@@ -1,0 +1,9 @@
+﻿# Credentials
+public_html/includes/config.php
+
+# IDE / Editor config
+.vscode/
+.idea/
+.DS_Store
+*.swp
+*.log

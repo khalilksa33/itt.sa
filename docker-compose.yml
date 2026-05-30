@@ -1,0 +1,10 @@
+services:
+  # Unified Web App: Nginx + PHP-FPM in a single container
+  itt-app:
+    image: khalilksa33/itt.sa:latest
+    container_name: insight-travel-app
+    ports:
+      - "8081:80"
+    volumes:
+      - ./public_html/includes/config.php:/var/www/html/includes/config.php:ro
+    restart: always

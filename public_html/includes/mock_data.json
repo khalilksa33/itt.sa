@@ -1,0 +1,99 @@
+{
+  "sub_agents": [
+    {
+      "name": "AGT-2026-0001",
+      "agency_name": "Al-Falah Travel Services",
+      "contact_name": "Muhammad Faisal",
+      "email": "faisal@alfalah.com.pk",
+      "phone": "+92 300 9876543",
+      "license_no": "DTS-ISB-4819",
+      "address": "Islamabad, Pakistan",
+      "experience": 8,
+      "bio": "Leading travel agency providing standard and custom Umrah packages across Punjab.",
+      "status": "Approved",
+      "created_at": "2026-05-15 10:30:22"
+    },
+    {
+      "name": "AGT-2026-0002",
+      "agency_name": "Haji & Sons Travel Agency",
+      "contact_name": "Kamran Khan",
+      "email": "info@hajiandsons.com",
+      "phone": "+92 321 5556789",
+      "license_no": "IATA-PK-9210",
+      "address": "Peshawar, Pakistan",
+      "experience": 12,
+      "bio": "Providing sacred journeys for families and corporate groups from KP region.",
+      "status": "Pending",
+      "created_at": "2026-05-28 14:15:00"
+    },
+    {
+      "name": "AGT-2026-0003",
+      "agency_name": "Karakoram Expeditions (Pvt) Ltd",
+      "contact_name": "Zulfiqar Ali",
+      "email": "ali@karakoram.pk",
+      "phone": "+92 312 4443322",
+      "license_no": "DTS-GB-1092",
+      "address": "Gilgit, Pakistan",
+      "experience": 5,
+      "bio": "Adventure tourism and religious pilgrimage packages from Gilgit-Baltistan.",
+      "status": "Suspended",
+      "created_at": "2026-05-10 09:00:00"
+    }
+  ],
+  "bookings": [
+    {
+      "name": "BKG-2026-0101",
+      "customer_name": "Tariq Mahmood",
+      "email": "tariq@gmail.com",
+      "phone": "+92 300 1234567",
+      "passport_number": "KP098765",
+      "package_code": "PKG-PREMIUM-20D-1",
+      "package_name": "Premium 20D - Pkg 1 (Arafat Golden / Hala Taibah)",
+      "group_code": "GRP-PREMIUM-20D-1",
+      "sharing_type": "Sharing",
+      "booking_mode": "Standard",
+      "base_price": 274850,
+      "resale_price": 274850,
+      "commission": 13742.5,
+      "sub_agent_id": "AGT-2026-0001",
+      "status": "Draft",
+      "booking_date": "2026-05-20"
+    },
+    {
+      "name": "BKG-2026-0102",
+      "customer_name": "Ayesha Bibi",
+      "email": "ayesha.bibi@yahoo.com",
+      "phone": "+92 333 4445555",
+      "passport_number": "PZ654321",
+      "package_code": "PKG-PREMIUM-20D-1",
+      "package_name": "Premium 20D - Pkg 1 (Arafat Golden / Hala Taibah)",
+      "group_code": "GRP-PREMIUM-20D-1",
+      "sharing_type": "Double",
+      "booking_mode": "Reseller",
+      "base_price": 305325,
+      "resale_price": 330000,
+      "commission": 24675,
+      "sub_agent_id": "AGT-2026-0001",
+      "status": "Confirmed",
+      "booking_date": "2026-05-22"
+    },
+    {
+      "name": "BKG-2026-0103",
+      "customer_name": "Bilal Siddiqui",
+      "email": "bilal@siddiqui-corp.com",
+      "phone": "+92 345 8887766",
+      "passport_number": "KL112233",
+      "package_code": "DAT-2809",
+      "package_name": "Dar Al Taqwa - 28 Sep to 03 Oct",
+      "group_code": "GRP-DAT-2809",
+      "sharing_type": "Sharing",
+      "booking_mode": "Standard",
+      "base_price": 137492,
+      "resale_price": 137492,
+      "commission": 6874.6,
+      "sub_agent_id": "AGT-2026-0001",
+      "status": "Draft",
+      "booking_date": "2026-05-25"
+    }
+  ]
+}
