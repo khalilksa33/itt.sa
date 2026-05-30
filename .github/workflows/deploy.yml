@@ -1,3 +1,31 @@
+      # 1. Install cloudflared on the GitHub Actions runner
+      - name: Install cloudflared
+        run: |
+          wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+          sudo dpkg -i cloudflared-linux-amd64.deb
+
+      # 2. Configure SSH client on the runner to proxy through cloudflared
+      - name: Configure SSH for Cloudflare Access
+        run: |
+          mkdir -p ~/.ssh
+          cat <<EOF >> ~/.ssh/config
+          Host ${{ secrets.SSH_HOST }}
+            ProxyCommand /usr/bin/cloudflared access ssh --id ${{ secrets.CF_ACCESS_CLIENT_ID }} --secret ${{ secrets.CF_ACCESS_CLIENT_SECRET }} --hostname %h
+          EOF
+          chmod 600 ~/.ssh/config
+
+      # 3. Perform the deploy over SSH (now routed through Cloudflare Access)
+      - name: Deploy to Linux Host
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/frappe/itt.sa
+            docker compose pull
+            docker compose up -d
 name: CI/CD Pipeline
 
 on:
@@ -7,7 +35,7 @@ on:
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
       - name: Checkout Code
