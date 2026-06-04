@@ -55,13 +55,12 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           
           # Create the SSH config file using the Cloudflare Service Token secrets
-          # We force HostName to ssh-erp.26i.uk which is the active Cloudflare Tunnel domain
           cat <<EOF > ~/.ssh/config
           Host ${{ secrets.SSH_HOST }}
-            HostName ssh-erp.26i.uk
+            HostName ${{ secrets.SSH_HOST }}
             User ${{ secrets.SSH_USER }}
             IdentityFile ~/.ssh/id_rsa
-            ProxyCommand /usr/bin/cloudflared access tcp --id ${{ secrets.CF_ACCESS_CLIENT_ID }} --secret ${{ secrets.CF_ACCESS_CLIENT_SECRET }} --hostname %h
+            ProxyCommand /usr/bin/cloudflared access ssh --id ${{ secrets.CF_ACCESS_CLIENT_ID }} --secret ${{ secrets.CF_ACCESS_CLIENT_SECRET }} --hostname %h
             StrictHostKeyChecking no
             UserKnownHostsFile /dev/null
           EOF
