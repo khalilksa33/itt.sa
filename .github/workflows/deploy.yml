@@ -51,14 +51,21 @@ jobs:
       - name: Configure SSH for Cloudflare Access
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          cat << 'EOF' > ~/.ssh/id_rsa
+          ${{ secrets.SSH_PRIVATE_KEY }}
+          EOF
           chmod 600 ~/.ssh/id_rsa
+          
+          # Resolve port value, defaulting to 22 if not defined
+          SSH_PORT_VAL="${{ secrets.SSH_PORT }}"
+          SSH_PORT_VAL="${SSH_PORT_VAL:-22}"
           
           # Create the SSH config file using the Cloudflare Service Token secrets
           cat <<EOF > ~/.ssh/config
           Host ${{ secrets.SSH_HOST }}
             HostName ${{ secrets.SSH_HOST }}
             User ${{ secrets.SSH_USER }}
+            Port $SSH_PORT_VAL
             IdentityFile ~/.ssh/id_rsa
             ProxyCommand /usr/bin/cloudflared access ssh --id ${{ secrets.CF_ACCESS_CLIENT_ID }} --secret ${{ secrets.CF_ACCESS_CLIENT_SECRET }} --hostname %h
             StrictHostKeyChecking no
