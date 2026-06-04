@@ -1,4 +1,4 @@
-﻿# Credentials
+# Credentials
 public_html/includes/config.php
 
 # IDE / Editor config
@@ -7,3 +7,11 @@ public_html/includes/config.php
 .DS_Store
 *.swp
 *.log
+
+# Node dependencies and builds
+node_modules/
+dist/
+.env
+
+# Scraped images directory
+server/public/
