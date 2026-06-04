@@ -22,6 +22,38 @@
   }
 }
 
+/* Animations & Keyframes */
+@keyframes rotateLogo {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes floatAnimation {
+  from {
+    transform: translateY(0px);
+  }
+  to {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-spin-slow {
+  animation: rotateLogo 15s linear infinite;
+}
+
+.animate-float {
+  animation: floatAnimation 4s ease-in-out infinite alternate;
+}
+
+.animate-float-delayed {
+  animation: floatAnimation 4s ease-in-out infinite alternate;
+  animation-delay: 2s;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
@@ -39,3 +71,4 @@
 ::-webkit-scrollbar-thumb:hover {
   background: var(--accent-hover);
 }
+

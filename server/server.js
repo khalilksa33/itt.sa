@@ -109,6 +109,17 @@ app.post('/api/inquiries', async (req, res) => {
   }
 });
 
+// 2b. Get all inquiries (BI Dashboard)
+app.get('/api/inquiries', async (req, res) => {
+  try {
+    const inquiries = await Inquiry.find({}).sort({ createdAt: -1 });
+    res.json(inquiries);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to retrieve inquiries.' });
+  }
+});
+
+
 // 3. Seed initial Meezab Group packages
 app.post('/api/packages/seed', async (req, res) => {
   try {
