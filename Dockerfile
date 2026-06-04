@@ -1,21 +1,14 @@
-# CI/CD Trigger Test - 2026-06-04
-FROM php:8.2-fpm-alpine
+# Stage 1: Build the React application
+FROM node:18-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm install --legacy-peer-deps
+COPY . .
+RUN npm run build
 
-# Install Nginx, supervisor, and curl dependencies
-RUN apk add --no-cache nginx supervisor curl curl-dev \
-    && docker-php-ext-install curl
-
-# Copy Nginx server configuration
-COPY nginx.conf /etc/nginx/http.d/default.conf
-
-# Copy supervisor configuration
-COPY supervisord.conf /etc/supervisord.conf
-
-# Copy application source code
-COPY public_html /var/www/html
-
-# Expose HTTP port
+# Stage 2: Serve the application with Nginx
+FROM nginx:alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
-
-# Start supervisord to manage processes
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
+CMD ["nginx", "-g", "daemon off;"]

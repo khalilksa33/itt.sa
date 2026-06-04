@@ -5,8 +5,6 @@ services:
     container_name: insight-travel-app
     ports:
       - "8080:80"
-    volumes:
-      - ./public_html/includes/config.php:/var/www/html/includes/config.php:ro
     restart: always
 
   # Express Backend with MongoDB Integration
@@ -22,4 +20,4 @@ services:
     restart: always
     environment:
       - PORT=5000
-      - MONGODB_URI=mongodb://192.168.8.250:27017/itt_sa
+      - MONGODB_URI=mongodb://192.168.8.59:27017/itt_sa

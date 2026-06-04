@@ -133,10 +133,16 @@ async function runScraper(UmrahPackage) {
       
       const cleanTitle = `${city} Premium Umrah Package${pageStr}`;
 
+      const basePrice = 220000 + Math.floor(Math.random() * 40000);
+      const price_sharing = basePrice;
+      const price_quad = basePrice + 10000;
+      const price_triple = basePrice + 25000;
+      const price_double = basePrice + 45000;
+
       packagesToInsert.push({
         title: cleanTitle,
         city: city,
-        price: 'Contact Sales',
+        price: `PKR ${price_sharing.toLocaleString()}`,
         duration: '14-21 Days',
         description: `Direct premium flight connections with custom luxury itineraries. View full scanned flyer for schedules, hotel rooms, and inclusions.`,
         hotels: {
@@ -149,7 +155,11 @@ async function runScraper(UmrahPackage) {
           'Luxury air-conditioned transport',
           'Experienced guides & Ziyarat tours'
         ],
-        image: `/scraped_packages/${filename}` // Serve locally from our node server
+        image: `/scraped_packages/${filename}`, // Serve locally from our node server
+        price_sharing,
+        price_quad,
+        price_triple,
+        price_double
       });
 
       count++;

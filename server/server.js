@@ -52,10 +52,35 @@ const UmrahPackageSchema = new mongoose.Schema({
     madinah: { type: String, required: true }
   },
   features: [{ type: String }],
-  image: { type: String } // Image path or placeholder
+  image: { type: String },
+  price_sharing: { type: Number },
+  price_quad: { type: Number },
+  price_triple: { type: Number },
+  price_double: { type: Number }
 });
 
 const UmrahPackage = mongoose.model('UmrahPackage', UmrahPackageSchema);
+
+const BookingSchema = new mongoose.Schema({
+  packageId: { type: String, required: true },
+  packageName: { type: String, required: true },
+  roomingType: { type: String, required: true }, // 'sharing', 'quad', 'triple', 'double'
+  pilgrimsCount: { type: Number, required: true },
+  totalPrice: { type: Number, required: true },
+  contact: {
+    name: { type: String, required: true },
+    email: { type: String, required: true },
+    phone: { type: String, required: true }
+  },
+  pilgrims: [{
+    name: { type: String, required: true },
+    passportNumber: { type: String, required: true }
+  }],
+  status: { type: String, default: 'Confirmed - Pending Payment' },
+  createdAt: { type: Date, default: Date.now }
+});
+
+const Booking = mongoose.model('Booking', BookingSchema);
 
 // API Routes
 
@@ -109,7 +134,11 @@ app.post('/api/packages/seed', async (req, res) => {
           "Buffet breakfast & dinner included",
           "Guided Ziyarat tours in Makkah & Madinah"
         ],
-        image: "https://meezabgroup.com/wp-content/uploads/2025/07/Lahore-Group-Pkgs_page-0001.jpg"
+        image: "https://meezabgroup.com/wp-content/uploads/2025/07/Lahore-Group-Pkgs_page-0001.jpg",
+        price_sharing: 274850,
+        price_quad: 283475,
+        price_triple: 290950,
+        price_double: 305325
       },
       {
         title: "Islamabad Elite Umrah Package",
@@ -129,7 +158,11 @@ app.post('/api/packages/seed', async (req, res) => {
           "Catering plans available on request",
           "Complete historical Ziyarat guided program"
         ],
-        image: "https://meezabgroup.com/wp-content/uploads/2025/07/Islamabad-Group-Pkg-_page-0001.jpg"
+        image: "https://meezabgroup.com/wp-content/uploads/2025/07/Islamabad-Group-Pkg-_page-0001.jpg",
+        price_sharing: 312800,
+        price_quad: 324875,
+        price_triple: 345575,
+        price_double: 387550
       },
       {
         title: "Faisalabad Economy Plus Package",
@@ -149,7 +182,11 @@ app.post('/api/packages/seed', async (req, res) => {
           "24/7 dedicated local staff support",
           "Standard ground transportation"
         ],
-        image: "https://meezabgroup.com/wp-content/uploads/2025/08/Faislabad-Group-Pkgs-_page-0001.jpg"
+        image: "https://meezabgroup.com/wp-content/uploads/2025/08/Faislabad-Group-Pkgs-_page-0001.jpg",
+        price_sharing: 215000,
+        price_quad: 225000,
+        price_triple: 235000,
+        price_double: 255000
       },
       {
         title: "Peshawar Executive Umrah Package",
@@ -169,7 +206,11 @@ app.post('/api/packages/seed', async (req, res) => {
           "24/7 on-call customer care in KSA",
           "Comfortable group airport and intercity transfers"
         ],
-        image: "https://meezabgroup.com/wp-content/uploads/2025/07/Peshawar-Group-Pkgs_page-0001.jpg"
+        image: "https://meezabgroup.com/wp-content/uploads/2025/07/Peshawar-Group-Pkgs_page-0001.jpg",
+        price_sharing: 245000,
+        price_quad: 255000,
+        price_triple: 265000,
+        price_double: 285000
       }
     ];
 
@@ -187,6 +228,39 @@ app.post('/api/packages/scrape', async (req, res) => {
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: 'Scraper failed: ' + error.message });
+  }
+});
+
+// 5. Submit a booking (Checkout)
+app.post('/api/bookings', async (req, res) => {
+  try {
+    const { packageId, packageName, roomingType, pilgrimsCount, totalPrice, contact, pilgrims } = req.body;
+    if (!packageId || !packageName || !roomingType || !pilgrimsCount || !totalPrice || !contact || !pilgrims) {
+      return res.status(400).json({ error: 'Missing required checkout information.' });
+    }
+    const newBooking = new Booking({
+      packageId,
+      packageName,
+      roomingType,
+      pilgrimsCount,
+      totalPrice,
+      contact,
+      pilgrims
+    });
+    await newBooking.save();
+    res.status(201).json({ success: true, bookingId: newBooking._id, message: 'Booking created successfully.' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to process booking: ' + error.message });
+  }
+});
+
+// 6. Get all bookings
+app.get('/api/bookings', async (req, res) => {
+  try {
+    const bookings = await Booking.find({}).sort({ createdAt: -1 });
+    res.json(bookings);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to retrieve bookings.' });
   }
 });
 
