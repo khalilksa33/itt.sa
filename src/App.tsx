@@ -75,7 +75,23 @@ export default function App() {
   const [packages, setPackages] = useState<UmrahPackage[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCity, setSelectedCity] = useState<string>('All');
-  
+  const [currentPage, setCurrentPage] = useState<string>('home');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
+  const navigateTo = (page: 'home' | 'portal', hash?: string) => {
+    setCurrentPage(page);
+    setMobileMenuOpen(false);
+    setSearchQuery('');
+    if (page === 'home' && hash) {
+      setTimeout(() => {
+        const el = document.getElementById(hash);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   // Lead Inquiry form state
   const [formData, setFormData] = useState({
     name: '',
@@ -254,7 +270,7 @@ export default function App() {
       {/* HEADER & NAVBAR */}
       <header className="sticky top-0 z-50 bg-[#05080a]/95 backdrop-blur-md border-b border-[#c5a059]/15">
         <div className="container mx-auto px-6 py-4 flex justify-between items-center max-w-7xl">
-          <a href="#" className="flex items-center gap-3">
+          <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home'); }} className="flex items-center gap-3">
             <span className="text-[#c5a059] text-2.5xl"><i className="fa-solid fa-compass"></i></span>
             <span className="text-xl font-bold tracking-wide text-white uppercase">
               Insight <span className="text-[#c5a059] font-serif capitalize">Travel</span>
@@ -263,13 +279,13 @@ export default function App() {
 
           {/* Desktop Nav */}
           <nav className="hidden lg:flex items-center gap-8">
-            <a href="#home" className="text-sm font-medium hover:text-[#c5a059] transition-colors">Home</a>
-            <a href="#services" className="text-sm font-medium hover:text-[#c5a059] transition-colors">Services</a>
-            <a href="#spiritual" className="text-sm font-medium hover:text-[#c5a059] transition-colors">Spiritual Journeys</a>
-            <a href="#wonders" className="text-sm font-medium hover:text-[#c5a059] transition-colors">World Tours</a>
-            <a href="#packages" className="text-sm font-medium hover:text-[#c5a059] transition-colors font-semibold text-[#c5a059]">Umrah E-Portal</a>
-            <a href="#team" className="text-sm font-medium hover:text-[#c5a059] transition-colors">Team</a>
-            <a href="#contact" className="px-5 py-2 bg-[#c5a059] text-[#05080a] text-sm font-semibold rounded hover:bg-[#b48e47] transition-all">
+            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home'); }} className={`text-sm font-medium hover:text-[#c5a059] transition-colors ${currentPage === 'home' ? 'text-white' : 'text-gray-400'}`}>Home</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home', 'services'); }} className="text-sm font-medium text-gray-400 hover:text-[#c5a059] transition-colors">Services</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home', 'spiritual'); }} className="text-sm font-medium text-gray-400 hover:text-[#c5a059] transition-colors">Spiritual Journeys</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home', 'wonders'); }} className="text-sm font-medium text-gray-400 hover:text-[#c5a059] transition-colors">World Tours</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('portal'); }} className={`text-sm font-medium hover:text-[#c5a059] transition-colors ${currentPage === 'portal' ? 'text-[#c5a059] font-bold' : 'text-gray-400'}`}>Umrah E-Portal</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home', 'team'); }} className="text-sm font-medium text-gray-400 hover:text-[#c5a059] transition-colors">Team</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home', 'contact'); }} className="px-5 py-2 bg-[#c5a059] text-[#05080a] text-sm font-semibold rounded hover:bg-[#b48e47] transition-all">
               Inquire Now
             </a>
           </nav>
@@ -286,387 +302,508 @@ export default function App() {
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="lg:hidden bg-[#0e1217] border-b border-[#c5a059]/15 py-6 px-8 flex flex-col gap-5">
-            <a href="#home" onClick={() => setMobileMenuOpen(false)} className="text-lg hover:text-[#c5a059] transition-colors">Home</a>
-            <a href="#services" onClick={() => setMobileMenuOpen(false)} className="text-lg hover:text-[#c5a059] transition-colors">Services</a>
-            <a href="#spiritual" onClick={() => setMobileMenuOpen(false)} className="text-lg hover:text-[#c5a059] transition-colors">Spiritual Journeys</a>
-            <a href="#wonders" onClick={() => setMobileMenuOpen(false)} className="text-lg hover:text-[#c5a059] transition-colors">World Tours</a>
-            <a href="#packages" onClick={() => setMobileMenuOpen(false)} className="text-lg text-[#c5a059] font-bold">Umrah E-Portal</a>
-            <a href="#team" onClick={() => setMobileMenuOpen(false)} className="text-lg hover:text-[#c5a059] transition-colors">Team</a>
-            <a href="#contact" onClick={() => setMobileMenuOpen(false)} className="py-3 text-center bg-[#c5a059] text-[#05080a] font-bold rounded">
+            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home'); }} className="text-lg hover:text-[#c5a059] transition-colors">Home</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home', 'services'); }} className="text-lg hover:text-[#c5a059] transition-colors">Services</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home', 'spiritual'); }} className="text-lg hover:text-[#c5a059] transition-colors">Spiritual Journeys</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home', 'wonders'); }} className="text-lg hover:text-[#c5a059] transition-colors">World Tours</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('portal'); }} className="text-lg text-[#c5a059] font-bold">Umrah E-Portal</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home', 'team'); }} className="text-lg hover:text-[#c5a059] transition-colors">Team</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home', 'contact'); }} className="py-3 text-center bg-[#c5a059] text-[#05080a] font-bold rounded">
               Inquire Now
             </a>
           </div>
         )}
       </header>
 
-      {/* HERO SECTION */}
-      <section id="home" className="relative min-h-[80vh] flex items-center justify-center bg-[#05080a] py-20">
-        <div className="absolute inset-0 bg-[url('/hero_bg.png')] bg-cover bg-center opacity-75"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_60%_40%,rgba(7,13,15,0.3)_0%,rgba(7,13,15,0.92)_85%)]"></div>
-        <div className="container mx-auto px-6 max-w-7xl text-center relative z-10">
-          <div className="max-w-4xl mx-auto flex flex-col items-center">
-            <h1 className="text-5xl sm:text-7xl font-extrabold tracking-tight text-white mb-6 leading-tight">
-              Sacred Journeys <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#c5a059] via-[#e2c98a] to-[#c5a059] font-serif italic font-normal">
-                Worldly Wonders
-              </span>
-            </h1>
-            <p className="text-gray-400 text-lg sm:text-xl max-w-2xl mb-10 leading-relaxed font-sans">
-              From the heart of Madinah to the iconic landmarks of the globe. Experience seamless e-commerce booking for your holy pilgrimage.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-              <a href="#packages" className="w-full sm:w-auto px-8 py-4 bg-[#c5a059] text-[#05080a] font-bold rounded hover:bg-[#b48e47] transition-all transform hover:-translate-y-1 shadow-lg shadow-[#c5a059]/20">
-                Book Umrah Online
-              </a>
-              <a href="#wonders" className="w-full sm:w-auto px-8 py-4 bg-transparent text-white border border-gray-700 font-bold rounded hover:border-[#c5a059] hover:text-[#c5a059] transition-all">
-                Explore World Tours
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* SERVICES SECTION */}
-      <section id="services" className="py-24 bg-[#080d12]/50 border-y border-[#c5a059]/5">
-        <div className="container mx-auto px-6 max-w-7xl">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <h2 className="text-3xl font-serif text-white font-bold">Premium Travel Solutions</h2>
-            <div className="w-16 h-0.5 bg-[#c5a059] mx-auto mt-4"></div>
-          </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="bg-[#0e1217] p-8 rounded border border-[#c5a059]/10 hover:border-[#c5a059]/40 hover:-translate-y-1.5 transition-all group">
-              <div className="w-12 h-12 rounded bg-[#c5a059]/10 flex items-center justify-center text-[#c5a059] text-xl mb-6 group-hover:bg-[#c5a059] group-hover:text-[#05080a] transition-all">
-                <i className="fa-solid fa-kaaba"></i>
+      {currentPage === 'home' ? (
+        <>
+          {/* HERO SECTION */}
+          <section id="home" className="relative min-h-[80vh] flex items-center justify-center bg-[#05080a] py-20">
+            <div className="absolute inset-0 bg-[url('/hero_bg.png')] bg-cover bg-center opacity-75"></div>
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_60%_40%,rgba(7,13,15,0.3)_0%,rgba(7,13,15,0.92)_85%)]"></div>
+            <div className="container mx-auto px-6 max-w-7xl text-center relative z-10">
+              <div className="max-w-4xl mx-auto flex flex-col items-center">
+                <h1 className="text-5xl sm:text-7xl font-extrabold tracking-tight text-white mb-6 leading-tight">
+                  Sacred Journeys <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#c5a059] via-[#e2c98a] to-[#c5a059] font-serif italic font-normal">
+                    Worldly Wonders
+                  </span>
+                </h1>
+                <p className="text-gray-400 text-lg sm:text-xl max-w-2xl mb-10 leading-relaxed font-sans">
+                  From the heart of Madinah to the iconic landmarks of the globe. Experience seamless e-commerce booking for your holy pilgrimage.
+                </p>
+                <div className="flex flex-col sm:flex-row items-center gap-4">
+                  <button 
+                    onClick={() => navigateTo('portal')}
+                    className="w-full sm:w-auto px-8 py-4 bg-[#c5a059] text-[#05080a] font-bold rounded hover:bg-[#b48e47] transition-all transform hover:-translate-y-1 shadow-lg shadow-[#c5a059]/20"
+                  >
+                    Book Umrah Online
+                  </button>
+                  <button 
+                    onClick={() => navigateTo('home', 'wonders')}
+                    className="w-full sm:w-auto px-8 py-4 bg-transparent text-white border border-gray-700 font-bold rounded hover:border-[#c5a059] hover:text-[#c5a059] transition-all"
+                  >
+                    Explore World Tours
+                  </button>
+                </div>
               </div>
-              <h3 className="text-lg font-bold text-white mb-3">Hajj & Umrah</h3>
-              <p className="text-gray-400 text-sm leading-relaxed">
-                Full-service pilgrimage packages with high-end transport and hotels near the Haram.
-              </p>
             </div>
+          </section>
 
-            <div className="bg-[#0e1217] p-8 rounded border border-[#c5a059]/10 hover:border-[#c5a059]/40 hover:-translate-y-1.5 transition-all group">
-              <div className="w-12 h-12 rounded bg-[#c5a059]/10 flex items-center justify-center text-[#c5a059] text-xl mb-6 group-hover:bg-[#c5a059] group-hover:text-[#05080a] transition-all">
-                <i className="fa-solid fa-hotel"></i>
+          {/* SERVICES SECTION */}
+          <section id="services" className="py-24 bg-[#080d12]/50 border-y border-[#c5a059]/5">
+            <div className="container mx-auto px-6 max-w-7xl">
+              <div className="text-center max-w-2xl mx-auto mb-16">
+                <h2 className="text-3xl font-serif text-white font-bold">Premium Travel Solutions</h2>
+                <div className="w-16 h-0.5 bg-[#c5a059] mx-auto mt-4"></div>
               </div>
-              <h3 className="text-lg font-bold text-white mb-3">Accommodation</h3>
-              <p className="text-gray-400 text-sm leading-relaxed">
-                Exclusive booking at 5-star properties in Makkah, Madinah, and global cities.
-              </p>
-            </div>
 
-            <div className="bg-[#0e1217] p-8 rounded border border-[#c5a059]/10 hover:border-[#c5a059]/40 hover:-translate-y-1.5 transition-all group">
-              <div className="w-12 h-12 rounded bg-[#c5a059]/10 flex items-center justify-center text-[#c5a059] text-xl mb-6 group-hover:bg-[#c5a059] group-hover:text-[#05080a] transition-all">
-                <i className="fa-solid fa-plane"></i>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div className="bg-[#0e1217] p-8 rounded border border-[#c5a059]/10 hover:border-[#c5a059]/40 hover:-translate-y-1.5 transition-all group">
+                  <div className="w-12 h-12 rounded bg-[#c5a059]/10 flex items-center justify-center text-[#c5a059] text-xl mb-6 group-hover:bg-[#c5a059] group-hover:text-[#05080a] transition-all">
+                    <i className="fa-solid fa-kaaba"></i>
+                  </div>
+                  <h3 className="text-lg font-bold text-white mb-3">Hajj & Umrah</h3>
+                  <p className="text-gray-400 text-sm leading-relaxed">
+                    Full-service pilgrimage packages with high-end transport and hotels near the Haram.
+                  </p>
+                </div>
+
+                <div className="bg-[#0e1217] p-8 rounded border border-[#c5a059]/10 hover:border-[#c5a059]/40 hover:-translate-y-1.5 transition-all group">
+                  <div className="w-12 h-12 rounded bg-[#c5a059]/10 flex items-center justify-center text-[#c5a059] text-xl mb-6 group-hover:bg-[#c5a059] group-hover:text-[#05080a] transition-all">
+                    <i className="fa-solid fa-hotel"></i>
+                  </div>
+                  <h3 className="text-lg font-bold text-white mb-3">Accommodation</h3>
+                  <p className="text-gray-400 text-sm leading-relaxed">
+                    Exclusive booking at 5-star properties in Makkah, Madinah, and global cities.
+                  </p>
+                </div>
+
+                <div className="bg-[#0e1217] p-8 rounded border border-[#c5a059]/10 hover:border-[#c5a059]/40 hover:-translate-y-1.5 transition-all group">
+                  <div className="w-12 h-12 rounded bg-[#c5a059]/10 flex items-center justify-center text-[#c5a059] text-xl mb-6 group-hover:bg-[#c5a059] group-hover:text-[#05080a] transition-all">
+                    <i className="fa-solid fa-plane"></i>
+                  </div>
+                  <h3 className="text-lg font-bold text-white mb-3">Ticketing</h3>
+                  <p className="text-gray-400 text-sm leading-relaxed">
+                    Seamless flight arrangements with major carriers at competitive rates.
+                  </p>
+                </div>
+
+                <div className="bg-[#0e1217] p-8 rounded border border-[#c5a059]/10 hover:border-[#c5a059]/40 hover:-translate-y-1.5 transition-all group">
+                  <div className="w-12 h-12 rounded bg-[#c5a059]/10 flex items-center justify-center text-[#c5a059] text-xl mb-6 group-hover:bg-[#c5a059] group-hover:text-[#05080a] transition-all">
+                    <i className="fa-solid fa-bus"></i>
+                  </div>
+                  <h3 className="text-lg font-bold text-white mb-3">Transportation</h3>
+                  <p className="text-gray-400 text-sm leading-relaxed">
+                    Luxury VIP fleet for Ziyarat and long-distance travel across Saudi Arabia.
+                  </p>
+                </div>
               </div>
-              <h3 className="text-lg font-bold text-white mb-3">Ticketing</h3>
-              <p className="text-gray-400 text-sm leading-relaxed">
-                Seamless flight arrangements with major carriers at competitive rates.
-              </p>
             </div>
+          </section>
 
-            <div className="bg-[#0e1217] p-8 rounded border border-[#c5a059]/10 hover:border-[#c5a059]/40 hover:-translate-y-1.5 transition-all group">
-              <div className="w-12 h-12 rounded bg-[#c5a059]/10 flex items-center justify-center text-[#c5a059] text-xl mb-6 group-hover:bg-[#c5a059] group-hover:text-[#05080a] transition-all">
-                <i className="fa-solid fa-bus"></i>
+          {/* SPIRITUAL JOURNEYS (ORIGINAL SECTION) */}
+          <section id="spiritual" className="py-24 bg-[#05080a]">
+            <div className="container mx-auto px-6 max-w-7xl">
+              <div className="text-center max-w-2xl mx-auto mb-16">
+                <h2 className="text-3xl font-serif text-white font-bold">Spiritual Journeys</h2>
+                <div className="w-16 h-0.5 bg-[#c5a059] mx-auto mt-4"></div>
               </div>
-              <h3 className="text-lg font-bold text-white mb-3">Transportation</h3>
-              <p className="text-gray-400 text-sm leading-relaxed">
-                Luxury VIP fleet for Ziyarat and long-distance travel across Saudi Arabia.
-              </p>
+
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {/* Cards matching the original index.php content */}
+                <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10">
+                  <img src="https://images.unsplash.com/photo-1693590614566-1d3ea9ef32f7?auto=format&fit=crop&w=600" alt="The Center of the Soul" className="w-full h-48 object-cover" />
+                  <div className="p-6">
+                    <h3 className="text-lg font-bold text-[#c5a059] mb-3">The Center of the Soul</h3>
+                    <p className="text-gray-400 text-sm leading-relaxed">
+                      Makkah is not just a destination on a map; it is the gravitational pull of the believer’s heart. When the eyes first fall upon the Kaaba, the noise of the world falls silent, and the soul finally hears the echo of its own beginning.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10">
+                  <img src="https://plus.unsplash.com/premium_photo-1697730274057-19338e84db8e?auto=format&fit=crop&w=600" alt="The House of Equality" className="w-full h-48 object-cover" />
+                  <div className="p-6">
+                    <h3 className="text-lg font-bold text-[#c5a059] mb-3">The House of Equality</h3>
+                    <p className="text-gray-400 text-sm leading-relaxed">
+                      In the shadows of the Black Stone, there are no kings and no beggars—only souls draped in white, circling the House of the One. It is here we learn that the only true rank in existence is the sincerity of our prostration.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10">
+                  <img src="https://images.unsplash.com/photo-1511652019870-fbd8713560bf?auto=format&fit=crop&w=600" alt="The Infinite Return" className="w-full h-48 object-cover" />
+                  <div className="p-6">
+                    <h3 className="text-lg font-bold text-[#c5a059] mb-3">The Infinite Return</h3>
+                    <p className="text-gray-400 text-sm leading-relaxed">
+                      To perform Tawaf is to realize that life is a circle that begins and ends with God. Every step around the Kaaba is a shedding of the ego, until nothing remains but the servant and the Master in a state of perfect peace.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10">
+                  <img src="https://images.unsplash.com/photo-1602733458155-647c07d32ef6?auto=format&fit=crop&w=600" alt="The City of Light" className="w-full h-48 object-cover" />
+                  <div className="p-6">
+                    <h3 className="text-lg font-bold text-[#c5a059] mb-3">The City of Light</h3>
+                    <p className="text-gray-400 text-sm leading-relaxed">
+                      If Makkah is the majesty of Divine Law, Madinah is the beauty of Divine Mercy. To enter the City of the Prophet is to move from the scorching heat of worldly struggle into the cool, fragrant shade of unconditional love.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10">
+                  <img src="https://images.unsplash.com/photo-1729931421786-7bbd6c7d78f6?auto=format&fit=crop&w=600" alt="The Fragrance of Presence" className="w-full h-48 object-cover" />
+                  <div className="p-6">
+                    <h3 className="text-lg font-bold text-[#c5a059] mb-3">The Fragrance of Presence</h3>
+                    <p className="text-gray-400 text-sm leading-relaxed">
+                      There is a stillness in the air of Madinah that cannot be found elsewhere. It is the scent of a thousand salutations and the weight of a Presence that reassures every broken heart: 'You are home, and you are welcome here.'
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10">
+                  <img src="https://images.unsplash.com/photo-1667454496584-9838026037af?auto=format&fit=crop&w=600" alt="The Garden of Paradise" className="w-full h-48 object-cover" />
+                  <div className="p-6">
+                    <h3 className="text-lg font-bold text-[#c5a059] mb-3">The Garden of Paradise</h3>
+                    <p className="text-gray-400 text-sm leading-relaxed">
+                      Walking through the gates of Al-Masjid an-Nabawi is like stepping out of time. Between the Rawdah and the Minbar lies a garden of Paradise, where the spirit breathes the air of the heavens while the feet still touch the earth.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      </section>
+          </section>
 
-      {/* SPIRITUAL JOURNEYS (ORIGINAL SECTION) */}
-      <section id="spiritual" className="py-24 bg-[#05080a]">
-        <div className="container mx-auto px-6 max-w-7xl">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <h2 className="text-3xl font-serif text-white font-bold">Spiritual Journeys</h2>
-            <div className="w-16 h-0.5 bg-[#c5a059] mx-auto mt-4"></div>
-          </div>
+          {/* INTERNATIONAL WONDERS (ORIGINAL SECTION) */}
+          <section id="wonders" className="py-24 bg-[#080d12]/50 border-t border-[#c5a059]/5">
+            <div className="container mx-auto px-6 max-w-7xl">
+              <div className="text-center max-w-2xl mx-auto mb-16">
+                <h2 className="text-3xl font-serif text-white font-bold">International Wonders</h2>
+                <div className="w-16 h-0.5 bg-[#c5a059] mx-auto mt-4"></div>
+              </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Cards matching the original index.php content */}
-            <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10">
-              <img src="https://images.unsplash.com/photo-1693590614566-1d3ea9ef32f7?auto=format&fit=crop&w=600" alt="The Center of the Soul" className="w-full h-48 object-cover" />
-              <div className="p-6">
-                <h3 className="text-lg font-bold text-[#c5a059] mb-3">The Center of the Soul</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">
-                  Makkah is not just a destination on a map; it is the gravitational pull of the believer’s heart. When the eyes first fall upon the Kaaba, the noise of the world falls silent, and the soul finally hears the echo of its own beginning.
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10 group">
+                  <img src="https://images.unsplash.com/photo-1615811648503-479d06197ff3?auto=format&fit=crop&w=600" alt="Petra" className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
+                  <div className="p-6">
+                    <h3 className="text-lg font-bold text-white mb-2">Petra, (Jordan)</h3>
+                    <p className="text-gray-400 text-sm leading-relaxed">Discover the ancient "Rose City" carved into sandstone.</p>
+                  </div>
+                </div>
+
+                <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10 group">
+                  <img src="https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=600" alt="Great Wall" className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
+                  <div className="p-6">
+                    <h3 className="text-lg font-bold text-white mb-2">Great Wall, (China)</h3>
+                    <p className="text-gray-400 text-sm leading-relaxed">Walk the historic fortifications of the Ming Dynasty.</p>
+                  </div>
+                </div>
+
+                <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10 group">
+                  <img src="https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=600" alt="Colosseum" className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
+                  <div className="p-6">
+                    <h3 className="text-lg font-bold text-white mb-2">The Colosseum, (Rome)</h3>
+                    <p className="text-gray-400 text-sm leading-relaxed">Experience the architectural marvel of ancient Italy.</p>
+                  </div>
+                </div>
+
+                <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10 group">
+                  <img src="https://images.unsplash.com/photo-1509273954142-d24fb1bb212d?auto=format&fit=crop&w=600" alt="Machu Picchu" className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
+                  <div className="p-6">
+                    <h3 className="text-lg font-bold text-white mb-2">Machu Picchu Trek (Peru)</h3>
+                    <p className="text-gray-400 text-sm leading-relaxed">Unveil the mysteries of the Incan Empire in the Peruvian Andes.</p>
+                  </div>
+                </div>
+
+                <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10 group">
+                  <img src="https://images.unsplash.com/photo-1647220499997-ae2a94540ed6?auto=format&fit=crop&w=600" alt="Chichen Itza" className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
+                  <div className="p-6">
+                    <h3 className="text-lg font-bold text-white mb-2">Chichén Itzá, (Mexico)</h3>
+                    <p className="text-gray-400 text-sm leading-relaxed">Experience the Chichén Itzá (Mexico): A large Maya pyramid city.</p>
+                  </div>
+                </div>
+
+                <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10 group">
+                  <img src="https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=600" alt="Taj Mahal" className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
+                  <div className="p-6">
+                    <h3 className="text-lg font-bold text-white mb-2">The Taj Mahal, (India)</h3>
+                    <p className="text-gray-400 text-sm leading-relaxed">Experience the white marble mausoleum commissioned in 1632 by Shah Jahan.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* DYNAMIC PORTAL CTA BANNER */}
+              <div className="mt-20 bg-[#0e1217] border border-[#c5a059]/15 rounded-xl p-8 sm:p-12 text-center max-w-4xl mx-auto shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-2 h-full bg-[#c5a059]"></div>
+                <h3 className="text-2xl font-serif text-white font-bold mb-4">Umrah Booking E-Portal</h3>
+                <p className="text-gray-400 text-sm max-w-2xl mx-auto mb-8 leading-relaxed">
+                  Ready to answer the sacred call? We offer dynamic, clean Unicode packages mapped directly from respected departure cities across Pakistan. Choose room options and place bookings through our real-time checkout flow.
+                </p>
+                <button 
+                  onClick={() => navigateTo('portal')}
+                  className="px-8 py-3.5 bg-[#c5a059] text-[#05080a] font-bold rounded-lg hover:bg-[#b48e47] transition-all transform hover:-translate-y-0.5 shadow-lg shadow-[#c5a059]/10"
+                >
+                  Enter Sacred Umrah Portal <i className="fa-solid fa-arrow-right-to-bracket ml-2"></i>
+                </button>
+              </div>
+            </div>
+          </section>
+
+          {/* TEAM SECTION (CEO MR. HAFIZ LAIQUE SHAHID & AHMAD HASAN MARJAN) */}
+          <section id="team" className="py-24 bg-[#05080a]">
+            <div className="container mx-auto px-6 max-w-7xl">
+              <div className="text-center max-w-2xl mx-auto mb-16">
+                <h2 className="text-3xl font-serif text-white font-bold">Our Team</h2>
+                <p className="text-[#c5a059] text-sm mt-1">Leadership at Lahore Office</p>
+                <div className="w-16 h-0.5 bg-[#c5a059] mx-auto mt-4"></div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                <div className="bg-[#0e1217] p-8 rounded border border-[#c5a059]/10 hover:border-[#c5a059]/30 transition-all flex flex-col">
+                  <span className="self-start px-3 py-1 bg-[#c5a059]/10 text-[#c5a059] text-xs font-bold uppercase tracking-wider rounded border border-[#c5a059]/20 mb-4">
+                    Team Head
+                  </span>
+                  <h3 className="text-2xl font-bold text-white mb-1">Mr. Hafiz Laique Shahid</h3>
+                  <p className="text-sm text-[#c5a059] font-semibold mb-2 font-serif">CEO</p>
+                  <p className="text-xs text-gray-400 mb-6"><i className="fa-solid fa-location-dot"></i> Lahore, Pakistan Office</p>
+                  
+                  <div className="flex flex-col gap-3 mt-auto pt-6 border-t border-gray-800">
+                    <div className="flex items-center gap-3 text-sm text-gray-300">
+                      <span className="text-[#c5a059] w-5"><i className="fa-solid fa-envelope"></i></span>
+                      <div className="flex flex-col">
+                        <a href="mailto:hlaique@yahoo.com" className="hover:text-[#c5a059] transition-colors">hlaique@yahoo.com</a>
+                        <a href="mailto:hijartulharamtravels@gmail.com" className="hover:text-[#c5a059] transition-colors">hijartulharamtravels@gmail.com</a>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm text-gray-300">
+                      <span className="text-[#c5a059] w-5"><i className="fa-solid fa-phone"></i></span>
+                      <div className="flex flex-col">
+                        <a href="tel:+923018490804" className="hover:text-[#c5a059] transition-colors">+92 301-8490804</a>
+                        <a href="tel:+966552945129" className="hover:text-[#c5a059] transition-colors">+966 55-294-5129</a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-[#0e1217] p-8 rounded border border-[#c5a059]/10 hover:border-[#c5a059]/30 transition-all flex flex-col">
+                  <span className="self-start px-3 py-1 bg-[#c5a059]/10 text-[#c5a059] text-xs font-bold uppercase tracking-wider rounded border border-[#c5a059]/20 mb-4">
+                    Executive Director
+                  </span>
+                  <h3 className="text-2xl font-bold text-white mb-1">Ahmad Hasan Marjan</h3>
+                  <p className="text-sm text-[#c5a059] font-semibold mb-2 font-serif">Executive Director</p>
+                  <p className="text-xs text-gray-400 mb-6"><i className="fa-solid fa-location-dot"></i> Lahore, Pakistan Office</p>
+                  
+                  <div className="flex flex-col gap-3 mt-auto pt-6 border-t border-gray-800">
+                    <div className="flex items-center gap-3 text-sm text-gray-300">
+                      <span className="text-[#c5a059] w-5"><i className="fa-solid fa-envelope"></i></span>
+                      <a href="mailto:m@itt.sa" className="hover:text-[#c5a059] transition-colors">m@itt.sa</a>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm text-gray-300">
+                      <span className="text-[#c5a059] w-5"><i className="fa-solid fa-phone"></i></span>
+                      <a href="tel:+966500860633" className="hover:text-[#c5a059] transition-colors">+966 50-086-0633</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </>
+      ) : (
+        /* DEDICATED PORTAL PAGE */
+        <section className="py-16 bg-[#05080a] flex-grow">
+          <div className="container mx-auto px-6 max-w-7xl">
+            {/* Header Banner */}
+            <div className="bg-gradient-to-r from-[#0e1217] to-[#080b0f] border border-[#c5a059]/15 rounded-xl p-8 mb-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+              <div>
+                <div className="flex items-center gap-2.5 text-xs text-[#c5a059] font-bold uppercase tracking-wider mb-2">
+                  <span className="hover:underline cursor-pointer" onClick={() => navigateTo('home')}>Home</span>
+                  <span><i className="fa-solid fa-chevron-right text-[10px]"></i></span>
+                  <span>Umrah Booking E-Portal</span>
+                </div>
+                <h2 className="text-3xl font-serif text-white font-bold">Umrah Booking E-Portal</h2>
+                <p className="text-gray-400 text-sm mt-1 leading-relaxed">
+                  Categorized Unicode offerings from Islamabad, Lahore, Sialkot, Peshawar, Multan, and Faisalabad.
                 </p>
               </div>
-            </div>
-
-            <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10">
-              <img src="https://plus.unsplash.com/premium_photo-1697730274057-19338e84db8e?auto=format&fit=crop&w=600" alt="The House of Equality" className="w-full h-48 object-cover" />
-              <div className="p-6">
-                <h3 className="text-lg font-bold text-[#c5a059] mb-3">The House of Equality</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">
-                  In the shadows of the Black Stone, there are no kings and no beggars—only souls draped in white, circling the House of the One. It is here we learn that the only true rank in existence is the sincerity of our prostration.
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10">
-              <img src="https://images.unsplash.com/photo-1511652019870-fbd8713560bf?auto=format&fit=crop&w=600" alt="The Infinite Return" className="w-full h-48 object-cover" />
-              <div className="p-6">
-                <h3 className="text-lg font-bold text-[#c5a059] mb-3">The Infinite Return</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">
-                  To perform Tawaf is to realize that life is a circle that begins and ends with God. Every step around the Kaaba is a shedding of the ego, until nothing remains but the servant and the Master in a state of perfect peace.
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10">
-              <img src="https://images.unsplash.com/photo-1602733458155-647c07d32ef6?auto=format&fit=crop&w=600" alt="The City of Light" className="w-full h-48 object-cover" />
-              <div className="p-6">
-                <h3 className="text-lg font-bold text-[#c5a059] mb-3">The City of Light</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">
-                  If Makkah is the majesty of Divine Law, Madinah is the beauty of Divine Mercy. To enter the City of the Prophet is to move from the scorching heat of worldly struggle into the cool, fragrant shade of unconditional love.
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10">
-              <img src="https://images.unsplash.com/photo-1729931421786-7bbd6c7d78f6?auto=format&fit=crop&w=600" alt="The Fragrance of Presence" className="w-full h-48 object-cover" />
-              <div className="p-6">
-                <h3 className="text-lg font-bold text-[#c5a059] mb-3">The Fragrance of Presence</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">
-                  There is a stillness in the air of Madinah that cannot be found elsewhere. It is the scent of a thousand salutations and the weight of a Presence that reassures every broken heart: 'You are home, and you are welcome here.'
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10">
-              <img src="https://images.unsplash.com/photo-1667454496584-9838026037af?auto=format&fit=crop&w=600" alt="The Garden of Paradise" className="w-full h-48 object-cover" />
-              <div className="p-6">
-                <h3 className="text-lg font-bold text-[#c5a059] mb-3">The Garden of Paradise</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">
-                  Walking through the gates of Al-Masjid an-Nabawi is like stepping out of time. Between the Rawdah and the Minbar lies a garden of Paradise, where the spirit breathes the air of the heavens while the feet still touch the earth.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* INTERNATIONAL WONDERS (ORIGINAL SECTION) */}
-      <section id="wonders" className="py-24 bg-[#080d12]/50 border-t border-[#c5a059]/5">
-        <div className="container mx-auto px-6 max-w-7xl">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <h2 className="text-3xl font-serif text-white font-bold">International Wonders</h2>
-            <div className="w-16 h-0.5 bg-[#c5a059] mx-auto mt-4"></div>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10 group">
-              <img src="https://images.unsplash.com/photo-1615811648503-479d06197ff3?auto=format&fit=crop&w=600" alt="Petra" className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
-              <div className="p-6">
-                <h3 className="text-lg font-bold text-white mb-2">Petra, (Jordan)</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">Discover the ancient "Rose City" carved into sandstone.</p>
-              </div>
-            </div>
-
-            <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10 group">
-              <img src="https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=600" alt="Great Wall" className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
-              <div className="p-6">
-                <h3 className="text-lg font-bold text-white mb-2">Great Wall, (China)</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">Walk the historic fortifications of the Ming Dynasty.</p>
-              </div>
-            </div>
-
-            <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10 group">
-              <img src="https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=600" alt="Colosseum" className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
-              <div className="p-6">
-                <h3 className="text-lg font-bold text-white mb-2">The Colosseum, (Rome)</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">Experience the architectural marvel of ancient Italy.</p>
-              </div>
-            </div>
-
-            <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10 group">
-              <img src="https://images.unsplash.com/photo-1509273954142-d24fb1bb212d?auto=format&fit=crop&w=600" alt="Machu Picchu" className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
-              <div className="p-6">
-                <h3 className="text-lg font-bold text-white mb-2">Machu Picchu Trek (Peru)</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">Unveil the mysteries of the Incan Empire in the Peruvian Andes.</p>
-              </div>
-            </div>
-
-            <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10 group">
-              <img src="https://images.unsplash.com/photo-1647220499997-ae2a94540ed6?auto=format&fit=crop&w=600" alt="Chichen Itza" className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
-              <div className="p-6">
-                <h3 className="text-lg font-bold text-white mb-2">Chichén Itzá, (Mexico)</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">Experience the Chichén Itzá (Mexico): A large Maya pyramid city.</p>
-              </div>
-            </div>
-
-            <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10 group">
-              <img src="https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=600" alt="Taj Mahal" className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
-              <div className="p-6">
-                <h3 className="text-lg font-bold text-white mb-2">The Taj Mahal, (India)</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">Experience the white marble mausoleum commissioned in 1632 by Shah Jahan.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* DYNAMIC PACKAGES & E-COMMERCE PORTAL */}
-      <section id="packages" className="py-24 bg-[#05080a]">
-        <div className="container mx-auto px-6 max-w-7xl">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <h2 className="text-3xl font-serif text-white font-bold">Umrah Booking E-Portal</h2>
-            <p className="text-[#c5a059] text-sm mt-1">Unicode Packages & Rooming Calculator</p>
-            <div className="w-16 h-0.5 bg-[#c5a059] mx-auto mt-4"></div>
-          </div>
-
-          {/* CITY TABS */}
-          <div className="flex flex-wrap justify-center gap-2 mb-12">
-            {['All', 'Islamabad', 'Lahore', 'Sialkot', 'Peshawar', 'Multan', 'Faisalabad'].map(city => (
-              <button
-                key={city}
-                onClick={() => setSelectedCity(city)}
-                className={`px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider border transition-all ${
-                  selectedCity === city 
-                    ? 'bg-[#c5a059] text-[#05080a] border-[#c5a059] shadow-lg shadow-[#c5a059]/20' 
-                    : 'bg-[#0e1217] text-gray-400 border-gray-800 hover:border-gray-700 hover:text-white'
-                }`}
+              <button 
+                onClick={() => navigateTo('home')}
+                className="px-6 py-2.5 bg-transparent border border-gray-800 text-gray-300 rounded hover:border-[#c5a059] hover:text-[#c5a059] transition-all text-sm font-semibold flex items-center gap-2"
               >
-                {city === 'All' ? 'All Cities' : city}
+                <i className="fa-solid fa-arrow-left"></i> Back to Homepage
               </button>
-            ))}
-          </div>
-
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-4">
-              <span className="text-[#c5a059] text-4xl animate-spin"><i className="fa-solid fa-circle-notch"></i></span>
-              <p className="text-gray-400">Loading dynamic packages...</p>
             </div>
-          ) : (
-            <div className="grid md:grid-cols-2 gap-8">
-              {(selectedCity === 'All' ? packages : packages.filter(p => p.city.toLowerCase() === selectedCity.toLowerCase())).map((pkg, index) => {
-                const imageSrc = pkg.image ? (pkg.image.startsWith('http') ? pkg.image : BACKEND_URL + pkg.image) : '';
+
+            {/* Filters Row */}
+            <div className="flex flex-col md:flex-row gap-6 justify-between items-center mb-10 bg-[#0e1217] p-5 rounded-lg border border-[#c5a059]/10">
+              {/* Tabs */}
+              <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                {['All', 'Islamabad', 'Lahore', 'Sialkot', 'Peshawar', 'Multan', 'Faisalabad'].map(city => (
+                  <button
+                    key={city}
+                    onClick={() => setSelectedCity(city)}
+                    className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider border transition-all ${
+                      selectedCity === city 
+                        ? 'bg-[#c5a059] text-[#05080a] border-[#c5a059] shadow-lg shadow-[#c5a059]/15' 
+                        : 'bg-[#05080a] text-gray-400 border-gray-800 hover:border-gray-700 hover:text-white'
+                    }`}
+                  >
+                    {city === 'All' ? 'All Cities' : city}
+                  </button>
+                ))}
+              </div>
+
+              {/* Search Box */}
+              <div className="relative w-full md:w-80">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                  <i className="fa-solid fa-magnifying-glass text-xs"></i>
+                </span>
+                <input
+                  type="text"
+                  placeholder="Search packages or hotels..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-[#05080a]/80 border border-gray-800 focus:border-[#c5a059] text-white pl-9 pr-4 py-2 rounded text-xs outline-none transition-all placeholder:text-gray-600"
+                />
+              </div>
+            </div>
+
+            {/* Packages Grid */}
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <span className="text-[#c5a059] text-4xl animate-spin"><i className="fa-solid fa-circle-notch"></i></span>
+                <p className="text-gray-400 text-sm">Loading dynamic packages...</p>
+              </div>
+            ) : (
+              (() => {
+                // Filter by city and search query
+                const filtered = packages.filter(pkg => {
+                  const matchesCity = selectedCity === 'All' || pkg.city.toLowerCase() === selectedCity.toLowerCase();
+                  const matchesSearch = searchQuery === '' || 
+                    pkg.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    pkg.hotels.makkah.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    pkg.hotels.madinah.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    pkg.description.toLowerCase().includes(searchQuery.toLowerCase());
+                  return matchesCity && matchesSearch;
+                });
+
+                if (filtered.length === 0) {
+                  return (
+                    <div className="text-center py-20 bg-[#0e1217] rounded-lg border border-gray-800">
+                      <span className="text-5xl text-gray-700 block mb-4"><i className="fa-solid fa-folder-open"></i></span>
+                      <h4 className="text-lg font-bold text-white mb-1">No Packages Found</h4>
+                      <p className="text-gray-500 text-xs">Try selecting another city tab or clearing your search filter.</p>
+                    </div>
+                  );
+                }
+
                 return (
-                  <div key={pkg._id || index} className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10 hover:border-[#c5a059]/30 transition-all flex flex-col group">
-                    <div className="relative h-64 w-full overflow-hidden">
-                      <img 
-                        src={imageSrc || "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?q=80&w=600"} 
-                        alt={pkg.title} 
-                        className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#0e1217] via-transparent to-transparent"></div>
-                      <div className="absolute top-4 left-4 px-3 py-1 bg-[#05080a]/90 border border-[#c5a059]/30 text-[#c5a059] text-xs font-bold rounded uppercase">
-                        {pkg.duration} - {pkg.city}
-                      </div>
-                      <div className="absolute bottom-4 right-4 px-4 py-1.5 bg-[#c5a059] text-[#05080a] text-sm font-extrabold rounded">
-                        Starts {pkg.price}
-                      </div>
-                    </div>
-                    
-                    <div className="p-8 flex flex-col flex-grow">
-                      <h3 className="text-xl font-bold text-white mb-2">{pkg.title}</h3>
-                      <p className="text-gray-400 text-sm leading-relaxed mb-6">{pkg.description}</p>
-                      
-                      <div className="bg-[#05080a]/60 border border-gray-800 p-4 rounded flex flex-col gap-2.5 mb-6">
-                        <div className="flex items-center gap-3 text-xs text-gray-300">
-                          <span className="text-[#c5a059]"><i className="fa-solid fa-hotel"></i></span>
-                          <span>Makkah Stay: <strong>{pkg.hotels.makkah}</strong></span>
-                        </div>
-                        <div className="flex items-center gap-3 text-xs text-gray-300">
-                          <span className="text-[#c5a059]"><i className="fa-solid fa-hotel"></i></span>
-                          <span>Madinah Stay: <strong>{pkg.hotels.madinah}</strong></span>
-                        </div>
-                      </div>
+                  <div className="grid md:grid-cols-2 gap-8">
+                    {filtered.map((pkg, index) => {
+                      const imageSrc = pkg.image ? (pkg.image.startsWith('http') ? pkg.image : BACKEND_URL + pkg.image) : '';
+                      return (
+                        <div key={pkg._id || index} className="bg-[#0e1217] rounded-xl overflow-hidden border border-[#c5a059]/10 hover:border-[#c5a059]/20 transition-all flex flex-col group shadow-lg">
+                          <div className="relative h-64 w-full overflow-hidden">
+                            <img 
+                              src={imageSrc || "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?q=80&w=600"} 
+                              alt={pkg.title} 
+                              className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#0e1217] via-transparent to-transparent"></div>
+                            <div className="absolute top-4 left-4 px-3 py-1 bg-[#05080a]/95 border border-[#c5a059]/30 text-[#c5a059] text-xs font-bold rounded uppercase tracking-wider">
+                              {pkg.duration}
+                            </div>
+                            <div className="absolute bottom-4 right-4 px-4 py-1.5 bg-[#c5a059] text-[#05080a] text-sm font-extrabold rounded shadow">
+                              Starts {pkg.price}
+                            </div>
+                          </div>
+                          
+                          <div className="p-8 flex flex-col flex-grow">
+                            <div className="flex justify-between items-center gap-2 mb-2">
+                              <h3 className="text-xl font-bold text-white">{pkg.title}</h3>
+                              <span className="px-2.5 py-1 bg-[#c5a059]/10 border border-[#c5a059]/20 text-[#c5a059] rounded text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
+                                <i className="fa-solid fa-plane-departure mr-1.5"></i> From {pkg.city}
+                              </span>
+                            </div>
+                            <p className="text-gray-400 text-sm leading-relaxed mb-6">{pkg.description}</p>
+                            
+                            {/* Stays info */}
+                            <div className="bg-[#05080a]/60 border border-gray-800/80 p-4 rounded-lg flex flex-col gap-2.5 mb-6">
+                              <div className="flex items-center gap-3 text-xs text-gray-300">
+                                <span className="text-[#c5a059]"><i className="fa-solid fa-kaaba"></i></span>
+                                <span>Makkah Accommodation: <strong>{pkg.hotels.makkah}</strong></span>
+                              </div>
+                              <div className="flex items-center gap-3 text-xs text-gray-300">
+                                <span className="text-[#c5a059]"><i className="fa-solid fa-mosque"></i></span>
+                                <span>Madinah Accommodation: <strong>{pkg.hotels.madinah}</strong></span>
+                              </div>
+                            </div>
 
-                      {/* Rooming Pricing Matrix Table */}
-                      <div className="border border-gray-800 rounded overflow-hidden mb-6 text-xs">
-                        <div className="bg-gray-900/60 grid grid-cols-4 py-2 px-3 text-gray-400 font-bold border-b border-gray-800 text-center">
-                          <div>Double</div>
-                          <div>Triple</div>
-                          <div>Quad</div>
-                          <div>Sharing</div>
-                        </div>
-                        <div className="grid grid-cols-4 py-2.5 px-3 text-center text-[#c5a059] font-semibold">
-                          <div>{pkg.price_double ? `${(pkg.price_double/1000).toFixed(0)}k` : '305k'}</div>
-                          <div>{pkg.price_triple ? `${(pkg.price_triple/1000).toFixed(0)}k` : '290k'}</div>
-                          <div>{pkg.price_quad ? `${(pkg.price_quad/1000).toFixed(0)}k` : '283k'}</div>
-                          <div>{pkg.price_sharing ? `${(pkg.price_sharing/1000).toFixed(0)}k` : '274k'}</div>
-                        </div>
-                      </div>
+                            {/* Features Inclusions */}
+                            <div className="mb-6">
+                              <h4 className="text-xs font-bold uppercase text-[#c5a059] tracking-wider mb-2.5">Package Inclusions</h4>
+                              <div className="grid grid-cols-2 gap-2 text-[11px] text-gray-400">
+                                {pkg.features ? pkg.features.slice(0, 6).map((feat, fIdx) => (
+                                  <div key={fIdx} className="flex items-center gap-2">
+                                    <span className="text-green-500"><i className="fa-solid fa-circle-check text-[9px]"></i></span>
+                                    <span className="truncate">{feat}</span>
+                                  </div>
+                                )) : (
+                                  <>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-green-500"><i className="fa-solid fa-circle-check text-[9px]"></i></span>
+                                      <span>Airline Flights Included</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-green-500"><i className="fa-solid fa-circle-check text-[9px]"></i></span>
+                                      <span>Umrah Visa & Insurance</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-green-500"><i className="fa-solid fa-circle-check text-[9px]"></i></span>
+                                      <span>Luxury Transfers</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-green-500"><i className="fa-solid fa-circle-check text-[9px]"></i></span>
+                                      <span>Ziyarat Tours</span>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            </div>
 
-                      <button 
-                        onClick={() => openBookingModal(pkg)}
-                        className="mt-auto w-full py-3 bg-[#c5a059] text-[#05080a] font-bold rounded hover:bg-[#b48e47] transition-all flex items-center justify-center gap-2"
-                      >
-                        Book & Checkout Online <i className="fa-solid fa-cart-shopping"></i>
-                      </button>
-                    </div>
+                            {/* Rooming Pricing Table */}
+                            <div className="border border-gray-800 rounded-lg overflow-hidden mb-6 text-xs bg-[#05080a]/30">
+                              <div className="bg-gray-900/40 grid grid-cols-4 py-2 px-3 text-gray-400 font-bold border-b border-gray-800 text-center">
+                                <div>Double</div>
+                                <div>Triple</div>
+                                <div>Quad</div>
+                                <div>Sharing</div>
+                              </div>
+                              <div className="grid grid-cols-4 py-2.5 px-3 text-center text-[#c5a059] font-bold">
+                                <div>{pkg.price_double ? `${(pkg.price_double/1000).toFixed(0)}k` : '305k'}</div>
+                                <div>{pkg.price_triple ? `${(pkg.price_triple/1000).toFixed(0)}k` : '290k'}</div>
+                                <div>{pkg.price_quad ? `${(pkg.price_quad/1000).toFixed(0)}k` : '283k'}</div>
+                                <div>{pkg.price_sharing ? `${(pkg.price_sharing/1000).toFixed(0)}k` : '274k'}</div>
+                              </div>
+                            </div>
+
+                            <button 
+                              onClick={() => openBookingModal(pkg)}
+                              className="mt-auto w-full py-3 bg-[#c5a059] text-[#05080a] font-bold rounded-lg hover:bg-[#b48e47] transition-all flex items-center justify-center gap-2 shadow shadow-[#c5a059]/10"
+                            >
+                              Book & Checkout Online <i className="fa-solid fa-cart-shopping"></i>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 );
-              })}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* TEAM SECTION (CEO MR. HAFIZ LAIQUE SHAHID & AHMAD HASAN MARJAN) */}
-      <section id="team" className="py-24 bg-[#080d12]/50 border-t border-[#c5a059]/5">
-        <div className="container mx-auto px-6 max-w-7xl">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <h2 className="text-3xl font-serif text-white font-bold">Our Team</h2>
-            <p className="text-[#c5a059] text-sm mt-1">Leadership at Lahore Office</p>
-            <div className="w-16 h-0.5 bg-[#c5a059] mx-auto mt-4"></div>
+              })()
+            )}
           </div>
-
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <div className="bg-[#0e1217] p-8 rounded border border-[#c5a059]/10 hover:border-[#c5a059]/30 transition-all flex flex-col">
-              <span className="self-start px-3 py-1 bg-[#c5a059]/10 text-[#c5a059] text-xs font-bold uppercase tracking-wider rounded border border-[#c5a059]/20 mb-4">
-                Team Head
-              </span>
-              <h3 className="text-2xl font-bold text-white mb-1">Mr. Hafiz Laique Shahid</h3>
-              <p className="text-sm text-[#c5a059] font-semibold mb-2 font-serif">CEO</p>
-              <p className="text-xs text-gray-400 mb-6"><i className="fa-solid fa-location-dot"></i> Lahore, Pakistan Office</p>
-              
-              <div className="flex flex-col gap-3 mt-auto pt-6 border-t border-gray-800">
-                <div className="flex items-center gap-3 text-sm text-gray-300">
-                  <span className="text-[#c5a059] w-5"><i className="fa-solid fa-envelope"></i></span>
-                  <div className="flex flex-col">
-                    <a href="mailto:hlaique@yahoo.com" className="hover:text-[#c5a059] transition-colors">hlaique@yahoo.com</a>
-                    <a href="mailto:hijartulharamtravels@gmail.com" className="hover:text-[#c5a059] transition-colors">hijartulharamtravels@gmail.com</a>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-gray-300">
-                  <span className="text-[#c5a059] w-5"><i className="fa-solid fa-phone"></i></span>
-                  <div className="flex flex-col">
-                    <a href="tel:+923018490804" className="hover:text-[#c5a059] transition-colors">+92 301-8490804</a>
-                    <a href="tel:+966552945129" className="hover:text-[#c5a059] transition-colors">+966 55-294-5129</a>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-[#0e1217] p-8 rounded border border-[#c5a059]/10 hover:border-[#c5a059]/30 transition-all flex flex-col">
-              <span className="self-start px-3 py-1 bg-[#c5a059]/10 text-[#c5a059] text-xs font-bold uppercase tracking-wider rounded border border-[#c5a059]/20 mb-4">
-                Executive Director
-              </span>
-              <h3 className="text-2xl font-bold text-white mb-1">Ahmad Hasan Marjan</h3>
-              <p className="text-sm text-[#c5a059] font-semibold mb-2 font-serif">Executive Director</p>
-              <p className="text-xs text-gray-400 mb-6"><i className="fa-solid fa-location-dot"></i> Lahore, Pakistan Office</p>
-              
-              <div className="flex flex-col gap-3 mt-auto pt-6 border-t border-gray-800">
-                <div className="flex items-center gap-3 text-sm text-gray-300">
-                  <span className="text-[#c5a059] w-5"><i className="fa-solid fa-envelope"></i></span>
-                  <a href="mailto:m@itt.sa" className="hover:text-[#c5a059] transition-colors">m@itt.sa</a>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-gray-300">
-                  <span className="text-[#c5a059] w-5"><i className="fa-solid fa-phone"></i></span>
-                  <a href="tel:+966500860633" className="hover:text-[#c5a059] transition-colors">+966 50-086-0633</a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* CHAIRMAN'S MESSAGE */}
       <section id="ceo-message" className="py-24 bg-[#05080a] border-t border-[#c5a059]/5">

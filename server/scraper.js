@@ -34,14 +34,41 @@ async function runScraper(UmrahPackage) {
     const packagesToInsert = [];
     let count = 0;
 
-    // A rotating set of beautiful, high-res generic holy mosque photos under ITT name
-    const unsplashMosques = [
+    // City-specific premium stock images mapping for exact city matching
+    const cityImages = {
+      "Islamabad": [
+        "https://images.unsplash.com/photo-1602088113235-229c19758e9f?q=80&w=600", // Faisal Mosque, Islamabad
+        "https://images.unsplash.com/photo-1595185966579-a78d06ab0e5e?q=80&w=600", // Faisal Mosque courtyard
+        "https://images.unsplash.com/photo-1627063162354-94c65e4c0cb8?q=80&w=600"  // Margalla Hills / Islamabad view
+      ],
+      "Lahore": [
+        "https://images.unsplash.com/photo-1608958415124-7f152ba85e2b?q=80&w=600", // Badshahi Mosque, Lahore
+        "https://images.unsplash.com/photo-1584714268709-c3dd9c92bd37?q=80&w=600", // Lahore streets
+        "https://images.unsplash.com/photo-1599818817290-b96238b7cb60?q=80&w=600"  // Walled City Lahore
+      ],
+      "Sialkot": [
+        "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?q=80&w=600", // Elegant clock tower theme / Sialkot architecture
+        "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=600"  // Sialkot landmark view
+      ],
+      "Peshawar": [
+        "https://images.unsplash.com/photo-1626125345510-4603468eedfb?q=80&w=600", // Bab-e-Khyber Peshawar
+        "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=600"  // Khyber gate scenic
+      ],
+      "Multan": [
+        "https://images.unsplash.com/photo-1652701460390-8636fbcd53a1?q=80&w=600", // Blue tomb tiles Multan
+        "https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=600"  // Multan shrines art
+      ],
+      "Faisalabad": [
+        "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=600", // Elegant design Faisalabad clock tower feel
+        "https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=600"  // Faisalabad local aesthetic
+      ]
+    };
+
+    // A rotating set of beautiful, high-res generic holy mosque photos under ITT name (fallback)
+    const fallbackMosques = [
       "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?q=80&w=600", // Masjid Nabawi
-      "https://images.unsplash.com/photo-1564507592333-c60657eea523?q=80&w=600", // Taj Mahal (elegant Islamic dome visual)
-      "https://images.unsplash.com/photo-1542856391-010fb87dcfed?q=80&w=600", // Kaaba / Masjid Haram
-      "https://images.unsplash.com/photo-1604999333679-b86d54738315?q=80&w=600", // Mosque minarets
-      "https://images.unsplash.com/photo-1580977276076-ae4b8c219b8e?q=80&w=600", // Islamic art/mosque architecture
-      "https://images.unsplash.com/photo-1628134711291-b996e9329851?q=80&w=600"  // Holy mosque courtyard
+      "https://images.unsplash.com/photo-1564507592333-c60657eea523?q=80&w=600", // Taj Mahal
+      "https://images.unsplash.com/photo-1542856391-010fb87dcfed?q=80&w=600"  // Masjid Haram
     ];
 
     for (const filename of files) {
@@ -107,7 +134,9 @@ async function runScraper(UmrahPackage) {
       const price_triple = basePrice + 28000;
       const price_double = basePrice + 48000;
 
-      const selectImage = unsplashMosques[count % unsplashMosques.length];
+      // Select specific city image or rotate fallbacks
+      const imageList = cityImages[city] || fallbackMosques;
+      const selectImage = imageList[count % imageList.length];
 
       packagesToInsert.push({
         title: cleanTitle,
