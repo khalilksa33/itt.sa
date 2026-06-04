@@ -41,6 +41,13 @@ jobs:
           wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
           sudo dpkg -i cloudflared-linux-amd64.deb
 
+      - name: Debug host connection
+        run: |
+          echo "Checking connectivity to SSH_HOST..."
+          curl -I -s --max-time 10 https://${{ secrets.SSH_HOST }} || echo "Curl to SSH_HOST failed or timed out"
+          echo "Checking connectivity to ssh-erp.26i.uk..."
+          curl -I -s --max-time 10 https://ssh-erp.26i.uk || echo "Curl to ssh-erp.26i.uk failed or timed out"
+
       - name: Configure SSH for Cloudflare Access
         run: |
           mkdir -p ~/.ssh
@@ -48,9 +55,10 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           
           # Create the SSH config file using the Cloudflare Service Token secrets
+          # We force HostName to ssh-erp.26i.uk which is the active Cloudflare Tunnel domain
           cat <<EOF > ~/.ssh/config
           Host ${{ secrets.SSH_HOST }}
-            HostName ${{ secrets.SSH_HOST }}
+            HostName ssh-erp.26i.uk
             User ${{ secrets.SSH_USER }}
             IdentityFile ~/.ssh/id_rsa
             ProxyCommand /usr/bin/cloudflared access ssh --id ${{ secrets.CF_ACCESS_CLIENT_ID }} --secret ${{ secrets.CF_ACCESS_CLIENT_SECRET }} --hostname %h
