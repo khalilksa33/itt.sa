@@ -8,3 +8,18 @@ services:
     volumes:
       - ./public_html/includes/config.php:/var/www/html/includes/config.php:ro
     restart: always
+
+  # Express Backend with MongoDB Integration
+  itt-backend:
+    image: node:18-alpine
+    container_name: insight-travel-backend
+    working_dir: /app
+    volumes:
+      - ./server:/app
+    command: sh -c "npm install && npm start"
+    ports:
+      - "5000:5000"
+    restart: always
+    environment:
+      - PORT=5000
+      - MONGODB_URI=mongodb://192.168.8.250:27017/itt_sa

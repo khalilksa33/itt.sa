@@ -435,5 +435,155 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // 8. Fetch & Render Dynamic Packages from MongoDB
+    const packagesContainer = document.getElementById('dynamic-packages-container');
+    const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:5000' : 'http://' + window.location.hostname + ':5000';
+
+    const fallbackPackages = [
+      {
+        title: "Lahore VIP Umrah Package",
+        city: "Lahore",
+        price: "PKR 310,000",
+        duration: "15 Days",
+        description: "Experience absolute peace of mind with our signature Lahore VIP Package. Designed for comfort, offering premium 5-star accommodations right next to the holy Harams and executive transport services.",
+        hotels: {
+          makkah: "Makkah Clock Tower Hotel (5-Star)",
+          madinah: "Madinah Front Hotel (5-Star)"
+        },
+        features: [
+          "Direct flights from Lahore (LHE)",
+          "Umrah Visa processing & insurance",
+          "5-Star hotel stays close to Haram",
+          "VIP private SUV transportation"
+        ],
+        image: "https://meezabgroup.com/wp-content/uploads/2025/07/Lahore-Group-Pkgs_page-0001.jpg"
+      },
+      {
+        title: "Islamabad Elite Umrah Package",
+        city: "Islamabad",
+        price: "PKR 285,000",
+        duration: "15 Days",
+        description: "Our premium package out of Islamabad features selected 4-star properties providing an optimal mix of religious proximity and luxurious comfort at highly competitive rates.",
+        hotels: {
+          makkah: "Swissôtel Makkah (4-Star)",
+          madinah: "Al Aqeeq Madinah Hotel (4-Star)"
+        },
+        features: [
+          "Direct flights from Islamabad (ISB)",
+          "Visa acquisition & ground logistics",
+          "Comfortable 4-Star hotels within 300m",
+          "Luxury shared air-conditioned coach transfers"
+        ],
+        image: "https://meezabgroup.com/wp-content/uploads/2025/07/Islamabad-Group-Pkg-_page-0001.jpg"
+      }
+    ];
+
+    function renderPackages(packages) {
+        if (!packagesContainer) return;
+        if (!packages || packages.length === 0) {
+            packages = fallbackPackages;
+        }
+        
+        packagesContainer.innerHTML = '';
+        
+        packages.forEach(pkg => {
+            const card = document.createElement('div');
+            card.className = 'package-card';
+            
+            const featuresHtml = pkg.features.slice(0, 4).map(f => `<li><i class="fa-solid fa-circle-check"></i> ${f}</li>`).join('');
+            
+            card.innerHTML = `
+                <div class="package-image-wrapper">
+                    <img src="${pkg.image || ''}" alt="${pkg.title}" class="package-img" onerror="this.src='https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?q=80&w=600'">
+                    <div class="package-badge">${pkg.duration} - ${pkg.city}</div>
+                    <div class="package-price-tag">${pkg.price}</div>
+                </div>
+                <div class="package-content">
+                    <h3>${pkg.title}</h3>
+                    <p class="package-desc">${pkg.description}</p>
+                    <div class="package-hotels">
+                        <div class="hotel-info">
+                            <i class="fa-solid fa-hotel"></i>
+                            <span>Makkah: <strong>${pkg.hotels.makkah}</strong></span>
+                        </div>
+                        <div class="hotel-info">
+                            <i class="fa-solid fa-hotel"></i>
+                            <span>Madinah: <strong>${pkg.hotels.madinah}</strong></span>
+                        </div>
+                    </div>
+                    <ul class="package-features-list">
+                        ${featuresHtml}
+                    </ul>
+                    <a href="#contact" class="btn btn-primary package-action-btn" data-pkg-title="${pkg.title}" data-pkg-duration="${pkg.duration}" data-pkg-price="${pkg.price}">
+                        Inquire Now <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                </div>
+            `;
+            
+            packagesContainer.appendChild(card);
+        });
+
+        // Add prefill handlers for inquiry form
+        document.querySelectorAll('.package-action-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const title = btn.getAttribute('data-pkg-title');
+                const duration = btn.getAttribute('data-pkg-duration');
+                const price = btn.getAttribute('data-pkg-price');
+                
+                const formService = document.querySelector('select[name="interest"]');
+                const formMessage = document.querySelector('textarea[name="message"]');
+                
+                if (formService) formService.value = "Umrah";
+                if (formMessage) {
+                    formMessage.value = `Hi, I am interested in inquiring about the "${title}" (${duration}, Price: ${price}) package. Please send me full details and booking choices.`;
+                }
+                
+                const contactSection = document.getElementById('contact');
+                if (contactSection) {
+                    contactSection.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    }
+
+    if (packagesContainer) {
+        fetch(`${BACKEND_URL}/api/packages`)
+          .then(res => {
+              if (!res.ok) throw new Error("API status error");
+              return res.json();
+          })
+          .then(data => renderPackages(data))
+          .catch(err => {
+              console.warn('Backend server unreachable, rendering fallback packages:', err);
+              renderPackages(fallbackPackages);
+          });
+    }
+
+    // 9. Intercept Inquiry Form and POST to MongoDB Backend
+    const mainInquiryForm = document.getElementById('itt-contact-form');
+    if (mainInquiryForm) {
+        mainInquiryForm.addEventListener('submit', (e) => {
+            const nameEl = mainInquiryForm.querySelector('input[name="full_name"]');
+            const emailEl = mainInquiryForm.querySelector('input[name="email"]');
+            const serviceEl = mainInquiryForm.querySelector('select[name="interest"]');
+            const messageEl = mainInquiryForm.querySelector('textarea[name="message"]');
+            
+            const name = nameEl ? nameEl.value : '';
+            const email = emailEl ? emailEl.value : '';
+            const phone = 'N/A'; 
+            const service = serviceEl ? serviceEl.value : 'General Inquiry';
+            const message = messageEl ? messageEl.value : '';
+            
+            fetch(`${BACKEND_URL}/api/inquiries`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, phone, service, message })
+            })
+            .then(res => res.json())
+            .then(data => console.log('Successfully saved inquiry to MongoDB:', data))
+            .catch(err => console.error('MongoDB backend save failed:', err));
+        });
+    }
 });
 
