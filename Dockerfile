@@ -1,3 +1,4 @@
+# CI/CD Trigger Test - 2026-06-04
 FROM php:8.2-fpm-alpine
 
 # Install Nginx, supervisor, and curl dependencies
