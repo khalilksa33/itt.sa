@@ -184,7 +184,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_lead'])) {
     <!-- Dynamic Umrah Packages Section -->
     <section id="packages" class="packages-section">
         <div class="container">
-            <h2 class="section-title">Featured Umrah Packages<br><span>Live Offerings from Meezab Group</span></h2>
+            <h2 class="section-title">Featured Umrah Packages<br><span>Premium Live Offerings</span></h2>
             <div class="packages-grid" id="dynamic-packages-container">
                 <div class="package-loading-card">
                     <i class="fa-solid fa-circle-notch fa-spin"></i>

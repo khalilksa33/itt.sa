@@ -2,6 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
+const path = require('path');
+const { runScraper } = require('./scraper');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -9,10 +11,22 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use('/scraped_packages', express.static(path.join(__dirname, 'public/scraped_packages')));
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('Successfully connected to MongoDB.'))
+  .then(async () => {
+    console.log('Successfully connected to MongoDB.');
+    try {
+      const count = await UmrahPackage.countDocuments({});
+      if (count === 0) {
+        console.log('No packages found in database. Running meezab scraper...');
+        await runScraper(UmrahPackage);
+      }
+    } catch (err) {
+      console.error('Could not auto-run scraper on startup:', err.message);
+    }
+  })
   .catch(err => console.error('MongoDB connection error:', err));
 
 // Mongoose Schemas & Models
@@ -163,6 +177,16 @@ app.post('/api/packages/seed', async (req, res) => {
     res.json({ success: true, message: 'Umrah packages seeded successfully.' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to seed database: ' + error.message });
+  }
+});
+
+// 4. Scrape meezab site packages
+app.post('/api/packages/scrape', async (req, res) => {
+  try {
+    const result = await runScraper(UmrahPackage);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: 'Scraper failed: ' + error.message });
   }
 });
 

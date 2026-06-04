@@ -492,10 +492,11 @@ document.addEventListener('DOMContentLoaded', () => {
             card.className = 'package-card';
             
             const featuresHtml = pkg.features.slice(0, 4).map(f => `<li><i class="fa-solid fa-circle-check"></i> ${f}</li>`).join('');
+            const imageSrc = pkg.image ? (pkg.image.startsWith('http') ? pkg.image : BACKEND_URL + pkg.image) : '';
             
             card.innerHTML = `
                 <div class="package-image-wrapper">
-                    <img src="${pkg.image || ''}" alt="${pkg.title}" class="package-img" onerror="this.src='https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?q=80&w=600'">
+                    <img src="${imageSrc}" alt="${pkg.title}" class="package-img" onerror="this.src='https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?q=80&w=600'">
                     <div class="package-badge">${pkg.duration} - ${pkg.city}</div>
                     <div class="package-price-tag">${pkg.price}</div>
                 </div>
