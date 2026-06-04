@@ -6,18 +6,26 @@ async function runScraper(UmrahPackage) {
   try {
     console.log('Starting local package scanner for uploaded-files/Meezab Packages...');
     
-    // Resolve the local directory path
-    const packagesDir = path.join(__dirname, '../uploaded-files/Meezab Packages');
-    if (!fs.existsSync(packagesDir)) {
-      console.warn(`Directory not found: ${packagesDir}. Trying lowercase 'meezab packages'...`);
+    // Resolve the local directory path, checking both parent (local) and child (container) path options
+    let targetDir = '';
+    const pathsToTry = [
+      path.join(__dirname, 'uploaded-files/Meezab Packages'),
+      path.join(__dirname, 'uploaded-files/meezab packages'),
+      path.join(__dirname, '../uploaded-files/Meezab Packages'),
+      path.join(__dirname, '../uploaded-files/meezab packages'),
+      '/app/uploaded-files/Meezab Packages',
+      '/app/uploaded-files/meezab packages'
+    ];
+
+    for (const p of pathsToTry) {
+      if (fs.existsSync(p)) {
+        targetDir = p;
+        break;
+      }
     }
 
-    const targetDir = fs.existsSync(packagesDir) 
-      ? packagesDir 
-      : path.join(__dirname, '../uploaded-files/meezab packages');
-
-    if (!fs.existsSync(targetDir)) {
-      throw new Error(`Meezab packages directory not found at: ${packagesDir} or ${targetDir}`);
+    if (!targetDir) {
+      throw new Error(`Meezab packages directory not found. Checked paths: ${pathsToTry.join(', ')}`);
     }
 
     const files = fs.readdirSync(targetDir);

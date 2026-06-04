@@ -14,6 +14,7 @@ services:
     working_dir: /app
     volumes:
       - ./server:/app
+      - ./uploaded-files:/app/uploaded-files
     command: sh -c "npm install && npm start"
     ports:
       - "5000:5000"
