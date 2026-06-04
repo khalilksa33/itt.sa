@@ -74,6 +74,7 @@ const fallbackPackages: UmrahPackage[] = [
 export default function App() {
   const [packages, setPackages] = useState<UmrahPackage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCity, setSelectedCity] = useState<string>('All');
   
   // Lead Inquiry form state
   const [formData, setFormData] = useState({
@@ -299,8 +300,9 @@ export default function App() {
       </header>
 
       {/* HERO SECTION */}
-      <section id="home" className="relative min-h-[80vh] flex items-center justify-center bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#0e171f] via-[#05080a] to-[#05080a] py-20">
-        <div className="absolute inset-0 opacity-5 mix-blend-overlay bg-[url('https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?q=80&w=1600')] bg-cover bg-center"></div>
+      <section id="home" className="relative min-h-[80vh] flex items-center justify-center bg-[#05080a] py-20">
+        <div className="absolute inset-0 bg-[url('/hero_bg.png')] bg-cover bg-center opacity-75"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_60%_40%,rgba(7,13,15,0.3)_0%,rgba(7,13,15,0.92)_85%)]"></div>
         <div className="container mx-auto px-6 max-w-7xl text-center relative z-10">
           <div className="max-w-4xl mx-auto flex flex-col items-center">
             <h1 className="text-5xl sm:text-7xl font-extrabold tracking-tight text-white mb-6 leading-tight">
@@ -518,6 +520,23 @@ export default function App() {
             <div className="w-16 h-0.5 bg-[#c5a059] mx-auto mt-4"></div>
           </div>
 
+          {/* CITY TABS */}
+          <div className="flex flex-wrap justify-center gap-2 mb-12">
+            {['All', 'Islamabad', 'Lahore', 'Sialkot', 'Peshawar', 'Multan', 'Faisalabad'].map(city => (
+              <button
+                key={city}
+                onClick={() => setSelectedCity(city)}
+                className={`px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider border transition-all ${
+                  selectedCity === city 
+                    ? 'bg-[#c5a059] text-[#05080a] border-[#c5a059] shadow-lg shadow-[#c5a059]/20' 
+                    : 'bg-[#0e1217] text-gray-400 border-gray-800 hover:border-gray-700 hover:text-white'
+                }`}
+              >
+                {city === 'All' ? 'All Cities' : city}
+              </button>
+            ))}
+          </div>
+
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
               <span className="text-[#c5a059] text-4xl animate-spin"><i className="fa-solid fa-circle-notch"></i></span>
@@ -525,7 +544,7 @@ export default function App() {
             </div>
           ) : (
             <div className="grid md:grid-cols-2 gap-8">
-              {packages.map((pkg, index) => {
+              {(selectedCity === 'All' ? packages : packages.filter(p => p.city.toLowerCase() === selectedCity.toLowerCase())).map((pkg, index) => {
                 const imageSrc = pkg.image ? (pkg.image.startsWith('http') ? pkg.image : BACKEND_URL + pkg.image) : '';
                 return (
                   <div key={pkg._id || index} className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10 hover:border-[#c5a059]/30 transition-all flex flex-col group">
@@ -652,23 +671,16 @@ export default function App() {
       {/* CHAIRMAN'S MESSAGE */}
       <section id="ceo-message" className="py-24 bg-[#05080a] border-t border-[#c5a059]/5">
         <div className="container mx-auto px-6 max-w-5xl">
-          <div className="bg-[#0e1217] rounded-xl border border-[#c5a059]/10 p-8 sm:p-12 relative overflow-hidden flex flex-col md:flex-row items-center gap-12">
-            <div className="w-40 h-40 rounded-full border-2 border-[#c5a059] overflow-hidden flex-shrink-0">
-              <img 
-                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=300" 
-                alt="Mr. Hafiz Laique Shahid" 
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div>
+          <div className="bg-[#0e1217] rounded-xl border border-[#c5a059]/10 p-8 sm:p-12 relative overflow-hidden text-center max-w-3xl mx-auto">
+            <div className="w-full">
               <span className="text-5xl text-[#c5a059]/20 absolute top-6 right-8"><i className="fa-solid fa-quote-right"></i></span>
               <h3 className="text-[#c5a059] text-xs uppercase tracking-widest font-semibold mb-2">Chairman's Message</h3>
-              <h4 className="text-2xl font-serif text-white mb-4">A Sacred Commitment to Quality</h4>
-              <p className="text-gray-400 text-sm leading-relaxed mb-6 italic">
+              <h4 className="text-2xl font-serif text-white mb-4 font-bold">A Sacred Commitment to Quality</h4>
+              <p className="text-gray-400 text-sm leading-relaxed mb-6 italic max-w-2xl mx-auto">
                 "Our mission at Insight Travel is rooted in trust, integrity, and absolute devotion. Having guided thousands of pilgrims from Pakistan and across the globe, we pledge our signature standards of comfort and care as you answer the sacred call. Your spiritual satisfaction is our ultimate reward."
               </p>
               <div>
-                <p className="text-white font-bold text-sm">Mr. Hafiz Laique Shahid</p>
+                <p className="text-white font-bold text-sm">Chauhdry Muhammad Aslam</p>
                 <p className="text-[#c5a059] text-xs">Chairman, Insight Travel & Tourism</p>
               </div>
             </div>
