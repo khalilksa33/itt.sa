@@ -46,13 +46,16 @@ jobs:
 
       - name: Sync Code to Production and Deploy
         run: |
-          # Export standard paths in case runner environment PATH is restricted
           export PATH=$PATH:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
-          
-          echo "Syncing workspace code to /home/frappe/itt.sa..."
-          rsync -av --exclude='.git' --exclude='node_modules' ./ /home/frappe/itt.sa/
-          
-          echo "Deploying containers..."
-          cd /home/frappe/itt.sa
-          docker compose pull
-          docker compose up -d --remove-orphans
+          {
+            echo "=== Deployment Run ==="
+            date
+            echo "Syncing workspace code to /home/frappe/itt.sa..."
+            rsync -av --exclude='.git' --exclude='node_modules' ./ /home/frappe/itt.sa/
+            
+            echo "Deploying containers..."
+            cd /home/frappe/itt.sa
+            docker compose pull
+            docker compose up -d --remove-orphans
+            echo "=== Deployment Finished ==="
+          } > /home/frappe/itt.sa/deploy_step.log 2>&1
