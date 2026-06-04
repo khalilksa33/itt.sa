@@ -61,7 +61,7 @@ jobs:
             HostName ssh-erp.26i.uk
             User ${{ secrets.SSH_USER }}
             IdentityFile ~/.ssh/id_rsa
-            ProxyCommand /usr/bin/cloudflared access ssh --id ${{ secrets.CF_ACCESS_CLIENT_ID }} --secret ${{ secrets.CF_ACCESS_CLIENT_SECRET }} --hostname %h
+            ProxyCommand /usr/bin/cloudflared access tcp --id ${{ secrets.CF_ACCESS_CLIENT_ID }} --secret ${{ secrets.CF_ACCESS_CLIENT_SECRET }} --hostname %h
             StrictHostKeyChecking no
             UserKnownHostsFile /dev/null
           EOF
