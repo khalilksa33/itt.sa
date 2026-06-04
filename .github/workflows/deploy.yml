@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
@@ -36,43 +36,13 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Install cloudflared on runner
-        run: |
-          wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
-          sudo dpkg -i cloudflared-linux-amd64.deb
+  deploy:
+    runs-on: self-hosted
+    needs: build-and-push
 
-      - name: Debug host connection
+    steps:
+      - name: Pull and Restart Containers
         run: |
-          echo "Checking connectivity to SSH_HOST..."
-          curl -I -s --max-time 10 https://${{ secrets.SSH_HOST }} || echo "Curl to SSH_HOST failed or timed out"
-          echo "Checking connectivity to ssh-erp.26i.uk..."
-          curl -I -s --max-time 10 https://ssh-erp.26i.uk || echo "Curl to ssh-erp.26i.uk failed or timed out"
-
-      - name: Configure SSH for Cloudflare Access
-        run: |
-          mkdir -p ~/.ssh
-          cat << 'EOF' > ~/.ssh/id_rsa
-          ${{ secrets.SSH_PRIVATE_KEY }}
-          EOF
-          chmod 600 ~/.ssh/id_rsa
-          
-          # Resolve port value, defaulting to 22 if not defined
-          SSH_PORT_VAL="${{ secrets.SSH_PORT }}"
-          SSH_PORT_VAL="${SSH_PORT_VAL:-22}"
-          
-          # Create the SSH config file using the Cloudflare Service Token secrets
-          cat <<EOF > ~/.ssh/config
-          Host ${{ secrets.SSH_HOST }}
-            HostName ${{ secrets.SSH_HOST }}
-            User ${{ secrets.SSH_USER }}
-            Port $SSH_PORT_VAL
-            IdentityFile ~/.ssh/id_rsa
-            ProxyCommand /usr/bin/cloudflared access ssh --id ${{ secrets.CF_ACCESS_CLIENT_ID }} --secret ${{ secrets.CF_ACCESS_CLIENT_SECRET }} --hostname %h
-            StrictHostKeyChecking no
-            UserKnownHostsFile /dev/null
-          EOF
-          chmod 600 ~/.ssh/config
-
-      - name: Deploy to Linux Host
-        run: |
-          ssh ${{ secrets.SSH_HOST }} "cd /home/frappe/itt.sa && docker compose pull && docker compose up -d"
+          cd /home/frappe/itt.sa
+          docker compose pull
+          docker compose up -d
