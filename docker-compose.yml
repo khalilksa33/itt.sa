@@ -33,8 +33,6 @@ services:
   mongodb:
     image: mongo:6.0
     container_name: insight-travel-db
-    ports:
-      - "27017:27017"
     volumes:
       - mongo-data:/data/db
     restart: always
