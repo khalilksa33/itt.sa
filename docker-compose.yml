@@ -1,11 +1,13 @@
 services:
-  # Unified Web App: Nginx + PHP-FPM in a single container
+  # React App served via Nginx
   itt-app:
-    image: khalilksa33/itt.sa:latest
+    build: .
     container_name: insight-travel-app
     ports:
       - "8080:80"
     restart: always
+    depends_on:
+      - itt-backend
 
   # Express Backend with MongoDB Integration
   itt-backend:
@@ -14,11 +16,29 @@ services:
     working_dir: /app
     volumes:
       - ./server:/app
-      - ./uploaded-files:/app/uploaded-files
+      - ./uploadded-files:/app/uploaded-files
+
     command: sh -c "npm install && npm start"
     ports:
       - "5000:5000"
     restart: always
+    depends_on:
+      - mongodb
     environment:
       - PORT=5000
-      - MONGODB_URI=mongodb://192.168.8.59:27017/itt_sa
+      - MONGODB_URI=mongodb://mongodb:27017/itt_sa
+      - STAFF_PASSWORD=admin123
+
+  # MongoDB database
+  mongodb:
+    image: mongo:6.0
+    container_name: insight-travel-db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    restart: always
+
+volumes:
+  mongo-data:
+

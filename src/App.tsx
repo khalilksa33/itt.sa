@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+
 
 interface UmrahPackage {
   _id?: string;
@@ -17,11 +19,26 @@ interface UmrahPackage {
   price_quad?: number;
   price_triple?: number;
   price_double?: number;
+  price_single?: number;
 }
 
 interface Pilgrim {
   name: string;
   passportNumber: string;
+}
+
+interface SubAgent {
+  name: string;
+  agencyName: string;
+  contactName: string;
+  email: string;
+  phone: string;
+  licenseNo?: string;
+  address: string;
+  experience: number;
+  bio?: string;
+  status: string;
+  createdAt: string;
 }
 
 const fallbackPackages: UmrahPackage[] = [
@@ -41,11 +58,11 @@ const fallbackPackages: UmrahPackage[] = [
       "5-Star hotel stays close to Haram",
       "VIP private SUV transportation"
     ],
-    image: "https://meezabgroup.com/wp-content/uploads/2025/07/Lahore-Group-Pkgs_page-0001.jpg",
     price_sharing: 274850,
     price_quad: 283475,
     price_triple: 290950,
-    price_double: 305325
+    price_double: 305325,
+    price_single: 450000
   },
   {
     title: "Islamabad Elite Umrah Package",
@@ -63,24 +80,28 @@ const fallbackPackages: UmrahPackage[] = [
       "Comfortable 4-Star hotels within 300m",
       "Luxury shared air-conditioned coach transfers"
     ],
-    image: "https://meezabgroup.com/wp-content/uploads/2025/07/Islamabad-Group-Pkg-_page-0001.jpg",
     price_sharing: 312800,
     price_quad: 324875,
     price_triple: 345575,
-    price_double: 387550
+    price_double: 387550,
+    price_single: 520000
   }
 ];
 
+
 export default function App() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [packages, setPackages] = useState<UmrahPackage[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCity, setSelectedCity] = useState<string>('All');
-  const [currentPage, setCurrentPage] = useState<string>('home');
   const [searchQuery, setSearchQuery] = useState<string>('');
   
   // BI Dashboard states
   const [bookings, setBookings] = useState<any[]>([]);
   const [inquiries, setInquiries] = useState<any[]>([]);
+  const [subagents, setSubagents] = useState<SubAgent[]>([]);
   const [dashboardStats, setDashboardStats] = useState({
     totalSales: 0,
     totalCommissions: 0,
@@ -89,19 +110,10 @@ export default function App() {
     packagesCount: 0
   });
 
-  const navigateTo = (page: 'home' | 'portal' | 'dashboard', hash?: string) => {
-    setCurrentPage(page);
-    setMobileMenuOpen(false);
-    setSearchQuery('');
-    if (page === 'home' && hash) {
-      setTimeout(() => {
-        const el = document.getElementById(hash);
-        if (el) el.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-    } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
+  // Authentication State
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return localStorage.getItem('staff_token') === 'staff-session-token';
+  });
 
   // Lead Inquiry form state
   const [formData, setFormData] = useState({
@@ -155,7 +167,8 @@ export default function App() {
   }, [BACKEND_URL]);
 
   useEffect(() => {
-    if (currentPage === 'dashboard') {
+    if (isAuthenticated) {
+      // Load BI dashboard data
       fetch(`${BACKEND_URL}/api/bookings`)
         .then(res => res.json())
         .then(data => {
@@ -181,13 +194,45 @@ export default function App() {
         })
         .catch(err => console.error("Error fetching inquiries:", err));
 
+      fetch(`${BACKEND_URL}/api/subagents`)
+        .then(res => res.json())
+        .then(data => {
+          setSubagents(data);
+        })
+        .catch(err => console.error("Error fetching subagents:", err));
+
       setDashboardStats(prev => ({
         ...prev,
         packagesCount: packages.length
       }));
     }
-  }, [currentPage, BACKEND_URL, packages]);
+  }, [isAuthenticated, BACKEND_URL, packages]);
 
+  const navigateTo = (path: string, hash?: string) => {
+    setMobileMenuOpen(false);
+    setSearchQuery('');
+    if (path === '/' && hash) {
+      if (location.pathname === '/') {
+        const el = document.getElementById(hash);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        navigate('/');
+        setTimeout(() => {
+          const el = document.getElementById(hash);
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }, 150);
+      }
+    } else {
+      navigate(path);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('staff_token');
+    setIsAuthenticated(false);
+    navigateTo('/');
+  };
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -223,7 +268,6 @@ export default function App() {
       });
   };
 
-  // E-commerce checkout logic
   const openBookingModal = (pkg: UmrahPackage) => {
     setSelectedPkg(pkg);
     setRoomingType('sharing');
@@ -236,8 +280,6 @@ export default function App() {
   const handlePilgrimCountChange = (count: number) => {
     const newCount = Math.max(1, count);
     setPilgrimsCount(newCount);
-    
-    // Adjust pilgrims array size
     setPilgrims(prev => {
       const copy = [...prev];
       if (copy.length < newCount) {
@@ -273,7 +315,6 @@ export default function App() {
     if (!selectedPkg) return;
 
     setBookingStatus({ type: 'info', message: 'Creating your reservation...' });
-
     const total = getPricePerPilgrim(selectedPkg) * pilgrimsCount;
 
     const payload = {
@@ -316,7 +357,7 @@ export default function App() {
       {/* HEADER & NAVBAR */}
       <header className="sticky top-0 z-50 bg-[#05080a]/95 backdrop-blur-md border-b border-[#c5a059]/15">
         <div className="container mx-auto px-6 py-4 flex justify-between items-center max-w-7xl">
-          <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home'); }} className="flex items-center gap-3">
+          <a href="/" onClick={(e) => { e.preventDefault(); navigateTo('/'); }} className="flex items-center gap-3">
             <span className="text-[#c5a059] text-2.5xl animate-spin-slow inline-block"><i className="fa-solid fa-compass"></i></span>
             <span className="text-xl font-bold tracking-wide text-white uppercase">
               Insight <span className="text-[#c5a059] font-serif capitalize">Travel & Tourism</span>
@@ -325,14 +366,26 @@ export default function App() {
 
           {/* Desktop Nav */}
           <nav className="hidden lg:flex items-center gap-8">
-            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home'); }} className={`text-sm font-medium hover:text-[#c5a059] transition-colors ${currentPage === 'home' ? 'text-white' : 'text-gray-400'}`}>Home</a>
-            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home', 'services'); }} className="text-sm font-medium text-gray-400 hover:text-[#c5a059] transition-colors">Services</a>
-            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home', 'spiritual'); }} className="text-sm font-medium text-gray-400 hover:text-[#c5a059] transition-colors">Spiritual Journeys</a>
-            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home', 'wonders'); }} className="text-sm font-medium text-gray-400 hover:text-[#c5a059] transition-colors">World Tours</a>
-            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('portal'); }} className={`text-sm font-medium hover:text-[#c5a059] transition-colors ${currentPage === 'portal' ? 'text-[#c5a059] font-bold' : 'text-gray-400'}`}>Umrah E-Portal</a>
-            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('dashboard'); }} className={`text-sm font-medium hover:text-[#c5a059] transition-colors ${currentPage === 'dashboard' ? 'text-[#c5a059] font-bold' : 'text-gray-400'}`}>BI Dashboard</a>
-            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home', 'team'); }} className="text-sm font-medium text-gray-400 hover:text-[#c5a059] transition-colors">Team</a>
-            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home', 'contact'); }} className="px-5 py-2 bg-[#c5a059] text-[#05080a] text-sm font-semibold rounded hover:bg-[#b48e47] transition-all">
+            <a href="/" onClick={(e) => { e.preventDefault(); navigateTo('/'); }} className={`text-sm font-medium hover:text-[#c5a059] transition-colors ${location.pathname === '/' ? 'text-white' : 'text-gray-400'}`}>Home</a>
+            <a href="#services" onClick={(e) => { e.preventDefault(); navigateTo('/', 'services'); }} className="text-sm font-medium text-gray-400 hover:text-[#c5a059] transition-colors">Services</a>
+            <a href="#spiritual" onClick={(e) => { e.preventDefault(); navigateTo('/', 'spiritual'); }} className="text-sm font-medium text-gray-400 hover:text-[#c5a059] transition-colors">Spiritual Journeys</a>
+            <a href="#wonders" onClick={(e) => { e.preventDefault(); navigateTo('/', 'wonders'); }} className="text-sm font-medium text-gray-400 hover:text-[#c5a059] transition-colors">World Tours</a>
+            <a href="/portal" onClick={(e) => { e.preventDefault(); navigateTo('/portal'); }} className={`text-sm font-medium hover:text-[#c5a059] transition-colors ${location.pathname === '/portal' ? 'text-[#c5a059] font-bold' : 'text-gray-400'}`}>Umrah E-Portal</a>
+            <a href="/partner" onClick={(e) => { e.preventDefault(); navigateTo('/partner'); }} className={`text-sm font-medium hover:text-[#c5a059] transition-colors ${location.pathname === '/partner' ? 'text-[#c5a059] font-bold' : 'text-gray-400'}`}>Partner Register</a>
+            
+            {isAuthenticated ? (
+              <>
+                <a href="/dashboard" onClick={(e) => { e.preventDefault(); navigateTo('/dashboard'); }} className={`text-sm font-medium hover:text-[#c5a059] transition-colors ${location.pathname === '/dashboard' ? 'text-[#c5a059] font-bold' : 'text-gray-400'}`}>BI Dashboard</a>
+                <a href="/sales" onClick={(e) => { e.preventDefault(); navigateTo('/sales'); }} className={`text-sm font-medium hover:text-[#c5a059] transition-colors ${location.pathname === '/sales' ? 'text-[#c5a059] font-bold' : 'text-gray-400'}`}>Sales Portal</a>
+                <button onClick={handleLogout} className="px-4 py-1.5 border border-red-500/30 text-red-400 text-xs font-semibold rounded hover:bg-red-500/10 transition-all">
+                  Log Out
+                </button>
+              </>
+            ) : (
+              <a href="/sales" onClick={(e) => { e.preventDefault(); navigateTo('/sales'); }} className="text-sm font-medium text-gray-400 hover:text-[#c5a059] transition-colors">Staff Login</a>
+            )}
+
+            <a href="#contact" onClick={(e) => { e.preventDefault(); navigateTo('/', 'contact'); }} className="px-5 py-2 bg-[#c5a059] text-[#05080a] text-sm font-semibold rounded hover:bg-[#b48e47] transition-all">
               Inquire Now
             </a>
           </nav>
@@ -349,788 +402,657 @@ export default function App() {
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="lg:hidden bg-[#0e1217] border-b border-[#c5a059]/15 py-6 px-8 flex flex-col gap-5">
-            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home'); }} className="text-lg hover:text-[#c5a059] transition-colors">Home</a>
-            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home', 'services'); }} className="text-lg hover:text-[#c5a059] transition-colors">Services</a>
-            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home', 'spiritual'); }} className="text-lg hover:text-[#c5a059] transition-colors">Spiritual Journeys</a>
-            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home', 'wonders'); }} className="text-lg hover:text-[#c5a059] transition-colors">World Tours</a>
-            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('portal'); }} className="text-lg text-[#c5a059] font-bold">Umrah E-Portal</a>
-            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('dashboard'); }} className="text-lg hover:text-[#c5a059] transition-colors">BI Dashboard</a>
-            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home', 'team'); }} className="text-lg hover:text-[#c5a059] transition-colors">Team</a>
-            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home', 'contact'); }} className="py-3 text-center bg-[#c5a059] text-[#05080a] font-bold rounded">
+            <a href="/" onClick={(e) => { e.preventDefault(); navigateTo('/'); }} className="text-lg hover:text-[#c5a059] transition-colors">Home</a>
+            <a href="#services" onClick={(e) => { e.preventDefault(); navigateTo('/', 'services'); }} className="text-lg hover:text-[#c5a059] transition-colors">Services</a>
+            <a href="#spiritual" onClick={(e) => { e.preventDefault(); navigateTo('/', 'spiritual'); }} className="text-lg hover:text-[#c5a059] transition-colors">Spiritual Journeys</a>
+            <a href="#wonders" onClick={(e) => { e.preventDefault(); navigateTo('/', 'wonders'); }} className="text-lg hover:text-[#c5a059] transition-colors">World Tours</a>
+            <a href="/portal" onClick={(e) => { e.preventDefault(); navigateTo('/portal'); }} className="text-lg text-[#c5a059] font-bold">Umrah E-Portal</a>
+            <a href="/partner" onClick={(e) => { e.preventDefault(); navigateTo('/partner'); }} className="text-lg hover:text-[#c5a059] transition-colors">Partner Register</a>
+            
+            {isAuthenticated ? (
+              <>
+                <a href="/dashboard" onClick={(e) => { e.preventDefault(); navigateTo('/dashboard'); }} className="text-lg hover:text-[#c5a059] transition-colors">BI Dashboard</a>
+                <a href="/sales" onClick={(e) => { e.preventDefault(); navigateTo('/sales'); }} className="text-lg hover:text-[#c5a059] transition-colors">Sales Portal</a>
+                <button onClick={handleLogout} className="py-2.5 text-center border border-red-500/30 text-red-400 font-bold rounded">
+                  Log Out
+                </button>
+              </>
+            ) : (
+              <a href="/sales" onClick={(e) => { e.preventDefault(); navigateTo('/sales'); }} className="text-lg hover:text-[#c5a059] transition-colors">Staff Login</a>
+            )}
+            
+            <a href="#contact" onClick={(e) => { e.preventDefault(); navigateTo('/', 'contact'); }} className="py-3 text-center bg-[#c5a059] text-[#05080a] font-bold rounded">
               Inquire Now
             </a>
           </div>
         )}
       </header>
 
-      {currentPage === 'home' ? (
-        <>
-          {/* HERO SECTION */}
-          <section id="home" className="relative min-h-[80vh] flex items-center justify-center bg-[#05080a] py-20 overflow-hidden">
-            <div className="absolute inset-0 bg-[url('/hero_bg.png')] bg-cover bg-center opacity-75"></div>
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_60%_40%,rgba(7,13,15,0.3)_0%,rgba(7,13,15,0.92)_85%)]"></div>
-            <div className="container mx-auto px-6 max-w-7xl relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-              <div className="col-span-1 lg:col-span-7 text-left">
-                <span className="text-[#c5a059] text-xs uppercase tracking-[4px] font-semibold mb-4 block animate-fadeIn">Your Gateway to Spiritual & Global Horizons</span>
-                <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white mb-6 leading-tight">
-                  Experience the <br className="hidden sm:inline" />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#c5a059] via-[#e2c98a] to-[#c5a059] font-serif italic font-normal">
-                    Journey of a Lifetime
-                  </span>
-                </h1>
-                <p className="text-gray-400 text-base sm:text-lg mb-10 leading-relaxed font-sans max-w-xl">
-                  Specializing in spiritual, serene Umrah pilgrimages and premium, tailored World Tour packages. Connect with Insight Travel & Tourism for trusted guidance, comfort, and premium arrangements.
-                </p>
-                <div className="flex flex-col sm:flex-row items-center gap-4">
-                  <button 
-                    onClick={() => navigateTo('portal')}
-                    className="w-full sm:w-auto px-8 py-4 bg-[#c5a059] text-[#05080a] font-bold rounded hover:bg-[#b48e47] transition-all transform hover:-translate-y-1 shadow-lg shadow-[#c5a059]/20 flex items-center justify-center gap-2"
-                  >
-                    Submit Inquiry <i className="fa-solid fa-arrow-right"></i>
-                  </button>
-                  <button 
-                    onClick={() => navigateTo('home', 'services')}
-                    className="w-full sm:w-auto px-8 py-4 bg-transparent text-white border border-gray-700 font-bold rounded hover:border-[#c5a059] hover:text-[#c5a059] transition-all"
-                  >
-                    Explore Services
-                  </button>
-                </div>
+      {/* ROUTES CONFIGURATION */}
+      <Routes>
+        <Route path="/" element={<HomeView navigateTo={navigateTo} handleFormChange={handleFormChange} handleInquirySubmit={handleInquirySubmit} formData={formData} submitStatus={submitStatus} />} />
+        <Route path="/portal" element={<PortalView loading={loading} packages={packages} selectedCity={selectedCity} setSelectedCity={setSelectedCity} searchQuery={searchQuery} setSearchQuery={setSearchQuery} BACKEND_URL={BACKEND_URL} openBookingModal={openBookingModal} />} />
+        <Route path="/partner" element={<PartnerRegisterView BACKEND_URL={BACKEND_URL} />} />
+        
+        {/* Private Dashboard Routes */}
+        <Route path="/dashboard" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} BACKEND_URL={BACKEND_URL}>
+            <DashboardView dashboardStats={dashboardStats} bookings={bookings} inquiries={inquiries} />
+          </ProtectedRoute>
+        } />
+        <Route path="/sales" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} BACKEND_URL={BACKEND_URL}>
+            <SalesPortalView packages={packages} subagents={subagents} bookings={bookings} BACKEND_URL={BACKEND_URL} setSubagents={setSubagents} setPackages={setPackages} />
+          </ProtectedRoute>
+        } />
+      </Routes>
+
+      {/* FOOTER */}
+      <footer className="bg-[#030507] border-t border-gray-900 py-12 mt-auto text-xs text-gray-500">
+        <div className="container mx-auto px-6 max-w-7xl flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex items-center gap-3">
+            <span className="text-[#c5a059] text-lg"><i className="fa-solid fa-compass"></i></span>
+            <span className="text-sm font-bold tracking-wide text-white uppercase">
+              Insight <span className="text-[#c5a059] font-serif capitalize">Travel & Tourism</span>
+            </span>
+          </div>
+          <p className="text-center">
+            &copy; 2026 Insight Travel and Tours. Based in Madinah Al-Munawarah. Powered by IICC IT Department.
+          </p>
+          <div className="flex gap-4">
+            <a href="/partner" onClick={(e) => { e.preventDefault(); navigateTo('/partner'); }} className="hover:text-[#c5a059]">Partner Registration</a>
+            <a href="/sales" onClick={(e) => { e.preventDefault(); navigateTo('/sales'); }} className="hover:text-[#c5a059]">Sales Portal</a>
+          </div>
+        </div>
+      </footer>
+
+      {/* E-COMMERCE CHECKOUT MODAL */}
+      {selectedPkg && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-[#0e1217] w-full max-w-2xl rounded-xl border border-[#c5a059]/20 shadow-2xl overflow-hidden animate-fadeIn">
+            {/* Modal Header */}
+            <div className="bg-[#05080a] py-4 px-6 border-b border-[#c5a059]/15 flex justify-between items-center">
+              <div>
+                <span className="text-xs text-[#c5a059] font-bold uppercase tracking-widest">E-Portal Checkout</span>
+                <h3 className="text-lg font-bold text-white mt-0.5">{selectedPkg.title}</h3>
               </div>
-              <div className="col-span-1 lg:col-span-5 flex flex-col gap-6 items-center lg:items-end justify-center">
-                <div className="bg-[#0e1217]/80 border border-white/10 backdrop-blur-md p-6 rounded-2xl flex items-center gap-5 w-[260px] shadow-2xl transition-all hover:-translate-y-1.5 hover:border-[#c5a059]/40 animate-float cursor-pointer" onClick={() => navigateTo('portal')}>
-                  <span className="text-[#c5a059] text-3xl"><i className="fa-solid fa-kaaba"></i></span>
-                  <span className="text-base font-bold text-white">Umrah & Hajj</span>
-                </div>
-                <div className="bg-[#0e1217]/80 border border-white/10 backdrop-blur-md p-6 rounded-2xl flex items-center gap-5 w-[260px] shadow-2xl transition-all hover:-translate-y-1.5 hover:border-[#c5a059]/40 animate-float-delayed cursor-pointer" onClick={() => navigateTo('home', 'wonders')}>
-                  <span className="text-[#c5a059] text-3xl"><i className="fa-solid fa-earth-americas"></i></span>
-                  <span className="text-base font-bold text-white">World Tours</span>
-                </div>
-              </div>
+              <button 
+                onClick={() => setSelectedPkg(null)} 
+                className="text-gray-400 hover:text-white text-xl"
+              >
+                <i className="fa-solid fa-xmark"></i>
+              </button>
             </div>
-          </section>
 
-          {/* SERVICES SECTION */}
-          <section id="services" className="py-24 bg-[#080d12]/50 border-y border-[#c5a059]/5">
-            <div className="container mx-auto px-6 max-w-7xl">
-              <div className="text-center max-w-2xl mx-auto mb-16">
-                <h2 className="text-3xl font-serif text-white font-bold">Premium Travel Solutions</h2>
-                <div className="w-16 h-0.5 bg-[#c5a059] mx-auto mt-4"></div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Umrah Card */}
-                <div className="bg-[#0e1217] rounded-3xl overflow-hidden border border-[#c5a059]/10 hover:border-[#c5a059]/30 hover:-translate-y-1.5 transition-all flex flex-col group shadow-xl">
-                  <div className="relative h-64 overflow-hidden">
-                    <img src="/umrah_card.png" alt="Umrah Pilgrimage" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0e1217] to-transparent opacity-60"></div>
-                  </div>
-                  <div className="p-8 flex flex-col flex-grow">
-                    <span className="self-start px-3 py-1 bg-[#c5a059]/10 text-[#c5a059] text-xs font-bold uppercase tracking-wider rounded border border-[#c5a059]/20 mb-4">
-                      Spiritual Journey
-                    </span>
-                    <h3 className="text-2xl font-bold text-white mb-3">Sacred Umrah Packages</h3>
-                    <p className="text-gray-400 text-sm leading-relaxed mb-6">
-                      Embark on a deeply spiritual pilgrimage to the Holy Sites. From visa facilitation and elegant hotel bookings in Makkah and Madinah near the Harams, to comfortable transport services, we take care of every detail so you can focus on worship.
-                    </p>
-                    <ul className="text-gray-400 text-sm space-y-3 mb-8">
-                      <li className="flex items-center gap-3"><i className="fa-solid fa-circle-check text-[#c5a059]"></i> Close-to-Haram Accommodations</li>
-                      <li className="flex items-center gap-3"><i className="fa-solid fa-circle-check text-[#c5a059]"></i> Complete Visa & Ground Logistics</li>
-                      <li className="flex items-center gap-3"><i className="fa-solid fa-circle-check text-[#c5a059]"></i> Experienced Guided Assistance</li>
-                    </ul>
-                    <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('portal'); }} className="text-[#c5a059] font-bold text-sm hover:underline mt-auto flex items-center gap-2">
-                      View Live Packages <i className="fa-solid fa-chevron-right text-xs"></i>
-                    </a>
-                  </div>
+            {bookingStatus.type === 'success' ? (
+              /* Success Screen */
+              <div className="p-8 text-center flex flex-col items-center gap-4">
+                <span className="text-6xl text-green-500"><i className="fa-regular fa-circle-check"></i></span>
+                <h4 className="text-2xl font-bold text-white">Booking Placed Successfully!</h4>
+                <div className="bg-[#05080a] py-2.5 px-6 rounded border border-gray-800 text-sm">
+                  Booking Reference ID: <strong className="text-[#c5a059]">{bookingStatus.bookingId}</strong>
                 </div>
-
-                {/* World Tour Card */}
-                <div className="bg-[#0e1217] rounded-3xl overflow-hidden border border-[#c5a059]/10 hover:border-[#c5a059]/30 hover:-translate-y-1.5 transition-all flex flex-col group shadow-xl">
-                  <div className="relative h-64 overflow-hidden">
-                    <img src="/world_tour_card.png" alt="World Tour Destinations" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0e1217] to-transparent opacity-60"></div>
-                  </div>
-                  <div className="p-8 flex flex-col flex-grow">
-                    <span className="self-start px-3 py-1 bg-blue-500/10 text-blue-400 text-xs font-bold uppercase tracking-wider rounded border border-blue-500/20 mb-4">
-                      Global Exploration
-                    </span>
-                    <h3 className="text-2xl font-bold text-white mb-3">Bespoke World Tours</h3>
-                    <p className="text-gray-400 text-sm leading-relaxed mb-6">
-                      Explore spectacular destinations across Europe, Asia, the Americas, and beyond. Whether you seek leisure beach holidays, exciting family vacations, or custom group tours, we craft itineraries to match your travel dreams perfectly.
-                    </p>
-                    <ul className="text-gray-400 text-sm space-y-3 mb-8">
-                      <li className="flex items-center gap-3"><i className="fa-solid fa-circle-check text-blue-400"></i> Tailored Itineraries & Group Tours</li>
-                      <li className="flex items-center gap-3"><i className="fa-solid fa-circle-check text-blue-400"></i> Flight & Hotel Reservations</li>
-                      <li className="flex items-center gap-3"><i className="fa-solid fa-circle-check text-blue-400"></i> Local Excursions & Guided Activities</li>
-                    </ul>
-                    <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home', 'wonders'); }} className="text-[#c5a059] font-bold text-sm hover:underline mt-auto flex items-center gap-2">
-                      Inquire about World Tours <i className="fa-solid fa-chevron-right text-xs"></i>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* SPIRITUAL JOURNEYS (ORIGINAL SECTION) */}
-          <section id="spiritual" className="py-24 bg-[#05080a]">
-            <div className="container mx-auto px-6 max-w-7xl">
-              <div className="text-center max-w-2xl mx-auto mb-16">
-                <h2 className="text-3xl font-serif text-white font-bold">Spiritual Journeys</h2>
-                <div className="w-16 h-0.5 bg-[#c5a059] mx-auto mt-4"></div>
-              </div>
-
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {/* Cards matching the original index.php content */}
-                <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10">
-                  <img src="https://images.unsplash.com/photo-1693590614566-1d3ea9ef32f7?auto=format&fit=crop&w=600" alt="The Center of the Soul" className="w-full h-48 object-cover" />
-                  <div className="p-6">
-                    <h3 className="text-lg font-bold text-[#c5a059] mb-3">The Center of the Soul</h3>
-                    <p className="text-gray-400 text-sm leading-relaxed">
-                      Makkah is not just a destination on a map; it is the gravitational pull of the believer’s heart. When the eyes first fall upon the Kaaba, the noise of the world falls silent, and the soul finally hears the echo of its own beginning.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10">
-                  <img src="https://plus.unsplash.com/premium_photo-1697730274057-19338e84db8e?auto=format&fit=crop&w=600" alt="The House of Equality" className="w-full h-48 object-cover" />
-                  <div className="p-6">
-                    <h3 className="text-lg font-bold text-[#c5a059] mb-3">The House of Equality</h3>
-                    <p className="text-gray-400 text-sm leading-relaxed">
-                      In the shadows of the Black Stone, there are no kings and no beggars—only souls draped in white, circling the House of the One. It is here we learn that the only true rank in existence is the sincerity of our prostration.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10">
-                  <img src="https://images.unsplash.com/photo-1511652019870-fbd8713560bf?auto=format&fit=crop&w=600" alt="The Infinite Return" className="w-full h-48 object-cover" />
-                  <div className="p-6">
-                    <h3 className="text-lg font-bold text-[#c5a059] mb-3">The Infinite Return</h3>
-                    <p className="text-gray-400 text-sm leading-relaxed">
-                      To perform Tawaf is to realize that life is a circle that begins and ends with God. Every step around the Kaaba is a shedding of the ego, until nothing remains but the servant and the Master in a state of perfect peace.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10">
-                  <img src="https://images.unsplash.com/photo-1602733458155-647c07d32ef6?auto=format&fit=crop&w=600" alt="The City of Light" className="w-full h-48 object-cover" />
-                  <div className="p-6">
-                    <h3 className="text-lg font-bold text-[#c5a059] mb-3">The City of Light</h3>
-                    <p className="text-gray-400 text-sm leading-relaxed">
-                      If Makkah is the majesty of Divine Law, Madinah is the beauty of Divine Mercy. To enter the City of the Prophet is to move from the scorching heat of worldly struggle into the cool, fragrant shade of unconditional love.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10">
-                  <img src="https://images.unsplash.com/photo-1729931421786-7bbd6c7d78f6?auto=format&fit=crop&w=600" alt="The Fragrance of Presence" className="w-full h-48 object-cover" />
-                  <div className="p-6">
-                    <h3 className="text-lg font-bold text-[#c5a059] mb-3">The Fragrance of Presence</h3>
-                    <p className="text-gray-400 text-sm leading-relaxed">
-                      There is a stillness in the air of Madinah that cannot be found elsewhere. It is the scent of a thousand salutations and the weight of a Presence that reassures every broken heart: 'You are home, and you are welcome here.'
-                    </p>
-                  </div>
-                </div>
-
-                <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10">
-                  <img src="https://images.unsplash.com/photo-1667454496584-9838026037af?auto=format&fit=crop&w=600" alt="The Garden of Paradise" className="w-full h-48 object-cover" />
-                  <div className="p-6">
-                    <h3 className="text-lg font-bold text-[#c5a059] mb-3">The Garden of Paradise</h3>
-                    <p className="text-gray-400 text-sm leading-relaxed">
-                      Walking through the gates of Al-Masjid an-Nabawi is like stepping out of time. Between the Rawdah and the Minbar lies a garden of Paradise, where the spirit breathes the air of the heavens while the feet still touch the earth.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* INTERNATIONAL WONDERS (ORIGINAL SECTION) */}
-          <section id="wonders" className="py-24 bg-[#080d12]/50 border-t border-[#c5a059]/5">
-            <div className="container mx-auto px-6 max-w-7xl">
-              <div className="text-center max-w-2xl mx-auto mb-16">
-                <h2 className="text-3xl font-serif text-white font-bold">International Wonders</h2>
-                <div className="w-16 h-0.5 bg-[#c5a059] mx-auto mt-4"></div>
-              </div>
-
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10 group">
-                  <img src="https://images.unsplash.com/photo-1615811648503-479d06197ff3?auto=format&fit=crop&w=600" alt="Petra" className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
-                  <div className="p-6">
-                    <h3 className="text-lg font-bold text-white mb-2">Petra, (Jordan)</h3>
-                    <p className="text-gray-400 text-sm leading-relaxed">Discover the ancient "Rose City" carved into sandstone.</p>
-                  </div>
-                </div>
-
-                <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10 group">
-                  <img src="https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=600" alt="Great Wall" className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
-                  <div className="p-6">
-                    <h3 className="text-lg font-bold text-white mb-2">Great Wall, (China)</h3>
-                    <p className="text-gray-400 text-sm leading-relaxed">Walk the historic fortifications of the Ming Dynasty.</p>
-                  </div>
-                </div>
-
-                <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10 group">
-                  <img src="https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=600" alt="Colosseum" className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
-                  <div className="p-6">
-                    <h3 className="text-lg font-bold text-white mb-2">The Colosseum, (Rome)</h3>
-                    <p className="text-gray-400 text-sm leading-relaxed">Experience the architectural marvel of ancient Italy.</p>
-                  </div>
-                </div>
-
-                <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10 group">
-                  <img src="https://images.unsplash.com/photo-1509273954142-d24fb1bb212d?auto=format&fit=crop&w=600" alt="Machu Picchu" className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
-                  <div className="p-6">
-                    <h3 className="text-lg font-bold text-white mb-2">Machu Picchu Trek (Peru)</h3>
-                    <p className="text-gray-400 text-sm leading-relaxed">Unveil the mysteries of the Incan Empire in the Peruvian Andes.</p>
-                  </div>
-                </div>
-
-                <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10 group">
-                  <img src="https://images.unsplash.com/photo-1647220499997-ae2a94540ed6?auto=format&fit=crop&w=600" alt="Chichen Itza" className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
-                  <div className="p-6">
-                    <h3 className="text-lg font-bold text-white mb-2">Chichén Itzá, (Mexico)</h3>
-                    <p className="text-gray-400 text-sm leading-relaxed">Experience the Chichén Itzá (Mexico): A large Maya pyramid city.</p>
-                  </div>
-                </div>
-
-                <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10 group">
-                  <img src="https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=600" alt="Taj Mahal" className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
-                  <div className="p-6">
-                    <h3 className="text-lg font-bold text-white mb-2">The Taj Mahal, (India)</h3>
-                    <p className="text-gray-400 text-sm leading-relaxed">Experience the white marble mausoleum commissioned in 1632 by Shah Jahan.</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* DYNAMIC PORTAL CTA BANNER */}
-              <div className="mt-20 bg-[#0e1217] border border-[#c5a059]/15 rounded-xl p-8 sm:p-12 text-center max-w-4xl mx-auto shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-2 h-full bg-[#c5a059]"></div>
-                <h3 className="text-2xl font-serif text-white font-bold mb-4">Umrah Booking E-Portal</h3>
-                <p className="text-gray-400 text-sm max-w-2xl mx-auto mb-8 leading-relaxed">
-                  Ready to answer the sacred call? We offer dynamic, clean Unicode packages mapped directly from respected departure cities across Pakistan. Choose room options and place bookings through our real-time checkout flow.
+                <p className="text-gray-400 text-sm max-w-md leading-relaxed mt-2">
+                  {bookingStatus.message}
                 </p>
                 <button 
-                  onClick={() => navigateTo('portal')}
-                  className="px-8 py-3.5 bg-[#c5a059] text-[#05080a] font-bold rounded-lg hover:bg-[#b48e47] transition-all transform hover:-translate-y-0.5 shadow-lg shadow-[#c5a059]/10"
+                  onClick={() => setSelectedPkg(null)} 
+                  className="mt-6 px-8 py-3 bg-[#c5a059] text-[#05080a] font-bold rounded hover:bg-[#b48e47] transition-all"
                 >
-                  Enter Sacred Umrah Portal <i className="fa-solid fa-arrow-right-to-bracket ml-2"></i>
+                  Return to Dashboard
                 </button>
               </div>
-            </div>
-          </section>
-
-          {/* TEAM SECTION (CEO MR. HAFIZ LAIQUE SHAHID & AHMAD HASAN MARJAN) */}
-          <section id="team" className="py-24 bg-[#05080a]">
-            <div className="container mx-auto px-6 max-w-7xl">
-              <div className="text-center max-w-2xl mx-auto mb-16">
-                <h2 className="text-3xl font-serif text-white font-bold">Our Team</h2>
-                <p className="text-[#c5a059] text-sm mt-1">Leadership at Lahore Office</p>
-                <div className="w-16 h-0.5 bg-[#c5a059] mx-auto mt-4"></div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-                <div className="bg-[#0e1217] p-8 rounded border border-[#c5a059]/10 hover:border-[#c5a059]/30 transition-all flex flex-col">
-                  <span className="self-start px-3 py-1 bg-[#c5a059]/10 text-[#c5a059] text-xs font-bold uppercase tracking-wider rounded border border-[#c5a059]/20 mb-4">
-                    Team Head
-                  </span>
-                  <h3 className="text-2xl font-bold text-white mb-1">Mr. Hafiz Laique Shahid</h3>
-                  <p className="text-sm text-[#c5a059] font-semibold mb-2 font-serif">CEO</p>
-                  <p className="text-xs text-gray-400 mb-6"><i className="fa-solid fa-location-dot"></i> Lahore, Pakistan Office</p>
-                  
-                  <div className="flex flex-col gap-3 mt-auto pt-6 border-t border-gray-800">
-                    <div className="flex items-center gap-3 text-sm text-gray-300">
-                      <span className="text-[#c5a059] w-5"><i className="fa-solid fa-envelope"></i></span>
-                      <div className="flex flex-col">
-                        <a href="mailto:hlaique@yahoo.com" className="hover:text-[#c5a059] transition-colors">hlaique@yahoo.com</a>
-                        <a href="mailto:hijartulharamtravels@gmail.com" className="hover:text-[#c5a059] transition-colors">hijartulharamtravels@gmail.com</a>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 text-sm text-gray-300">
-                      <span className="text-[#c5a059] w-5"><i className="fa-solid fa-phone"></i></span>
-                      <div className="flex flex-col">
-                        <a href="tel:+923018490804" className="hover:text-[#c5a059] transition-colors">+92 301-8490804</a>
-                        <a href="tel:+966552945129" className="hover:text-[#c5a059] transition-colors">+966 55-294-5129</a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-[#0e1217] p-8 rounded border border-[#c5a059]/10 hover:border-[#c5a059]/30 transition-all flex flex-col">
-                  <span className="self-start px-3 py-1 bg-[#c5a059]/10 text-[#c5a059] text-xs font-bold uppercase tracking-wider rounded border border-[#c5a059]/20 mb-4">
-                    Executive Director
-                  </span>
-                  <h3 className="text-2xl font-bold text-white mb-1">Ahmad Hasan Marjan</h3>
-                  <p className="text-sm text-[#c5a059] font-semibold mb-2 font-serif">Executive Director</p>
-                  <p className="text-xs text-gray-400 mb-6"><i className="fa-solid fa-location-dot"></i> Lahore, Pakistan Office</p>
-                  
-                  <div className="flex flex-col gap-3 mt-auto pt-6 border-t border-gray-800">
-                    <div className="flex items-center gap-3 text-sm text-gray-300">
-                      <span className="text-[#c5a059] w-5"><i className="fa-solid fa-envelope"></i></span>
-                      <a href="mailto:m@itt.sa" className="hover:text-[#c5a059] transition-colors">m@itt.sa</a>
-                    </div>
-                    <div className="flex items-center gap-3 text-sm text-gray-300">
-                      <span className="text-[#c5a059] w-5"><i className="fa-solid fa-phone"></i></span>
-                      <a href="tel:+966500860633" className="hover:text-[#c5a059] transition-colors">+966 50-086-0633</a>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-        </>
-      ) : currentPage === 'portal' ? (
-        /* DEDICATED PORTAL PAGE */
-        <section className="py-16 bg-[#05080a] flex-grow">
-          <div className="container mx-auto px-6 max-w-7xl">
-            {/* Header Banner */}
-            <div className="bg-gradient-to-r from-[#0e1217] to-[#080b0f] border border-[#c5a059]/15 rounded-xl p-8 mb-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-              <div>
-                <div className="flex items-center gap-2.5 text-xs text-[#c5a059] font-bold uppercase tracking-wider mb-2">
-                  <span className="hover:underline cursor-pointer" onClick={() => navigateTo('home')}>Home</span>
-                  <span><i className="fa-solid fa-chevron-right text-[10px]"></i></span>
-                  <span>Umrah Booking E-Portal</span>
-                </div>
-                <h2 className="text-3xl font-serif text-white font-bold">Umrah Booking E-Portal</h2>
-                <p className="text-gray-400 text-sm mt-1 leading-relaxed">
-                  Categorized Unicode offerings from Islamabad, Lahore, Sialkot, Peshawar, Multan, and Faisalabad.
-                </p>
-              </div>
-              <button 
-                onClick={() => navigateTo('home')}
-                className="px-6 py-2.5 bg-transparent border border-gray-800 text-gray-300 rounded hover:border-[#c5a059] hover:text-[#c5a059] transition-all text-sm font-semibold flex items-center gap-2"
-              >
-                <i className="fa-solid fa-arrow-left"></i> Back to Homepage
-              </button>
-            </div>
-
-            {/* Filters Row */}
-            <div className="flex flex-col md:flex-row gap-6 justify-between items-center mb-10 bg-[#0e1217] p-5 rounded-lg border border-[#c5a059]/10">
-              {/* Tabs */}
-              <div className="flex flex-wrap gap-2 w-full md:w-auto">
-                {['All', 'Islamabad', 'Lahore', 'Sialkot', 'Peshawar', 'Multan', 'Faisalabad'].map(city => (
-                  <button
-                    key={city}
-                    onClick={() => setSelectedCity(city)}
-                    className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider border transition-all ${
-                      selectedCity === city 
-                        ? 'bg-[#c5a059] text-[#05080a] border-[#c5a059] shadow-lg shadow-[#c5a059]/15' 
-                        : 'bg-[#05080a] text-gray-400 border-gray-800 hover:border-gray-700 hover:text-white'
-                    }`}
-                  >
-                    {city === 'All' ? 'All Cities' : city}
-                  </button>
-                ))}
-              </div>
-
-              {/* Search Box */}
-              <div className="relative w-full md:w-80">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
-                  <i className="fa-solid fa-magnifying-glass text-xs"></i>
-                </span>
-                <input
-                  type="text"
-                  placeholder="Search packages or hotels..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-[#05080a]/80 border border-gray-800 focus:border-[#c5a059] text-white pl-9 pr-4 py-2 rounded text-xs outline-none transition-all placeholder:text-gray-600"
-                />
-              </div>
-            </div>
-
-            {/* Packages Grid */}
-            {loading ? (
-              <div className="flex flex-col items-center justify-center py-20 gap-4">
-                <span className="text-[#c5a059] text-4xl animate-spin"><i className="fa-solid fa-circle-notch"></i></span>
-                <p className="text-gray-400 text-sm">Loading dynamic packages...</p>
-              </div>
             ) : (
-              (() => {
-                // Filter by city and search query
-                const filtered = packages.filter(pkg => {
-                  const matchesCity = selectedCity === 'All' || pkg.city.toLowerCase() === selectedCity.toLowerCase();
-                  const matchesSearch = searchQuery === '' || 
-                    pkg.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    pkg.hotels.makkah.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    pkg.hotels.madinah.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    pkg.description.toLowerCase().includes(searchQuery.toLowerCase());
-                  return matchesCity && matchesSearch;
-                });
-
-                if (filtered.length === 0) {
-                  return (
-                    <div className="text-center py-20 bg-[#0e1217] rounded-lg border border-gray-800">
-                      <span className="text-5xl text-gray-700 block mb-4"><i className="fa-solid fa-folder-open"></i></span>
-                      <h4 className="text-lg font-bold text-white mb-1">No Packages Found</h4>
-                      <p className="text-gray-500 text-xs">Try selecting another city tab or clearing your search filter.</p>
-                    </div>
-                  );
-                }
-
-                return (
-                  <div className="grid md:grid-cols-2 gap-8">
-                    {filtered.map((pkg, index) => {
-                      const imageSrc = pkg.image ? (pkg.image.startsWith('http') ? pkg.image : BACKEND_URL + pkg.image) : '';
-                      return (
-                        <div key={pkg._id || index} className="bg-[#0e1217] rounded-xl overflow-hidden border border-[#c5a059]/10 hover:border-[#c5a059]/20 transition-all flex flex-col group shadow-lg">
-                          <div className="relative h-64 w-full overflow-hidden">
-                            <img 
-                              src={imageSrc || "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?q=80&w=600"} 
-                              alt={pkg.title} 
-                              className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-[#0e1217] via-transparent to-transparent"></div>
-                            <div className="absolute top-4 left-4 px-3 py-1 bg-[#05080a]/95 border border-[#c5a059]/30 text-[#c5a059] text-xs font-bold rounded uppercase tracking-wider">
-                              {pkg.duration}
-                            </div>
-                            <div className="absolute bottom-4 right-4 px-4 py-1.5 bg-[#c5a059] text-[#05080a] text-sm font-extrabold rounded shadow">
-                              Starts {pkg.price}
-                            </div>
-                          </div>
-                          
-                          <div className="p-8 flex flex-col flex-grow">
-                            <div className="flex justify-between items-center gap-2 mb-2">
-                              <h3 className="text-xl font-bold text-white">{pkg.title}</h3>
-                              <span className="px-2.5 py-1 bg-[#c5a059]/10 border border-[#c5a059]/20 text-[#c5a059] rounded text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
-                                <i className="fa-solid fa-plane-departure mr-1.5"></i> From {pkg.city}
-                              </span>
-                            </div>
-                            <p className="text-gray-400 text-sm leading-relaxed mb-6">{pkg.description}</p>
-                            
-                            {/* Stays info */}
-                            <div className="bg-[#05080a]/60 border border-gray-800/80 p-4 rounded-lg flex flex-col gap-2.5 mb-6">
-                              <div className="flex items-center gap-3 text-xs text-gray-300">
-                                <span className="text-[#c5a059]"><i className="fa-solid fa-kaaba"></i></span>
-                                <span>Makkah Accommodation: <strong>{pkg.hotels.makkah}</strong></span>
-                              </div>
-                              <div className="flex items-center gap-3 text-xs text-gray-300">
-                                <span className="text-[#c5a059]"><i className="fa-solid fa-mosque"></i></span>
-                                <span>Madinah Accommodation: <strong>{pkg.hotels.madinah}</strong></span>
-                              </div>
-                            </div>
-
-                            {/* Features Inclusions */}
-                            <div className="mb-6">
-                              <h4 className="text-xs font-bold uppercase text-[#c5a059] tracking-wider mb-2.5">Package Inclusions</h4>
-                              <div className="grid grid-cols-2 gap-2 text-[11px] text-gray-400">
-                                {pkg.features ? pkg.features.slice(0, 6).map((feat, fIdx) => (
-                                  <div key={fIdx} className="flex items-center gap-2">
-                                    <span className="text-green-500"><i className="fa-solid fa-circle-check text-[9px]"></i></span>
-                                    <span className="truncate">{feat}</span>
-                                  </div>
-                                )) : (
-                                  <>
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-green-500"><i className="fa-solid fa-circle-check text-[9px]"></i></span>
-                                      <span>Airline Flights Included</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-green-500"><i className="fa-solid fa-circle-check text-[9px]"></i></span>
-                                      <span>Umrah Visa & Insurance</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-green-500"><i className="fa-solid fa-circle-check text-[9px]"></i></span>
-                                      <span>Luxury Transfers</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-green-500"><i className="fa-solid fa-circle-check text-[9px]"></i></span>
-                                      <span>Ziyarat Tours</span>
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Rooming Pricing Table */}
-                            <div className="border border-gray-800 rounded-lg overflow-hidden mb-6 text-xs bg-[#05080a]/30">
-                              <div className="bg-gray-900/40 grid grid-cols-4 py-2 px-3 text-gray-400 font-bold border-b border-gray-800 text-center">
-                                <div>Double</div>
-                                <div>Triple</div>
-                                <div>Quad</div>
-                                <div>Sharing</div>
-                              </div>
-                              <div className="grid grid-cols-4 py-2.5 px-3 text-center text-[#c5a059] font-bold">
-                                <div>{pkg.price_double ? `${(pkg.price_double/1000).toFixed(0)}k` : '305k'}</div>
-                                <div>{pkg.price_triple ? `${(pkg.price_triple/1000).toFixed(0)}k` : '290k'}</div>
-                                <div>{pkg.price_quad ? `${(pkg.price_quad/1000).toFixed(0)}k` : '283k'}</div>
-                                <div>{pkg.price_sharing ? `${(pkg.price_sharing/1000).toFixed(0)}k` : '274k'}</div>
-                              </div>
-                            </div>
-
-                            <button 
-                              onClick={() => openBookingModal(pkg)}
-                              className="mt-auto w-full py-3 bg-[#c5a059] text-[#05080a] font-bold rounded-lg hover:bg-[#b48e47] transition-all flex items-center justify-center gap-2 shadow shadow-[#c5a059]/10"
-                            >
-                              Book & Checkout Online <i className="fa-solid fa-cart-shopping"></i>
-                            </button>
-                          </div>
+              /* Booking Flow Form */
+              <form onSubmit={handleCheckoutSubmit} className="p-6 flex flex-col gap-6 max-h-[80vh] overflow-y-auto">
+                <div>
+                  <label className="block text-xs font-bold uppercase text-[#c5a059] tracking-wider mb-2">1. Select Rooming Type</label>
+                  <div className="grid grid-cols-4 gap-3">
+                    {[
+                      { type: 'sharing', label: 'Sharing', price: selectedPkg.price_sharing },
+                      { type: 'quad', label: 'Quad (4)', price: selectedPkg.price_quad },
+                      { type: 'triple', label: 'Triple (3)', price: selectedPkg.price_triple },
+                      { type: 'double', label: 'Double (2)', price: selectedPkg.price_double }
+                    ].map(room => (
+                      <button
+                        key={room.type}
+                        type="button"
+                        onClick={() => setRoomingType(room.type as any)}
+                        className={`py-3 px-1.5 rounded border text-center transition-all ${
+                          roomingType === room.type 
+                            ? 'border-[#c5a059] bg-[#c5a059]/10 text-white font-bold' 
+                            : 'border-gray-800 bg-[#05080a]/60 text-gray-400 hover:border-gray-700'
+                        }`}
+                      >
+                        <div className="text-xs">{room.label}</div>
+                        <div className="text-xs text-[#c5a059] mt-1 font-extrabold">
+                          {room.price ? `${(room.price/1000).toFixed(0)}k` : 'N/A'}
                         </div>
-                      );
-                    })}
+                      </button>
+                    ))}
                   </div>
-                );
-              })()
+                </div>
+
+                <div className="flex justify-between items-center bg-[#05080a] p-4 rounded border border-gray-800">
+                  <div>
+                    <div className="text-sm font-bold text-white">Number of Pilgrims</div>
+                    <div className="text-xs text-gray-400 mt-0.5">Adjust count to calculate total</div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button 
+                      type="button" 
+                      onClick={() => handlePilgrimCountChange(pilgrimsCount - 1)}
+                      className="w-8 h-8 rounded bg-gray-800 text-white font-bold flex items-center justify-center hover:bg-gray-700 text-lg"
+                    >
+                      -
+                    </button>
+                    <span className="text-lg font-extrabold text-white w-6 text-center">{pilgrimsCount}</span>
+                    <button 
+                      type="button" 
+                      onClick={() => handlePilgrimCountChange(pilgrimsCount + 1)}
+                      className="w-8 h-8 rounded bg-[#c5a059] text-[#05080a] font-bold flex items-center justify-center hover:bg-[#b48e47] text-lg"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-[#c5a059] tracking-wider mb-2.5">2. Contact Details</label>
+                  <div className="grid sm:grid-cols-3 gap-4">
+                    <input
+                      type="text"
+                      placeholder="Contact Name"
+                      required
+                      value={contactInfo.name}
+                      onChange={(e) => setContactInfo(prev => ({ ...prev, name: e.target.value }))}
+                      className="w-full bg-[#05080a]/60 border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none"
+                    />
+                    <input
+                      type="email"
+                      placeholder="Contact Email"
+                      required
+                      value={contactInfo.email}
+                      onChange={(e) => setContactInfo(prev => ({ ...prev, email: e.target.value }))}
+                      className="w-full bg-[#05080a]/60 border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none"
+                    />
+                    <input
+                      type="tel"
+                      placeholder="Contact Phone"
+                      required
+                      value={contactInfo.phone}
+                      onChange={(e) => setContactInfo(prev => ({ ...prev, phone: e.target.value }))}
+                      className="w-full bg-[#05080a]/60 border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-[#c5a059] tracking-wider mb-2.5">3. Pilgrim Information</label>
+                  <div className="flex flex-col gap-3 max-h-40 overflow-y-auto pr-1">
+                    {pilgrims.map((pilgrim, idx) => (
+                      <div key={idx} className="grid grid-cols-12 gap-3 items-center bg-[#05080a]/40 p-2.5 rounded border border-gray-800/80">
+                        <span className="col-span-2 text-xs font-semibold text-gray-400">P{idx + 1}:</span>
+                        <input
+                          type="text"
+                          placeholder="Full Name"
+                          required
+                          value={pilgrim.name}
+                          onChange={(e) => handlePilgrimFieldChange(idx, 'name', e.target.value)}
+                          className="col-span-5 bg-[#05080a]/60 border border-gray-800 focus:border-[#c5a059] text-white px-2 py-1.5 rounded text-xs outline-none"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Passport Number"
+                          required
+                          value={pilgrim.passportNumber}
+                          onChange={(e) => handlePilgrimFieldChange(idx, 'passportNumber', e.target.value)}
+                          className="col-span-5 bg-[#05080a]/60 border border-gray-800 focus:border-[#c5a059] text-white px-2 py-1.5 rounded text-xs outline-none"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {bookingStatus.type === 'error' && (
+                  <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded text-xs font-semibold">
+                    {bookingStatus.message}
+                  </div>
+                )}
+
+                <div className="border-t border-[#c5a059]/15 pt-5 flex justify-between items-center">
+                  <div>
+                    <div className="text-xs text-gray-400">Total Price Calculation</div>
+                    <div className="text-xl font-black text-[#c5a059]">
+                      PKR {(getPricePerPilgrim(selectedPkg) * pilgrimsCount).toLocaleString()}
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    className="px-8 py-3 bg-[#c5a059] text-[#05080a] font-bold rounded hover:bg-[#b48e47] transition-all flex items-center gap-2 shadow-lg"
+                  >
+                    Confirm & Reserve <i className="fa-solid fa-credit-card"></i>
+                  </button>
+                </div>
+              </form>
             )}
           </div>
-        </section>
-      ) : (
-        /* BI DASHBOARD PAGE */
-        <section className="py-16 bg-[#05080a] flex-grow text-gray-100 animate-fadeIn">
-          <div className="container mx-auto px-6 max-w-7xl">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-[#0e1217] to-[#080b0f] border border-[#c5a059]/15 rounded-xl p-8 mb-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-              <div>
-                <div className="flex items-center gap-2.5 text-xs text-[#c5a059] font-bold uppercase tracking-wider mb-2">
-                  <span className="hover:underline cursor-pointer" onClick={() => navigateTo('home')}>Home</span>
-                  <span><i className="fa-solid fa-chevron-right text-[10px]"></i></span>
-                  <span>BI Dashboard</span>
-                </div>
-                <h2 className="text-3xl font-serif text-white font-bold">Business Intelligence Display</h2>
-                <p className="text-gray-400 text-sm mt-1 leading-relaxed">
-                  Real-time sales tracking, commission logs, booking distributions, and lead metrics.
-                </p>
-              </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* PROTECTED ROUTE COMPONENT FOR STAFF */
+interface ProtectedRouteProps {
+  isAuthenticated: boolean;
+  setIsAuthenticated: (val: boolean) => void;
+  BACKEND_URL: string;
+  children: React.ReactNode;
+}
+
+function ProtectedRoute({ isAuthenticated, setIsAuthenticated, BACKEND_URL, children }: ProtectedRouteProps) {
+  const [passwordInput, setPasswordInput] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg('');
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: passwordInput })
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        localStorage.setItem('staff_token', data.token);
+        setIsAuthenticated(true);
+      } else {
+        setErrorMsg(data.error || 'Authentication failed.');
+      }
+    } catch (err) {
+      setErrorMsg('Failed to connect to the server.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (isAuthenticated) {
+    return <>{children}</>;
+  }
+
+  return (
+    <section className="py-24 bg-[#05080a] flex-grow flex items-center justify-center">
+      <div className="bg-[#0e1217] w-full max-w-md p-8 rounded-2xl border border-[#c5a059]/20 shadow-2xl text-center">
+        <span className="text-[#c5a059] text-3xl mb-4 inline-block"><i className="fa-solid fa-lock"></i></span>
+        <h3 className="text-xl font-bold text-white mb-2">Staff Access Portal</h3>
+        <p className="text-gray-400 text-xs mb-6">Enter portal password to view dashboards and manage sales transactions.</p>
+        
+        {errorMsg && (
+          <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded mb-4 font-semibold">
+            {errorMsg}
+          </div>
+        )}
+
+        <form onSubmit={handleLoginSubmit} className="flex flex-col gap-4 text-left">
+          <div>
+            <label className="block text-[10px] font-bold uppercase text-[#c5a059] tracking-wider mb-2">Authentication Password</label>
+            <input 
+              type="password" 
+              placeholder="••••••••••••"
+              required 
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
+              className="w-full bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-4 py-3 rounded text-sm outline-none transition-all"
+            />
+          </div>
+          <button 
+            type="submit" 
+            disabled={isSubmitting}
+            className="w-full py-3 bg-[#c5a059] text-[#05080a] font-bold rounded hover:bg-[#b48e47] transition-all flex items-center justify-center gap-2"
+          >
+            {isSubmitting ? (
+              <><i className="fa-solid fa-circle-notch fa-spin"></i> Authenticating...</>
+            ) : (
+              'Authenticate'
+            )}
+          </button>
+        </form>
+      </div>
+    </section>
+  );
+}
+
+/* HOME VIEW COMPONENT */
+function HomeView({ navigateTo, handleFormChange, handleInquirySubmit, formData, submitStatus }: any) {
+  return (
+    <>
+      {/* HERO SECTION */}
+      <section id="home" className="relative min-h-[80vh] flex items-center justify-center bg-[#05080a] py-20 overflow-hidden">
+        <div className="absolute inset-0 bg-[url('/hero_bg.png')] bg-cover bg-center opacity-75"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_60%_40%,rgba(7,13,15,0.3)_0%,rgba(7,13,15,0.92)_85%)]"></div>
+        <div className="container mx-auto px-6 max-w-7xl relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+          <div className="col-span-1 lg:col-span-7 text-left">
+            <span className="text-[#c5a059] text-xs uppercase tracking-[4px] font-semibold mb-4 block animate-fadeIn">Your Gateway to Spiritual & Global Horizons</span>
+            <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white mb-6 leading-tight">
+              Experience the <br className="hidden sm:inline" />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#c5a059] via-[#e2c98a] to-[#c5a059] font-serif italic font-normal">
+                Journey of a Lifetime
+              </span>
+            </h1>
+            <p className="text-gray-400 text-base sm:text-lg mb-10 leading-relaxed font-sans max-w-xl">
+              Specializing in spiritual, serene Umrah pilgrimages and premium, tailored World Tour packages. Connect with Insight Travel & Tourism for trusted guidance, comfort, and premium arrangements.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center gap-4">
               <button 
-                onClick={() => navigateTo('home')}
-                className="px-6 py-2.5 bg-transparent border border-gray-800 text-gray-300 rounded hover:border-[#c5a059] hover:text-[#c5a059] transition-all text-sm font-semibold flex items-center gap-2"
+                onClick={() => navigateTo('/portal')}
+                className="w-full sm:w-auto px-8 py-4 bg-[#c5a059] text-[#05080a] font-bold rounded hover:bg-[#b48e47] transition-all transform hover:-translate-y-1 shadow-lg shadow-[#c5a059]/20 flex items-center justify-center gap-2"
               >
-                <i className="fa-solid fa-arrow-left"></i> Back to Homepage
+                Submit Inquiry <i className="fa-solid fa-arrow-right"></i>
+              </button>
+              <button 
+                onClick={() => navigateTo('/', 'services')}
+                className="w-full sm:w-auto px-8 py-4 bg-transparent text-white border border-gray-700 font-bold rounded hover:border-[#c5a059] hover:text-[#c5a059] transition-all"
+              >
+                Explore Services
               </button>
             </div>
-
-            {/* KPI Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
-              <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden group">
-                <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5 group-hover:scale-110 transition-transform"><i className="fa-solid fa-coins"></i></div>
-                <div className="text-xs font-bold uppercase tracking-wider text-gray-400">Total Sales Value</div>
-                <div className="text-2xl font-black text-[#c5a059] mt-2">PKR {dashboardStats.totalSales.toLocaleString()}</div>
-                <div className="text-[10px] text-gray-500 mt-1">Aggregated booking values</div>
-              </div>
-              <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden group">
-                <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5 group-hover:scale-110 transition-transform"><i className="fa-solid fa-percent"></i></div>
-                <div className="text-xs font-bold uppercase tracking-wider text-gray-400">Est. Commissions</div>
-                <div className="text-2xl font-black text-green-400 mt-2">PKR {dashboardStats.totalCommissions.toLocaleString()}</div>
-                <div className="text-[10px] text-gray-500 mt-1">Calculated at 5% rate</div>
-              </div>
-              <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden group">
-                <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5 group-hover:scale-110 transition-transform"><i className="fa-solid fa-receipt"></i></div>
-                <div className="text-xs font-bold uppercase tracking-wider text-gray-400">Bookings Logged</div>
-                <div className="text-2xl font-black text-white mt-2">{dashboardStats.bookingsCount} Reservations</div>
-                <div className="text-[10px] text-gray-500 mt-1">Real-time checkout orders</div>
-              </div>
-              <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden group">
-                <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5 group-hover:scale-110 transition-transform"><i className="fa-solid fa-envelope-open-text"></i></div>
-                <div className="text-xs font-bold uppercase tracking-wider text-gray-400">Lead Inquiries</div>
-                <div className="text-2xl font-black text-blue-400 mt-2">{dashboardStats.inquiriesCount} Leads</div>
-                <div className="text-[10px] text-gray-500 mt-1">Interested customer entries</div>
-              </div>
-              <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden group">
-                <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5 group-hover:scale-110 transition-transform"><i className="fa-solid fa-box-open"></i></div>
-                <div className="text-xs font-bold uppercase tracking-wider text-gray-400">Tour Offerings</div>
-                <div className="text-2xl font-black text-purple-400 mt-2">{dashboardStats.packagesCount} Packages</div>
-                <div className="text-[10px] text-gray-500 mt-1">Live active system options</div>
-              </div>
-            </div>
-
-            {/* Interactive Analytical Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-              {/* Chart 1: Sales by Departure City */}
-              <div className="bg-[#0e1217] p-6 rounded-xl border border-gray-800">
-                <h3 className="text-base font-bold text-white mb-6 flex items-center gap-2">
-                  <i className="fa-solid fa-chart-simple text-[#c5a059]"></i> Sales Volume by Departure City
-                </h3>
-                <div className="flex flex-col gap-4">
-                  {(() => {
-                    const cities = ['Lahore', 'Islamabad', 'Faisalabad', 'Peshawar', 'Multan', 'Sialkot'];
-                    const citySales = bookings.reduce((acc: any, b: any) => {
-                      const cityName = b.packageName.includes('Lahore') ? 'Lahore' :
-                                       b.packageName.includes('Islamabad') ? 'Islamabad' :
-                                       b.packageName.includes('Faisalabad') ? 'Faisalabad' :
-                                       b.packageName.includes('Peshawar') ? 'Peshawar' :
-                                       b.packageName.includes('Multan') ? 'Multan' :
-                                       b.packageName.includes('Sialkot') ? 'Sialkot' : 'Other';
-                      acc[cityName] = (acc[cityName] || 0) + (b.totalPrice || 0);
-                      return acc;
-                    }, {});
-
-                    const maxSale = Math.max(...cities.map(c => citySales[c] || 0), 1);
-
-                    return cities.map(city => {
-                      const value = citySales[city] || 0;
-                      const percentage = (value / maxSale) * 100;
-                      return (
-                        <div key={city} className="flex flex-col gap-1.5">
-                          <div className="flex justify-between text-xs">
-                            <span className="font-bold text-gray-300">{city}</span>
-                            <span className="text-[#c5a059] font-black">PKR {value.toLocaleString()}</span>
-                          </div>
-                          <div className="w-full bg-gray-900 rounded-full h-3 overflow-hidden border border-gray-800">
-                            <div 
-                              className="bg-gradient-to-r from-[#c5a059] to-[#e2c98a] h-full rounded-full transition-all duration-1000"
-                              style={{ width: `${percentage}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      );
-                    });
-                  })()}
-                </div>
-              </div>
-
-              {/* Chart 2: Rooming Option Distribution */}
-              <div className="bg-[#0e1217] p-6 rounded-xl border border-gray-800 flex flex-col justify-between">
-                <div>
-                  <h3 className="text-base font-bold text-white mb-6 flex items-center gap-2">
-                    <i className="fa-solid fa-chart-pie text-[#c5a059]"></i> Rooming Option Preferences
-                  </h3>
-                  {(() => {
-                    const dist = bookings.reduce((acc: any, b: any) => {
-                      const rt = b.roomingType || 'sharing';
-                      acc[rt] = (acc[rt] || 0) + 1;
-                      return acc;
-                    }, { sharing: 0, quad: 0, triple: 0, double: 0 });
-
-                    const totalCount = bookings.length || 1;
-                    const items = [
-                      { type: 'sharing', label: 'Sharing', count: dist.sharing, color: '#c5a059' },
-                      { type: 'quad', label: 'Quad Room', count: dist.quad, color: '#38bdf8' },
-                      { type: 'triple', label: 'Triple Room', count: dist.triple, color: '#a855f7' },
-                      { type: 'double', label: 'Double Room', count: dist.double, color: '#f43f5e' }
-                    ];
-
-                    return (
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
-                        {items.map(item => {
-                          const pct = ((item.count / totalCount) * 100).toFixed(0);
-                          return (
-                            <div key={item.type} className="bg-[#05080a] p-4 rounded-lg border border-gray-800 text-center flex flex-col items-center">
-                              <div className="w-3.5 h-3.5 rounded-full mb-2" style={{ backgroundColor: item.color }}></div>
-                              <span className="text-xs text-gray-400 font-semibold">{item.label}</span>
-                              <span className="text-xl font-bold mt-1 text-white">{item.count}</span>
-                              <span className="text-[10px] text-gray-500 font-bold">{pct}% of bookings</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })()}
-                </div>
-                <div className="text-center text-xs text-gray-500 border-t border-gray-800/60 pt-4 mt-6">
-                  Based on current registered checkout databases. Update status dynamically.
-                </div>
-              </div>
-            </div>
-
-            {/* Bookings Log Table */}
-            <div className="bg-[#0e1217] p-6 rounded-xl border border-gray-800 mb-12 overflow-hidden">
-              <h3 className="text-base font-bold text-white mb-6 flex items-center gap-2">
-                <i className="fa-solid fa-list text-[#c5a059]"></i> Live Sales Booking Logs
-              </h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="border-b border-gray-800 text-gray-400 uppercase font-extrabold tracking-wider">
-                      <th className="py-3 px-4">Booking ID</th>
-                      <th className="py-3 px-4">Contact Person</th>
-                      <th className="py-3 px-4">Package</th>
-                      <th className="py-3 px-4">Rooming Type</th>
-                      <th className="py-3 px-4 text-center">Pilgrims</th>
-                      <th className="py-3 px-4 text-right">Total Price</th>
-                      <th className="py-3 px-4 text-center">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-800 text-gray-300">
-                    {bookings.length === 0 ? (
-                      <tr>
-                        <td colSpan={7} className="py-8 text-center text-gray-500">No active bookings registered yet. Try creating checkouts in the sacred portal page.</td>
-                      </tr>
-                    ) : (
-                      bookings.map((booking, bIdx) => (
-                        <tr key={booking._id || bIdx} className="hover:bg-gray-900/40">
-                          <td className="py-3.5 px-4 font-mono text-[#c5a059] font-bold">{booking._id ? booking._id.substring(18) : `B-${1000+bIdx}`}</td>
-                          <td className="py-3.5 px-4">
-                            <div className="font-bold text-white">{booking.contact.name}</div>
-                            <div className="text-[10px] text-gray-500">{booking.contact.phone}</div>
-                          </td>
-                          <td className="py-3.5 px-4 font-semibold">{booking.packageName}</td>
-                          <td className="py-3.5 px-4 capitalize">{booking.roomingType}</td>
-                          <td className="py-3.5 px-4 text-center font-bold text-white">{booking.pilgrimsCount}</td>
-                          <td className="py-3.5 px-4 text-right font-black text-[#c5a059]">PKR {booking.totalPrice.toLocaleString()}</td>
-                          <td className="py-3.5 px-4 text-center">
-                            <span className="px-2 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 font-bold uppercase tracking-wider text-[9px]">
-                              {booking.status || 'Pending Payment'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Inquiries List Table */}
-            <div className="bg-[#0e1217] p-6 rounded-xl border border-gray-800 overflow-hidden">
-              <h3 className="text-base font-bold text-white mb-6 flex items-center gap-2">
-                <i className="fa-solid fa-envelope-open-text text-[#c5a059]"></i> Live Inquiries Received
-              </h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="border-b border-gray-800 text-gray-400 uppercase font-extrabold tracking-wider">
-                      <th className="py-3 px-4">Date</th>
-                      <th className="py-3 px-4">Inquirer Name</th>
-                      <th className="py-3 px-4">Contact Details</th>
-                      <th className="py-3 px-4">Service Interest</th>
-                      <th className="py-3 px-4">Message Details</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-800 text-gray-300">
-                    {inquiries.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="py-8 text-center text-gray-500">No customer inquiries logged yet. Fill out the contact form to generate live leads.</td>
-                      </tr>
-                    ) : (
-                      inquiries.map((inquiry, iIdx) => (
-                        <tr key={inquiry._id || iIdx} className="hover:bg-gray-900/40">
-                          <td className="py-3.5 px-4 text-gray-500 font-semibold">{inquiry.createdAt ? new Date(inquiry.createdAt).toLocaleDateString() : '06/04/2026'}</td>
-                          <td className="py-3.5 px-4 font-bold text-white">{inquiry.name}</td>
-                          <td className="py-3.5 px-4">
-                            <div>{inquiry.phone}</div>
-                            <div className="text-[10px] text-gray-500">{inquiry.email}</div>
-                          </td>
-                          <td className="py-3.5 px-4">
-                            <span className="px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold uppercase tracking-wider text-[9px]">
-                              {inquiry.service}
-                            </span>
-                          </td>
-                          <td className="py-3.5 px-4 text-gray-400 max-w-xs truncate" title={inquiry.message}>{inquiry.message}</td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
           </div>
-        </section>
-      )}
+          <div className="col-span-1 lg:col-span-5 flex flex-col gap-6 items-center lg:items-end justify-center">
+            <div className="bg-[#0e1217]/80 border border-white/10 backdrop-blur-md p-6 rounded-2xl flex items-center gap-5 w-[260px] shadow-2xl transition-all hover:-translate-y-1.5 hover:border-[#c5a059]/40 animate-float cursor-pointer" onClick={() => navigateTo('/portal')}>
+              <span className="text-[#c5a059] text-3xl"><i className="fa-solid fa-kaaba"></i></span>
+              <span className="text-base font-bold text-white">Umrah & Hajj</span>
+            </div>
+            <div className="bg-[#0e1217]/80 border border-white/10 backdrop-blur-md p-6 rounded-2xl flex items-center gap-5 w-[260px] shadow-2xl transition-all hover:-translate-y-1.5 hover:border-[#c5a059]/40 animate-float-delayed cursor-pointer" onClick={() => navigateTo('/', 'wonders')}>
+              <span className="text-[#c5a059] text-3xl"><i className="fa-solid fa-earth-americas"></i></span>
+              <span className="text-base font-bold text-white">World Tours</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SERVICES SECTION */}
+      <section id="services" className="py-24 bg-[#080d12]/50 border-y border-[#c5a059]/5">
+        <div className="container mx-auto px-6 max-w-7xl">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <h2 className="text-3xl font-serif text-white font-bold">Premium Travel Solutions</h2>
+            <div className="w-16 h-0.5 bg-[#c5a059] mx-auto mt-4"></div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-[#0e1217] rounded-3xl overflow-hidden border border-[#c5a059]/10 hover:border-[#c5a059]/30 hover:-translate-y-1.5 transition-all flex flex-col group shadow-xl">
+              <div className="relative h-64 overflow-hidden">
+                <img src="/umrah_card.png" alt="Umrah Pilgrimage" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0e1217] to-transparent opacity-60"></div>
+              </div>
+              <div className="p-8 flex flex-col flex-grow">
+                <span className="self-start px-3 py-1 bg-[#c5a059]/10 text-[#c5a059] text-xs font-bold uppercase tracking-wider rounded border border-[#c5a059]/20 mb-4">
+                  Spiritual Journey
+                </span>
+                <h3 className="text-2xl font-bold text-white mb-3">Sacred Umrah Packages</h3>
+                <p className="text-gray-400 text-sm leading-relaxed mb-6">
+                  Embark on a deeply spiritual pilgrimage to the Holy Sites. From visa facilitation and elegant hotel bookings in Makkah and Madinah near the Harams, to comfortable transport services, we take care of every detail so you can focus on worship.
+                </p>
+                <ul className="text-gray-400 text-sm space-y-3 mb-8">
+                  <li className="flex items-center gap-3"><i className="fa-solid fa-circle-check text-[#c5a059]"></i> Close-to-Haram Accommodations</li>
+                  <li className="flex items-center gap-3"><i className="fa-solid fa-circle-check text-[#c5a059]"></i> Complete Visa & Ground Logistics</li>
+                  <li className="flex items-center gap-3"><i className="fa-solid fa-circle-check text-[#c5a059]"></i> Experienced Guided Assistance</li>
+                </ul>
+                <a href="/portal" onClick={(e) => { e.preventDefault(); navigateTo('/portal'); }} className="text-[#c5a059] font-bold text-sm hover:underline mt-auto flex items-center gap-2">
+                  View Live Packages <i className="fa-solid fa-chevron-right text-xs"></i>
+                </a>
+              </div>
+            </div>
+
+            <div className="bg-[#0e1217] rounded-3xl overflow-hidden border border-[#c5a059]/10 hover:border-[#c5a059]/30 hover:-translate-y-1.5 transition-all flex flex-col group shadow-xl">
+              <div className="relative h-64 overflow-hidden">
+                <img src="/world_tour_card.png" alt="World Tour Destinations" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0e1217] to-transparent opacity-60"></div>
+              </div>
+              <div className="p-8 flex flex-col flex-grow">
+                <span className="self-start px-3 py-1 bg-blue-500/10 text-blue-400 text-xs font-bold uppercase tracking-wider rounded border border-blue-500/20 mb-4">
+                  Global Exploration
+                </span>
+                <h3 className="text-2xl font-bold text-white mb-3">Bespoke World Tours</h3>
+                <p className="text-gray-400 text-sm leading-relaxed mb-6">
+                  Explore spectacular destinations across Europe, Asia, the Americas, and beyond. Whether you seek leisure beach holidays, exciting family vacations, or custom group tours, we craft itineraries to match your travel dreams perfectly.
+                </p>
+                <ul className="text-gray-400 text-sm space-y-3 mb-8">
+                  <li className="flex items-center gap-3"><i className="fa-solid fa-circle-check text-blue-400"></i> Tailored Itineraries & Group Tours</li>
+                  <li className="flex items-center gap-3"><i className="fa-solid fa-circle-check text-blue-400"></i> Flight & Hotel Reservations</li>
+                  <li className="flex items-center gap-3"><i className="fa-solid fa-circle-check text-blue-400"></i> Local Excursions & Guided Activities</li>
+                </ul>
+                <a href="#wonders" onClick={(e) => { e.preventDefault(); navigateTo('/', 'wonders'); }} className="text-[#c5a059] font-bold text-sm hover:underline mt-auto flex items-center gap-2">
+                  Inquire about World Tours <i className="fa-solid fa-chevron-right text-xs"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SPIRITUAL JOURNEYS */}
+      <section id="spiritual" className="py-24 bg-[#05080a]">
+        <div className="container mx-auto px-6 max-w-7xl">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <h2 className="text-3xl font-serif text-white font-bold">Spiritual Journeys</h2>
+            <div className="w-16 h-0.5 bg-[#c5a059] mx-auto mt-4"></div>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10">
+              <img src="https://images.unsplash.com/photo-1693590614566-1d3ea9ef32f7?auto=format&fit=crop&w=600" alt="The Center of the Soul" className="w-full h-48 object-cover" />
+              <div className="p-6">
+                <h3 className="text-lg font-bold text-[#c5a059] mb-3">The Center of the Soul</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">
+                  Makkah is not just a destination on a map; it is the gravitational pull of the believer’s heart. When the eyes first fall upon the Kaaba, the noise of the world falls silent, and the soul finally hears the echo of its own beginning.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10">
+              <img src="https://plus.unsplash.com/premium_photo-1697730274057-19338e84db8e?auto=format&fit=crop&w=600" alt="The House of Equality" className="w-full h-48 object-cover" />
+              <div className="p-6">
+                <h3 className="text-lg font-bold text-[#c5a059] mb-3">The House of Equality</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">
+                  In the shadows of the Black Stone, there are no kings and no beggars—only souls draped in white, circling the House of the One. It is here we learn that the only true rank in existence is the sincerity of our prostration.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10">
+              <img src="https://images.unsplash.com/photo-1511652019870-fbd8713560bf?auto=format&fit=crop&w=600" alt="The Infinite Return" className="w-full h-48 object-cover" />
+              <div className="p-6">
+                <h3 className="text-lg font-bold text-[#c5a059] mb-3">The Infinite Return</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">
+                  To perform Tawaf is to realize that life is a circle that begins and ends with God. Every step around the Kaaba is a shedding of the ego, until nothing remains but the servant and the Master in a state of perfect peace.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10">
+              <img src="https://images.unsplash.com/photo-1602733458155-647c07d32ef6?auto=format&fit=crop&w=600" alt="The City of Light" className="w-full h-48 object-cover" />
+              <div className="p-6">
+                <h3 className="text-lg font-bold text-[#c5a059] mb-3">The City of Light</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">
+                  If Makkah is the majesty of Divine Law, Madinah is the beauty of Divine Mercy. To enter the City of the Prophet is to move from the scorching heat of worldly struggle into the cool, fragrant shade of unconditional love.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10">
+              <img src="https://images.unsplash.com/photo-1729931421786-7bbd6c7d78f6?auto=format&fit=crop&w=600" alt="The Fragrance of Presence" className="w-full h-48 object-cover" />
+              <div className="p-6">
+                <h3 className="text-lg font-bold text-[#c5a059] mb-3">The Fragrance of Presence</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">
+                  There is a stillness in the air of Madinah that cannot be found elsewhere. It is the scent of a thousand salutations and the weight of a Presence that reassures every broken heart: 'You are home, and you are welcome here.'
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10">
+              <img src="https://images.unsplash.com/photo-1667454496584-9838026037af?auto=format&fit=crop&w=600" alt="The Garden of Paradise" className="w-full h-48 object-cover" />
+              <div className="p-6">
+                <h3 className="text-lg font-bold text-[#c5a059] mb-3">The Garden of Paradise</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">
+                  Walking through the gates of Al-Masjid an-Nabawi is like stepping out of time. Between the Rawdah and the Minbar lies a garden of Paradise, where the spirit breathes the air of the heavens while the feet still touch the earth.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* INTERNATIONAL WONDERS */}
+      <section id="wonders" className="py-24 bg-[#080d12]/50 border-t border-[#c5a059]/5">
+        <div className="container mx-auto px-6 max-w-7xl">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <h2 className="text-3xl font-serif text-white font-bold">International Wonders</h2>
+            <div className="w-16 h-0.5 bg-[#c5a059] mx-auto mt-4"></div>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10 group">
+              <img src="https://images.unsplash.com/photo-1615811648503-479d06197ff3?auto=format&fit=crop&w=600" alt="Petra" className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
+              <div className="p-6">
+                <h3 className="text-lg font-bold text-white mb-2">Petra, (Jordan)</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">Discover the ancient "Rose City" carved into sandstone.</p>
+              </div>
+            </div>
+
+            <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10 group">
+              <img src="https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=600" alt="Great Wall" className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
+              <div className="p-6">
+                <h3 className="text-lg font-bold text-white mb-2">Great Wall, (China)</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">Walk the historic fortifications of the Ming Dynasty.</p>
+              </div>
+            </div>
+
+            <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10 group">
+              <img src="https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=600" alt="Colosseum" className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
+              <div className="p-6">
+                <h3 className="text-lg font-bold text-white mb-2">The Colosseum, (Rome)</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">Experience the architectural marvel of ancient Italy.</p>
+              </div>
+            </div>
+
+            <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10 group">
+              <img src="https://images.unsplash.com/photo-1509273954142-d24fb1bb212d?auto=format&fit=crop&w=600" alt="Machu Picchu" className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
+              <div className="p-6">
+                <h3 className="text-lg font-bold text-white mb-2">Machu Picchu Trek (Peru)</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">Unveil the mysteries of the Incan Empire in the Peruvian Andes.</p>
+              </div>
+            </div>
+
+            <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10 group">
+              <img src="https://images.unsplash.com/photo-1647220499997-ae2a94540ed6?auto=format&fit=crop&w=600" alt="Chichen Itza" className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
+              <div className="p-6">
+                <h3 className="text-lg font-bold text-white mb-2">Chichén Itzá, (Mexico)</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">Experience the Chichén Itzá (Mexico): A large Maya pyramid city.</p>
+              </div>
+            </div>
+
+            <div className="bg-[#0e1217] rounded overflow-hidden border border-[#c5a059]/10 group">
+              <img src="https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=600" alt="Taj Mahal" className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
+              <div className="p-6">
+                <h3 className="text-lg font-bold text-white mb-2">The Taj Mahal, (India)</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">Experience the white marble mausoleum commissioned in 1632 by Shah Jahan.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-20 bg-[#0e1217] border border-[#c5a059]/15 rounded-xl p-8 sm:p-12 text-center max-w-4xl mx-auto shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-2 h-full bg-[#c5a059]"></div>
+            <h3 className="text-2xl font-serif text-white font-bold mb-4">Umrah Booking E-Portal</h3>
+            <p className="text-gray-400 text-sm max-w-2xl mx-auto mb-8 leading-relaxed">
+              Ready to answer the sacred call? We offer dynamic, clean Unicode packages mapped directly from respected departure cities across Pakistan. Choose room options and place bookings through our real-time checkout flow.
+            </p>
+            <button 
+              onClick={() => navigateTo('/portal')}
+              className="px-8 py-3.5 bg-[#c5a059] text-[#05080a] font-bold rounded-lg hover:bg-[#b48e47] transition-all transform hover:-translate-y-0.5 shadow-lg shadow-[#c5a059]/10"
+            >
+              Enter Sacred Umrah Portal <i className="fa-solid fa-arrow-right-to-bracket ml-2"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* TEAM SECTION */}
+      <section id="team" className="py-24 bg-[#05080a]">
+        <div className="container mx-auto px-6 max-w-7xl">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <h2 className="text-3xl font-serif text-white font-bold">Our Team</h2>
+            <p className="text-[#c5a059] text-sm mt-1">Leadership at Lahore Office</p>
+            <div className="w-16 h-0.5 bg-[#c5a059] mx-auto mt-4"></div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div className="bg-[#0e1217] p-8 rounded border border-[#c5a059]/10 hover:border-[#c5a059]/30 transition-all flex flex-col">
+              <span className="self-start px-3 py-1 bg-[#c5a059]/10 text-[#c5a059] text-xs font-bold uppercase tracking-wider rounded border border-[#c5a059]/20 mb-4">
+                Team Head
+              </span>
+              <h3 className="text-2xl font-bold text-white mb-1">Mr. Hafiz Laique Shahid</h3>
+              <p className="text-sm text-[#c5a059] font-semibold mb-2 font-serif">CEO</p>
+              <p className="text-xs text-gray-400 mb-6"><i className="fa-solid fa-location-dot"></i> Lahore, Pakistan Office</p>
+              
+              <div className="flex flex-col gap-3 mt-auto pt-6 border-t border-gray-800">
+                <div className="flex items-center gap-3 text-sm text-gray-300">
+                  <span className="text-[#c5a059] w-5"><i className="fa-solid fa-envelope"></i></span>
+                  <div className="flex flex-col">
+                    <a href="mailto:hlaique@yahoo.com" className="hover:text-[#c5a059] transition-colors">hlaique@yahoo.com</a>
+                    <a href="mailto:hijartulharamtravels@gmail.com" className="hover:text-[#c5a059] transition-colors">hijartulharamtravels@gmail.com</a>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 text-sm text-gray-300">
+                  <span className="text-[#c5a059] w-5"><i className="fa-solid fa-phone"></i></span>
+                  <div className="flex flex-col">
+                    <a href="tel:+923018490804" className="hover:text-[#c5a059] transition-colors">+92 301-8490804</a>
+                    <a href="tel:+966552945129" className="hover:text-[#c5a059] transition-colors">+966 55-294-5129</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-[#0e1217] p-8 rounded border border-[#c5a059]/10 hover:border-[#c5a059]/30 transition-all flex flex-col">
+              <span className="self-start px-3 py-1 bg-[#c5a059]/10 text-[#c5a059] text-xs font-bold uppercase tracking-wider rounded border border-[#c5a059]/20 mb-4">
+                Executive Director
+              </span>
+              <h3 className="text-2xl font-bold text-white mb-1">Ahmad Hasan Marjan</h3>
+              <p className="text-sm text-[#c5a059] font-semibold mb-2 font-serif">Executive Director</p>
+              <p className="text-xs text-gray-400 mb-6"><i className="fa-solid fa-location-dot"></i> Lahore, Pakistan Office</p>
+              
+              <div className="flex flex-col gap-3 mt-auto pt-6 border-t border-gray-800">
+                <div className="flex items-center gap-3 text-sm text-gray-300">
+                  <span className="text-[#c5a059] w-5"><i className="fa-solid fa-envelope"></i></span>
+                  <a href="mailto:m@itt.sa" className="hover:text-[#c5a059] transition-colors">m@itt.sa</a>
+                </div>
+                <div className="flex items-center gap-3 text-sm text-gray-300">
+                  <span className="text-[#c5a059] w-5"><i className="fa-solid fa-phone"></i></span>
+                  <a href="tel:+966500860633" className="hover:text-[#c5a059] transition-colors">+966 50-086-0633</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* CHAIRMAN'S MESSAGE */}
       <section id="ceo-message" className="py-24 bg-[#05080a] border-t border-[#c5a059]/5">
         <div className="container mx-auto px-6 max-w-5xl">
           <div className="bg-[#0e1217] rounded-xl border border-[#c5a059]/10 p-8 sm:p-12 relative overflow-hidden text-center max-w-3xl mx-auto">
-            <div className="w-full">
-              <span className="text-5xl text-[#c5a059]/20 absolute top-6 right-8"><i className="fa-solid fa-quote-right"></i></span>
-              <h3 className="text-[#c5a059] text-xs uppercase tracking-widest font-semibold mb-2">Chairman's Message</h3>
-              <h4 className="text-2xl font-serif text-white mb-4 font-bold">A Sacred Commitment to Quality</h4>
-              <p className="text-gray-400 text-sm leading-relaxed mb-6 italic max-w-2xl mx-auto">
-                "Our mission at Insight Travel is rooted in trust, integrity, and absolute devotion. Having guided thousands of pilgrims from Pakistan and across the globe, we pledge our signature standards of comfort and care as you answer the sacred call. Your spiritual satisfaction is our ultimate reward."
-              </p>
-              <div>
-                <p className="text-white font-bold text-sm">Chauhdry Muhammad Aslam</p>
-                <p className="text-[#c5a059] text-xs">Chairman, Insight Travel & Tourism</p>
-              </div>
+            <span className="text-5xl text-[#c5a059]/20 absolute top-6 right-8"><i className="fa-solid fa-quote-right"></i></span>
+            <h3 className="text-[#c5a059] text-xs uppercase tracking-widest font-semibold mb-2">Chairman's Message</h3>
+            <h4 className="text-2xl font-serif text-white mb-4 font-bold">A Sacred Commitment to Quality</h4>
+            <p className="text-gray-400 text-sm leading-relaxed mb-6 italic max-w-2xl mx-auto">
+              "Our mission at Insight Travel is rooted in trust, integrity, and absolute devotion. Having guided thousands of pilgrims from Pakistan and across the globe, we pledge our signature standards of comfort and care as you answer the sacred call. Your spiritual satisfaction is our ultimate reward."
+            </p>
+            <div>
+              <p className="text-white font-bold text-sm">Chauhdry Muhammad Aslam</p>
+              <p className="text-[#c5a059] text-xs">Chairman, Insight Travel & Tourism</p>
             </div>
           </div>
         </div>
@@ -1238,207 +1160,1270 @@ export default function App() {
           </div>
         </div>
       </section>
+    </>
+  );
+}
 
-      {/* FOOTER */}
-      <footer className="bg-[#030507] border-t border-gray-900 py-12 mt-auto text-xs text-gray-500">
-        <div className="container mx-auto px-6 max-w-7xl flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-3">
-            <span className="text-[#c5a059] text-lg"><i className="fa-solid fa-compass"></i></span>
-            <span className="text-sm font-bold tracking-wide text-white uppercase">
-              Insight <span className="text-[#c5a059] font-serif capitalize">Travel & Tourism</span>
-            </span>
+/* PORTAL VIEW COMPONENT */
+const flyerImages: { [city: string]: string[] } = {
+  Islamabad: Array.from({ length: 12 }, (_, i) => `Islamabad-Group-Pkg-_page-${String(i + 1).padStart(4, '0')}.jpg`),
+  Lahore: [
+    "Lahore-Group-Pkgs_page-0023.jpg",
+    "Lahore-Group-Pkgs_page-0024.jpg",
+    "Lahore-Group-Pkgs_page-0025.jpg",
+    "Lahore-Group-Pkgs_page-0026.jpg"
+  ],
+  Faisalabad: Array.from({ length: 4 }, (_, i) => `Faislabad-Group-Pkgs-_page-${String(i + 1).padStart(4, '0')}.jpg`),
+  Multan: Array.from({ length: 4 }, (_, i) => `Multan-Group-Pkgs-_page-${String(i + 1).padStart(4, '0')}.jpg`),
+  Peshawar: Array.from({ length: 8 }, (_, i) => `Peshawar-Group-Pkgs_page-${String(i + 1).padStart(4, '0')}.jpg`),
+  Sialkot: [
+    "Sialkot-Group-Pkgs_page-0001-1.jpg",
+    "Sialkot-Group-Pkgs_page-0002-1.jpg",
+    "Sialkot-Group-Pkgs_page-0003-1.jpg",
+    "Sialkot-Group-Pkgs_page-0004-1.jpg",
+    "Sialkot-Group-Pkgs_page-0005-1.jpg",
+    "Sialkot-Group-Pkgs_page-0006.jpg",
+    "Sialkot-Group-Pkgs_page-0007.jpg",
+    "Sialkot-Group-Pkgs_page-0008.jpg",
+    "Sialkot-Group-Pkgs_page-0009.jpg",
+    "Sialkot-Group-Pkgs_page-0010.jpg",
+    "Sialkot-Group-Pkgs_page-0011.jpg",
+    "Sialkot-Group-Pkgs_page-0012.jpg",
+    "Sialkot-Group-Pkgs_page-0013.jpg"
+  ],
+  Karachi: [
+    "WhatsApp-Image-2026-05-22-at-14.13.46-1.jpeg",
+    "WhatsApp-Image-2026-05-22-at-14.13.47-1.jpeg",
+    "WhatsApp-Image-2026-05-22-at-14.13.47.jpeg",
+    "WhatsApp-Image-2026-05-22-at-14.13.48-1.jpeg",
+    "WhatsApp-Image-2026-05-22-at-14.13.48-2.jpeg",
+    "WhatsApp-Image-2026-05-22-at-14.13.48.jpeg"
+  ]
+};
+
+function PortalView({ loading, packages, selectedCity, setSelectedCity, searchQuery, setSearchQuery, BACKEND_URL, openBookingModal }: any) {
+  const navigate = useNavigate();
+  const [viewMode, setViewMode] = useState<'interactive' | 'flyers'>('interactive');
+  const [selectedFlyer, setSelectedFlyer] = useState<string | null>(null);
+  const [selectedFlyerIndex, setSelectedFlyerIndex] = useState<number>(-1);
+  const [activeFlyerList, setActiveFlyerList] = useState<string[]>([]);
+
+  const getFilteredFlyers = () => {
+    if (selectedCity === 'All') {
+      return Object.values(flyerImages).flat();
+    }
+    return flyerImages[selectedCity] || [];
+  };
+
+  const openLightbox = (imgUrl: string, list: string[], idx: number) => {
+    setSelectedFlyer(imgUrl);
+    setActiveFlyerList(list);
+    setSelectedFlyerIndex(idx);
+  };
+
+  const nextFlyer = () => {
+    if (selectedFlyerIndex < activeFlyerList.length - 1) {
+      const nextIdx = selectedFlyerIndex + 1;
+      setSelectedFlyerIndex(nextIdx);
+      setSelectedFlyer(`${BACKEND_URL}/uploaded-files/umrah packages/${encodeURIComponent(activeFlyerList[nextIdx])}`);
+    }
+  };
+
+  const prevFlyer = () => {
+    if (selectedFlyerIndex > 0) {
+      const prevIdx = selectedFlyerIndex - 1;
+      setSelectedFlyerIndex(prevIdx);
+      setSelectedFlyer(`${BACKEND_URL}/uploaded-files/umrah packages/${encodeURIComponent(activeFlyerList[prevIdx])}`);
+    }
+  };
+
+  return (
+    <section className="py-16 bg-[#05080a] flex-grow animate-fadeIn">
+      <div className="container mx-auto px-6 max-w-7xl">
+        {/* Header Banner */}
+        <div className="bg-gradient-to-r from-[#0e1217] to-[#080b0f] border border-[#c5a059]/15 rounded-xl p-8 mb-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div>
+            <div className="flex items-center gap-2.5 text-xs text-[#c5a059] font-bold uppercase tracking-wider mb-2">
+              <span className="hover:underline cursor-pointer" onClick={() => navigate('/')}>Home</span>
+              <span><i className="fa-solid fa-chevron-right text-[10px]"></i></span>
+              <span>Umrah Booking E-Portal</span>
+            </div>
+            <h2 className="text-3xl font-serif text-white font-bold">Umrah Booking E-Portal</h2>
+            <p className="text-gray-400 text-sm mt-1 leading-relaxed">
+              Categorized offerings from Islamabad, Karachi, Lahore, Sialkot, Peshawar, Multan, and Faisalabad.
+            </p>
           </div>
-          <p className="text-center">
-            &copy; 2026 Insight Travel and Tours. Based in Madinah Al-Munawarah. Powered by IICC IT Department.
-          </p>
-          <div className="flex gap-4">
-            <a href="subagent_register.php" className="hover:text-[#c5a059]">Agent Registration</a>
-            <a href="manage_packages.php" className="hover:text-[#c5a059]">Sales Portal</a>
+          <button 
+            onClick={() => navigate('/')}
+            className="px-6 py-2.5 bg-transparent border border-gray-800 text-gray-300 rounded hover:border-[#c5a059] hover:text-[#c5a059] transition-all text-sm font-semibold flex items-center gap-2"
+          >
+            <i className="fa-solid fa-arrow-left"></i> Back to Homepage
+          </button>
+        </div>
+
+        {/* View Mode Toggle Segment */}
+        <div className="flex justify-center mb-10">
+          <div className="bg-[#0e1217] p-1.5 rounded-xl border border-gray-800 flex gap-2">
+            <button 
+              onClick={() => setViewMode('interactive')}
+              className={`px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
+                viewMode === 'interactive' 
+                  ? 'bg-[#c5a059] text-[#05080a] shadow-lg shadow-[#c5a059]/15' 
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <i className="fa-solid fa-kaaba"></i> Interactive Packages
+            </button>
+            <button 
+              onClick={() => setViewMode('flyers')}
+              className={`px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
+                viewMode === 'flyers' 
+                  ? 'bg-[#c5a059] text-[#05080a] shadow-lg shadow-[#c5a059]/15' 
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <i className="fa-solid fa-images"></i> Package Flyer Sheets
+            </button>
           </div>
         </div>
-      </footer>
 
-      {/* E-COMMERCE CHECKOUT MODAL */}
-      {selectedPkg && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="bg-[#0e1217] w-full max-w-2xl rounded-xl border border-[#c5a059]/20 shadow-2xl overflow-hidden animate-fadeIn">
-            {/* Modal Header */}
-            <div className="bg-[#05080a] py-4 px-6 border-b border-[#c5a059]/15 flex justify-between items-center">
-              <div>
-                <span className="text-xs text-[#c5a059] font-bold uppercase tracking-widest">E-Portal Checkout</span>
-                <h3 className="text-lg font-bold text-white mt-0.5">{selectedPkg.title}</h3>
+        {/* Filters Row - Only for Interactive Packages */}
+        {viewMode === 'interactive' && (
+          <div className="flex flex-col md:flex-row gap-6 justify-between items-center mb-10 bg-[#0e1217] p-5 rounded-lg border border-[#c5a059]/10">
+            <div className="flex flex-wrap gap-2 w-full md:w-auto">
+              {['All', 'Islamabad', 'Karachi', 'Lahore', 'Sialkot', 'Peshawar', 'Multan', 'Faisalabad'].map(city => (
+                <button
+                  key={city}
+                  onClick={() => setSelectedCity(city)}
+                  className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider border transition-all ${
+                    selectedCity === city 
+                      ? 'bg-[#c5a059] text-[#05080a] border-[#c5a059] shadow-lg shadow-[#c5a059]/15' 
+                      : 'bg-[#05080a] text-gray-400 border-gray-800 hover:border-gray-700 hover:text-white'
+                  }`}
+                >
+                  {city === 'All' ? 'All Cities' : `From ${city}`}
+                </button>
+              ))}
+            </div>
+
+            <div className="relative w-full md:w-80">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                <i className="fa-solid fa-magnifying-glass text-xs"></i>
+              </span>
+              <input
+                type="text"
+                placeholder="Search packages or hotels..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-[#05080a]/80 border border-gray-800 focus:border-[#c5a059] text-white pl-9 pr-4 py-2 rounded text-xs outline-none transition-all placeholder:text-gray-600"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Sub-navigation City Tabs - Only for Package Flyer Sheets */}
+        {viewMode === 'flyers' && (
+          <div className="mb-10 text-center">
+            <div className="inline-flex flex-wrap justify-center gap-3 bg-[#0e1217] p-2.5 rounded-2xl border border-gray-800/80 shadow-xl max-w-full">
+              {['All', 'Islamabad', 'Karachi', 'Lahore', 'Sialkot', 'Peshawar', 'Multan', 'Faisalabad'].map(city => {
+                const count = city === 'All' 
+                  ? Object.values(flyerImages).reduce((acc, curr) => acc + curr.length, 0)
+                  : (flyerImages[city] || []).length;
+                
+                const isActive = selectedCity === city;
+                return (
+                  <button
+                    key={city}
+                    onClick={() => setSelectedCity(city)}
+                    className={`relative px-5 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2.5 border ${
+                      isActive 
+                        ? 'bg-[#c5a059] text-[#05080a] border-[#c5a059] shadow-lg shadow-[#c5a059]/20 scale-102 font-extrabold' 
+                        : 'bg-[#05080a]/80 text-gray-400 border-gray-900 hover:border-gray-800 hover:text-white hover:bg-gray-950'
+                    }`}
+                  >
+                    <i className={`fa-solid ${
+                      city === 'All' ? 'fa-globe' :
+                      city === 'Islamabad' ? 'fa-mosque' :
+                      city === 'Karachi' ? 'fa-ship' :
+                      city === 'Lahore' ? 'fa-archway' :
+                      city === 'Sialkot' ? 'fa-plane-departure' :
+                      city === 'Peshawar' ? 'fa-mountain' :
+                      city === 'Multan' ? 'fa-gopuram' : 'fa-city'
+                    }`}></i>
+                    <span>{city === 'All' ? 'All Cities' : `From ${city}`}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+                      isActive ? 'bg-[#05080a]/20 text-[#05080a]' : 'bg-gray-800/60 text-gray-400'
+                    }`}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-gray-500 text-xs mt-4">
+              Select a city tab to browse printed/scanned leaflet packages. Click any flyer sheet to open the high-resolution lightbox view.
+            </p>
+          </div>
+        )}
+
+        {/* Dynamic Display based on View Mode */}
+        {viewMode === 'interactive' ? (
+          loading ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+              <span className="text-[#c5a059] text-4xl animate-spin"><i className="fa-solid fa-circle-notch"></i></span>
+              <p className="text-gray-400 text-sm">Loading dynamic packages...</p>
+            </div>
+          ) : (
+            (() => {
+              const filtered = packages.filter((pkg: any) => {
+                const matchesCity = selectedCity === 'All' || pkg.city.toLowerCase() === selectedCity.toLowerCase();
+                const matchesSearch = searchQuery === '' || 
+                  pkg.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  pkg.hotels.makkah.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  pkg.hotels.madinah.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  pkg.description.toLowerCase().includes(searchQuery.toLowerCase());
+                return matchesCity && matchesSearch;
+              });
+
+              if (filtered.length === 0) {
+                return (
+                  <div className="text-center py-20 bg-[#0e1217] rounded-lg border border-gray-800">
+                    <span className="text-5xl text-gray-700 block mb-4"><i className="fa-solid fa-folder-open"></i></span>
+                    <h4 className="text-lg font-bold text-white mb-1">No Packages Found</h4>
+                    <p className="text-gray-500 text-xs">Try selecting another city tab or clearing your search filter.</p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="grid md:grid-cols-2 gap-8">
+                  {filtered.map((pkg: any, index: number) => {
+                    const imageSrc = pkg.image ? (pkg.image.startsWith('http') ? pkg.image : BACKEND_URL + pkg.image) : '';
+                    return (
+                      <div key={pkg._id || index} className="bg-[#0e1217] rounded-xl overflow-hidden border border-[#c5a059]/10 hover:border-[#c5a059]/20 transition-all flex flex-col group shadow-lg">
+                        <div className="relative h-64 w-full overflow-hidden">
+                          {imageSrc ? (
+                            <img 
+                              src={imageSrc} 
+                              alt={pkg.title} 
+                              className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-[#0e1217] via-[#05080a] to-[#0e1217] flex flex-col items-center justify-center border-b border-[#c5a059]/10 relative">
+                              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(197,160,89,0.05)_0%,transparent_70%)]"></div>
+                              <span className="text-[#c5a059]/30 text-5xl mb-3"><i className="fa-solid fa-kaaba"></i></span>
+                              <span className="text-[10px] text-gray-500 uppercase tracking-widest font-mono">Premium Sacred Package</span>
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-[#0e1217] via-transparent to-transparent"></div>
+                          <div className="absolute top-4 left-4 px-3 py-1 bg-[#05080a]/95 border border-[#c5a059]/30 text-[#c5a059] text-xs font-bold rounded uppercase tracking-wider">
+                            {pkg.duration}
+                          </div>
+                          <div className="absolute bottom-4 right-4 px-4 py-1.5 bg-[#c5a059] text-[#05080a] text-sm font-extrabold rounded shadow">
+                            Starts {pkg.price}
+                          </div>
+                        </div>
+                        
+                        <div className="p-8 flex flex-col flex-grow">
+                          <div className="flex justify-between items-center gap-2 mb-2">
+                            <h3 className="text-xl font-bold text-white">{pkg.title}</h3>
+                            <span className="px-2.5 py-1 bg-[#c5a059]/10 border border-[#c5a059]/20 text-[#c5a059] rounded text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
+                              <i className="fa-solid fa-plane-departure mr-1.5"></i> From {pkg.city}
+                            </span>
+                          </div>
+                          <p className="text-gray-400 text-sm leading-relaxed mb-6">{pkg.description}</p>
+                          
+                          <div className="bg-[#05080a]/60 border border-gray-800/80 p-4 rounded-lg flex flex-col gap-2.5 mb-6">
+                            <div className="flex items-center gap-3 text-xs text-gray-300">
+                              <span className="text-[#c5a059]"><i className="fa-solid fa-kaaba"></i></span>
+                              <span>Makkah Accommodation: <strong>{pkg.hotels.makkah}</strong></span>
+                            </div>
+                            <div className="flex items-center gap-3 text-xs text-gray-300">
+                              <span className="text-[#c5a059]"><i className="fa-solid fa-mosque"></i></span>
+                              <span>Madinah Accommodation: <strong>{pkg.hotels.madinah}</strong></span>
+                            </div>
+                          </div>
+
+                          <div className="mb-6">
+                            <h4 className="text-xs font-bold uppercase text-[#c5a059] tracking-wider mb-2.5">Package Inclusions</h4>
+                            <div className="grid grid-cols-2 gap-2 text-[11px] text-gray-400">
+                              {pkg.features ? pkg.features.slice(0, 6).map((feat: string, fIdx: number) => (
+                                <div key={fIdx} className="flex items-center gap-2">
+                                  <span className="text-green-500"><i className="fa-solid fa-circle-check text-[9px]"></i></span>
+                                  <span className="truncate">{feat}</span>
+                                </div>
+                              )) : (
+                                <>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-green-500"><i className="fa-solid fa-circle-check text-[9px]"></i></span>
+                                    <span>Airline Flights Included</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-green-500"><i className="fa-solid fa-circle-check text-[9px]"></i></span>
+                                    <span>Umrah Visa & Insurance</span>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="border border-gray-800 rounded-lg overflow-hidden mb-6 text-xs bg-[#05080a]/30">
+                            <div className="bg-gray-900/40 grid grid-cols-4 py-2 px-3 text-gray-400 font-bold border-b border-gray-800 text-center">
+                              <div>Double</div>
+                              <div>Triple</div>
+                              <div>Quad</div>
+                              <div>Sharing</div>
+                            </div>
+                            <div className="grid grid-cols-4 py-2.5 px-3 text-center text-[#c5a059] font-bold">
+                              <div>{pkg.price_double ? `${(pkg.price_double/1000).toFixed(0)}k` : '305k'}</div>
+                              <div>{pkg.price_triple ? `${(pkg.price_triple/1000).toFixed(0)}k` : '290k'}</div>
+                              <div>{pkg.price_quad ? `${(pkg.price_quad/1000).toFixed(0)}k` : '283k'}</div>
+                              <div>{pkg.price_sharing ? `${(pkg.price_sharing/1000).toFixed(0)}k` : '274k'}</div>
+                            </div>
+                          </div>
+
+                          <button 
+                            onClick={() => openBookingModal(pkg)}
+                            className="mt-auto w-full py-3 bg-[#c5a059] text-[#05080a] font-bold rounded-lg hover:bg-[#b48e47] transition-all flex items-center justify-center gap-2 shadow shadow-[#c5a059]/10"
+                          >
+                            Book & Checkout Online <i className="fa-solid fa-cart-shopping"></i>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()
+          )
+        ) : (
+          /* FLYER SHEETS IMAGE VIEW */
+          (() => {
+            const flyers = getFilteredFlyers();
+            if (flyers.length === 0) {
+              return (
+                <div className="text-center py-20 bg-[#0e1217] rounded-lg border border-gray-800">
+                  <span className="text-5xl text-gray-700 block mb-4"><i className="fa-solid fa-image"></i></span>
+                  <h4 className="text-lg font-bold text-white mb-1">No Flyer Sheets Found</h4>
+                  <p className="text-gray-500 text-xs">There are no package flyer scans uploaded for the selected city.</p>
+                </div>
+              );
+            }
+
+            return (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {flyers.map((filename: string, idx: number) => {
+                  const flyerUrl = `${BACKEND_URL}/uploaded-files/umrah packages/${encodeURIComponent(filename)}`;
+                  return (
+                    <div 
+                      key={idx} 
+                      onClick={() => openLightbox(flyerUrl, flyers, idx)}
+                      className="bg-[#0e1217] border border-gray-800 rounded-xl overflow-hidden hover:border-[#c5a059]/40 transition-all cursor-pointer group shadow-lg"
+                    >
+                      <div className="relative aspect-[3/4] w-full overflow-hidden bg-black flex items-center justify-center">
+                        <img 
+                          src={flyerUrl} 
+                          alt={`Flyer Sheet ${idx + 1}`} 
+                          className="max-h-full max-w-full object-contain group-hover:scale-102 transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <span className="px-4 py-2 bg-[#c5a059] text-[#05080a] font-bold text-xs rounded uppercase tracking-wider flex items-center gap-1.5 shadow">
+                            <i className="fa-solid fa-magnifying-glass-plus"></i> View Sheet
+                          </span>
+                        </div>
+                      </div>
+                      <div className="p-3 border-t border-gray-800/60 bg-[#0c0f13] text-center">
+                        <div className="text-[10px] text-gray-400 truncate font-mono font-medium">{filename}</div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
+            );
+          })()
+        )}
+      </div>
+
+      {/* FULL-SCREEN LIGHTBOX MODAL */}
+      {selectedFlyer && (
+        <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex flex-col justify-between p-4">
+          {/* Header toolbar */}
+          <div className="flex justify-between items-center py-2 px-6 bg-black/40 border-b border-white/5">
+            <span className="text-xs text-gray-400 font-mono truncate max-w-md">{activeFlyerList[selectedFlyerIndex]}</span>
+            <div className="flex items-center gap-6">
+              <a 
+                href={selectedFlyer} 
+                download={activeFlyerList[selectedFlyerIndex]}
+                target="_blank"
+                rel="noreferrer"
+                className="text-gray-300 hover:text-[#c5a059] text-sm font-semibold flex items-center gap-1.5 transition-colors"
+              >
+                <i className="fa-solid fa-download"></i> Download
+              </a>
               <button 
-                onClick={() => setSelectedPkg(null)} 
-                className="text-gray-400 hover:text-white text-xl"
+                onClick={() => setSelectedFlyer(null)}
+                className="text-gray-400 hover:text-white text-2xl transition-colors"
               >
                 <i className="fa-solid fa-xmark"></i>
               </button>
             </div>
+          </div>
 
-            {bookingStatus.type === 'success' ? (
-              /* Success Screen */
-              <div className="p-8 text-center flex flex-col items-center gap-4">
-                <span className="text-6xl text-green-500"><i className="fa-regular fa-circle-check"></i></span>
-                <h4 className="text-2xl font-bold text-white">Booking Placed Successfully!</h4>
-                <div className="bg-[#05080a] py-2.5 px-6 rounded border border-gray-800 text-sm">
-                  Booking Reference ID: <strong className="text-[#c5a059]">{bookingStatus.bookingId}</strong>
-                </div>
-                <p className="text-gray-400 text-sm max-w-md leading-relaxed mt-2">
-                  {bookingStatus.message}
-                </p>
-                <button 
-                  onClick={() => setSelectedPkg(null)} 
-                  className="mt-6 px-8 py-3 bg-[#c5a059] text-[#05080a] font-bold rounded hover:bg-[#b48e47] transition-all"
-                >
-                  Return to Dashboard
-                </button>
-              </div>
-            ) : (
-              /* Booking Flow Form */
-              <form onSubmit={handleCheckoutSubmit} className="p-6 flex flex-col gap-6 max-h-[80vh] overflow-y-auto">
-                
-                {/* Step 1: Rooming selection & Price Calculation */}
-                <div>
-                  <label className="block text-xs font-bold uppercase text-[#c5a059] tracking-wider mb-2">1. Select Rooming Type</label>
-                  <div className="grid grid-cols-4 gap-3">
-                    {[
-                      { type: 'sharing', label: 'Sharing', price: selectedPkg.price_sharing },
-                      { type: 'quad', label: 'Quad (4)', price: selectedPkg.price_quad },
-                      { type: 'triple', label: 'Triple (3)', price: selectedPkg.price_triple },
-                      { type: 'double', label: 'Double (2)', price: selectedPkg.price_double }
-                    ].map(room => (
-                      <button
-                        key={room.type}
-                        type="button"
-                        onClick={() => setRoomingType(room.type as any)}
-                        className={`py-3 px-1.5 rounded border text-center transition-all ${
-                          roomingType === room.type 
-                            ? 'border-[#c5a059] bg-[#c5a059]/10 text-white font-bold' 
-                            : 'border-gray-800 bg-[#05080a]/60 text-gray-400 hover:border-gray-700'
-                        }`}
-                      >
-                        <div className="text-xs">{room.label}</div>
-                        <div className="text-xs text-[#c5a059] mt-1 font-extrabold">
-                          {room.price ? `${(room.price/1000).toFixed(0)}k` : 'N/A'}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+          {/* Main image content with navigation arrows */}
+          <div className="flex-grow flex items-center justify-between relative max-h-[80vh] my-4">
+            {/* Left Nav Arrow */}
+            <button 
+              onClick={prevFlyer} 
+              disabled={selectedFlyerIndex === 0}
+              className={`absolute left-4 z-10 w-12 h-12 rounded-full flex items-center justify-center bg-black/50 text-white border border-white/10 hover:border-[#c5a059] hover:text-[#c5a059] transition-all disabled:opacity-20 disabled:pointer-events-none text-xl`}
+            >
+              <i className="fa-solid fa-chevron-left"></i>
+            </button>
 
-                {/* Step 2: Pilgrim Count */}
-                <div className="flex justify-between items-center bg-[#05080a] p-4 rounded border border-gray-800">
-                  <div>
-                    <div className="text-sm font-bold text-white">Number of Pilgrims</div>
-                    <div className="text-xs text-gray-400 mt-0.5">Adjust count to calculate total</div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <button 
-                      type="button" 
-                      onClick={() => handlePilgrimCountChange(pilgrimsCount - 1)}
-                      className="w-8 h-8 rounded bg-gray-800 text-white font-bold flex items-center justify-center hover:bg-gray-700 text-lg"
-                    >
-                      -
-                    </button>
-                    <span className="text-lg font-extrabold text-white w-6 text-center">{pilgrimsCount}</span>
-                    <button 
-                      type="button" 
-                      onClick={() => handlePilgrimCountChange(pilgrimsCount + 1)}
-                      className="w-8 h-8 rounded bg-[#c5a059] text-[#05080a] font-bold flex items-center justify-center hover:bg-[#b48e47] text-lg"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
+            {/* Central image container */}
+            <div className="w-full h-full flex items-center justify-center">
+              <img 
+                src={selectedFlyer} 
+                alt="Flyer Lightbox" 
+                className="max-h-full max-w-full object-contain shadow-2xl rounded"
+              />
+            </div>
 
-                {/* Step 3: Contact Information */}
-                <div>
-                  <label className="block text-xs font-bold uppercase text-[#c5a059] tracking-wider mb-2.5">2. Contact Details</label>
-                  <div className="grid sm:grid-cols-3 gap-4">
-                    <input
-                      type="text"
-                      placeholder="Contact Name"
-                      required
-                      value={contactInfo.name}
-                      onChange={(e) => setContactInfo(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full bg-[#05080a]/60 border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none"
-                    />
-                    <input
-                      type="email"
-                      placeholder="Contact Email"
-                      required
-                      value={contactInfo.email}
-                      onChange={(e) => setContactInfo(prev => ({ ...prev, email: e.target.value }))}
-                      className="w-full bg-[#05080a]/60 border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none"
-                    />
-                    <input
-                      type="tel"
-                      placeholder="Contact Phone"
-                      required
-                      value={contactInfo.phone}
-                      onChange={(e) => setContactInfo(prev => ({ ...prev, phone: e.target.value }))}
-                      className="w-full bg-[#05080a]/60 border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none"
-                    />
-                  </div>
-                </div>
+            {/* Right Nav Arrow */}
+            <button 
+              onClick={nextFlyer} 
+              disabled={selectedFlyerIndex === activeFlyerList.length - 1}
+              className={`absolute right-4 z-10 w-12 h-12 rounded-full flex items-center justify-center bg-black/50 text-white border border-white/10 hover:border-[#c5a059] hover:text-[#c5a059] transition-all disabled:opacity-20 disabled:pointer-events-none text-xl`}
+            >
+              <i className="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
 
-                {/* Step 4: Pilgrim Details */}
-                <div>
-                  <label className="block text-xs font-bold uppercase text-[#c5a059] tracking-wider mb-2.5">3. Pilgrim Information</label>
-                  <div className="flex flex-col gap-3 max-h-40 overflow-y-auto pr-1">
-                    {pilgrims.map((pilgrim, idx) => (
-                      <div key={idx} className="grid grid-cols-12 gap-3 items-center bg-[#05080a]/40 p-2.5 rounded border border-gray-800/80">
-                        <span className="col-span-2 text-xs font-semibold text-gray-400">P{idx + 1}:</span>
-                        <input
-                          type="text"
-                          placeholder="Full Name"
-                          required
-                          value={pilgrim.name}
-                          onChange={(e) => handlePilgrimFieldChange(idx, 'name', e.target.value)}
-                          className="col-span-5 bg-[#05080a]/60 border border-gray-800 focus:border-[#c5a059] text-white px-2 py-1.5 rounded text-xs outline-none"
-                        />
-                        <input
-                          type="text"
-                          placeholder="Passport Number"
-                          required
-                          value={pilgrim.passportNumber}
-                          onChange={(e) => handlePilgrimFieldChange(idx, 'passportNumber', e.target.value)}
-                          className="col-span-5 bg-[#05080a]/60 border border-gray-800 focus:border-[#c5a059] text-white px-2 py-1.5 rounded text-xs outline-none"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Booking Status Warnings */}
-                {bookingStatus.type === 'error' && (
-                  <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded text-xs font-semibold">
-                    {bookingStatus.message}
-                  </div>
-                )}
-
-                {/* Totals & Confirm */}
-                <div className="border-t border-[#c5a059]/15 pt-5 flex justify-between items-center">
-                  <div>
-                    <div className="text-xs text-gray-400">Total Price Calculation</div>
-                    <div className="text-xl font-black text-[#c5a059]">
-                      PKR {(getPricePerPilgrim(selectedPkg) * pilgrimsCount).toLocaleString()}
-                    </div>
-                  </div>
-                  <button
-                    type="submit"
-                    className="px-8 py-3 bg-[#c5a059] text-[#05080a] font-bold rounded hover:bg-[#b48e47] transition-all flex items-center gap-2 shadow-lg"
-                  >
-                    Confirm & Reserve <i className="fa-solid fa-credit-card"></i>
-                  </button>
-                </div>
-
-              </form>
-            )}
+          {/* Bottom indicator */}
+          <div className="text-center py-2 text-xs text-gray-500 font-bold">
+            Sheet {selectedFlyerIndex + 1} of {activeFlyerList.length}
           </div>
         </div>
       )}
-    </div>
+    </section>
+  );
+}
+
+/* PARTNER REGISTER VIEW */
+
+function PartnerRegisterView({ BACKEND_URL }: { BACKEND_URL: string }) {
+  const navigate = useNavigate();
+  const [form, setForm] = useState({
+    agencyName: '',
+    contactName: '',
+    email: '',
+    phone: '',
+    licenseNo: '',
+    address: '',
+    experience: 3,
+    bio: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [regResult, setRegResult] = useState<{ agent_id: string; agency_name: string } | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/subagents`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form)
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setRegResult({ agent_id: data.agent_id, agency_name: data.agency_name });
+      } else {
+        alert(data.error || 'Failed to submit application.');
+      }
+    } catch (err) {
+      alert('Network error. Failed to reach backend server.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <section className="py-24 bg-[#05080a] flex-grow animate-fadeIn">
+      <div className="container mx-auto px-6 max-w-3xl">
+        <div className="text-center mb-12">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-white">Partner With <span className="text-[#c5a059]">Insight Travel</span></h1>
+          <p className="text-gray-400 text-sm mt-3 max-w-xl mx-auto">
+            Grow your pilgrimage business by becoming an authorized sub-agent. Access premium rates, real-time booking, and white-label tools instantly.
+          </p>
+        </div>
+
+        <div className="bg-[#0e1217] border border-[#c5a059]/15 p-8 rounded-2xl shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-[#c5a059] to-transparent"></div>
+          
+          {regResult ? (
+            <div className="text-center py-6 flex flex-col items-center gap-4">
+              <span className="text-5xl text-green-500"><i className="fa-solid fa-circle-check"></i></span>
+              <h3 className="text-2xl font-bold text-white">Application Submitted!</h3>
+              <p className="text-gray-400 text-sm max-w-md leading-relaxed">
+                Thank you, <strong>{regResult.agency_name}</strong>. Your partner request has been registered. Reference ID: <strong className="text-[#c5a059] font-mono">{regResult.agent_id}</strong>.
+              </p>
+              <div className="bg-[#05080a] p-5 rounded-lg border border-gray-800 text-left max-w-md mt-4 text-xs text-gray-400 flex flex-col gap-2.5">
+                <div className="font-bold text-white flex items-center gap-1.5"><i className="fa-solid fa-circle-info text-[#c5a059]"></i> What happens next?</div>
+                <ol className="list-decimal pl-4 flex flex-col gap-1.5">
+                  <li>Our verification department will review your business details.</li>
+                  <li>An email containing your approval status and access keys will be dispatched.</li>
+                  <li>You can then start booking dynamic Umrah packages directly at agent commissions.</li>
+                </ol>
+              </div>
+              <button onClick={() => navigate('/')} className="mt-6 px-6 py-2.5 bg-[#c5a059] text-[#05080a] font-bold rounded">Return to Homepage</button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+              <h3 className="text-lg font-bold text-white border-b border-gray-800 pb-3 flex items-center gap-2"><i className="fa-solid fa-hotel text-[#c5a059]"></i> Agency Details Form</h3>
+              
+              <div className="grid sm:grid-cols-2 gap-5">
+                <div className="flex flex-col gap-2">
+                  <label className="text-[11px] font-bold uppercase text-[#c5a059] tracking-wider">Agency / Company Name</label>
+                  <input 
+                    type="text" 
+                    placeholder="Al-Basit Travel (Pvt) Ltd" 
+                    required 
+                    value={form.agencyName}
+                    onChange={(e) => setForm(prev => ({ ...prev, agencyName: e.target.value }))}
+                    className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3.5 py-2.5 rounded text-xs outline-none"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-[11px] font-bold uppercase text-[#c5a059] tracking-wider">Primary Contact Person</label>
+                  <input 
+                    type="text" 
+                    placeholder="Muhammad Ali" 
+                    required 
+                    value={form.contactName}
+                    onChange={(e) => setForm(prev => ({ ...prev, contactName: e.target.value }))}
+                    className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3.5 py-2.5 rounded text-xs outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-5">
+                <div className="flex flex-col gap-2">
+                  <label className="text-[11px] font-bold uppercase text-[#c5a059] tracking-wider">Business Email Address</label>
+                  <input 
+                    type="email" 
+                    placeholder="contact@agency.com" 
+                    required 
+                    value={form.email}
+                    onChange={(e) => setForm(prev => ({ ...prev, email: e.target.value }))}
+                    className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3.5 py-2.5 rounded text-xs outline-none"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-[11px] font-bold uppercase text-[#c5a059] tracking-wider">Phone / WhatsApp Number</label>
+                  <input 
+                    type="tel" 
+                    placeholder="+92 300 1234567" 
+                    required 
+                    value={form.phone}
+                    onChange={(e) => setForm(prev => ({ ...prev, phone: e.target.value }))}
+                    className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3.5 py-2.5 rounded text-xs outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-5">
+                <div className="flex flex-col gap-2">
+                  <label className="text-[11px] font-bold uppercase text-[#c5a059] tracking-wider">Business License / Registration No (Optional)</label>
+                  <input 
+                    type="text" 
+                    placeholder="DTS-LHR-9481" 
+                    value={form.licenseNo}
+                    onChange={(e) => setForm(prev => ({ ...prev, licenseNo: e.target.value }))}
+                    className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3.5 py-2.5 rounded text-xs outline-none"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-[11px] font-bold uppercase text-[#c5a059] tracking-wider">City & Country</label>
+                  <input 
+                    type="text" 
+                    placeholder="Lahore, Pakistan" 
+                    required 
+                    value={form.address}
+                    onChange={(e) => setForm(prev => ({ ...prev, address: e.target.value }))}
+                    className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3.5 py-2.5 rounded text-xs outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-[11px] font-bold uppercase text-[#c5a059] tracking-wider">Years of Experience in Hajj & Umrah Tourism</label>
+                <select 
+                  value={form.experience}
+                  onChange={(e) => setForm(prev => ({ ...prev, experience: parseInt(e.target.value) }))}
+                  className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-gray-300 px-3.5 py-2.5 rounded text-xs outline-none"
+                >
+                  <option value={0}>Less than 1 year</option>
+                  <option value={1}>1 - 2 Years</option>
+                  <option value={3}>3 - 5 Years</option>
+                  <option value={5}>5 - 10 Years</option>
+                  <option value={10}>10+ Years</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-[11px] font-bold uppercase text-[#c5a059] tracking-wider">Brief Agency Profile / Description</label>
+                <textarea 
+                  rows={4} 
+                  placeholder="Tell us about your agency, number of monthly pilgrims you handle..." 
+                  value={form.bio}
+                  onChange={(e) => setForm(prev => ({ ...prev, bio: e.target.value }))}
+                  className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3.5 py-2.5 rounded text-xs outline-none"
+                />
+              </div>
+
+              <button 
+                type="submit" 
+                disabled={loading}
+                className="w-full py-3.5 bg-[#c5a059] text-[#05080a] font-bold rounded hover:bg-[#b48e47] transition-all flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <><i className="fa-solid fa-circle-notch fa-spin"></i> Submitting Request...</>
+                ) : (
+                  'Submit Registration Application'
+                )}
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* STAFF BI DASHBOARD VIEW Component */
+function DashboardView({ dashboardStats, bookings, inquiries }: any) {
+  return (
+    <section className="py-16 bg-[#05080a] flex-grow text-gray-100 animate-fadeIn">
+      <div className="container mx-auto px-6 max-w-7xl">
+        <div className="bg-gradient-to-r from-[#0e1217] to-[#080b0f] border border-[#c5a059]/15 rounded-xl p-8 mb-12">
+          <div className="flex items-center gap-2.5 text-xs text-[#c5a059] font-bold uppercase tracking-wider mb-2">
+            <span>Staff Portal</span>
+            <span><i className="fa-solid fa-chevron-right text-[10px]"></i></span>
+            <span>BI Dashboard</span>
+          </div>
+          <h2 className="text-3xl font-serif text-white font-bold">Business Intelligence Display</h2>
+          <p className="text-gray-400 text-sm mt-1">Real-time sales tracking, commission logs, booking distributions, and lead metrics.</p>
+        </div>
+
+        {/* KPI Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
+          <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden group">
+            <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-coins"></i></div>
+            <div className="text-xs font-bold uppercase tracking-wider text-gray-400">Total Sales Value</div>
+            <div className="text-2xl font-black text-[#c5a059] mt-2">PKR {dashboardStats.totalSales.toLocaleString()}</div>
+          </div>
+          <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden group">
+            <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-percent"></i></div>
+            <div className="text-xs font-bold uppercase tracking-wider text-gray-400">Est. Commissions</div>
+            <div className="text-2xl font-black text-green-400 mt-2">PKR {dashboardStats.totalCommissions.toLocaleString()}</div>
+          </div>
+          <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden group">
+            <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-receipt"></i></div>
+            <div className="text-xs font-bold uppercase tracking-wider text-gray-400">Bookings Logged</div>
+            <div className="text-2xl font-black text-white mt-2">{dashboardStats.bookingsCount}</div>
+          </div>
+          <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden group">
+            <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-envelope-open-text"></i></div>
+            <div className="text-xs font-bold uppercase tracking-wider text-gray-400">Lead Inquiries</div>
+            <div className="text-2xl font-black text-blue-400 mt-2">{dashboardStats.inquiriesCount}</div>
+          </div>
+          <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden group">
+            <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-box-open"></i></div>
+            <div className="text-xs font-bold uppercase tracking-wider text-gray-400">Tour Offerings</div>
+            <div className="text-2xl font-black text-purple-400 mt-2">{dashboardStats.packagesCount}</div>
+          </div>
+        </div>
+
+        {/* Charts and Booking logs tables */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+          {/* Chart 1: Sales by Departure City */}
+          <div className="bg-[#0e1217] p-6 rounded-xl border border-gray-800">
+            <h3 className="text-base font-bold text-white mb-6 flex items-center gap-2">
+              <i className="fa-solid fa-chart-simple text-[#c5a059]"></i> Sales Volume by Departure City
+            </h3>
+            <div className="flex flex-col gap-4">
+              {(() => {
+                const cities = ['Lahore', 'Islamabad', 'Faisalabad', 'Peshawar', 'Multan', 'Sialkot'];
+                const citySales = bookings.reduce((acc: any, b: any) => {
+                  const cityName = b.packageName.includes('Lahore') ? 'Lahore' :
+                                   b.packageName.includes('Islamabad') ? 'Islamabad' :
+                                   b.packageName.includes('Faisalabad') ? 'Faisalabad' :
+                                   b.packageName.includes('Peshawar') ? 'Peshawar' :
+                                   b.packageName.includes('Multan') ? 'Multan' :
+                                   b.packageName.includes('Sialkot') ? 'Sialkot' : 'Other';
+                  acc[cityName] = (acc[cityName] || 0) + (b.totalPrice || 0);
+                  return acc;
+                }, {});
+
+                const maxSale = Math.max(...cities.map(c => citySales[c] || 0), 1);
+
+                return cities.map(city => {
+                  const value = citySales[city] || 0;
+                  const percentage = (value / maxSale) * 100;
+                  return (
+                    <div key={city} className="flex flex-col gap-1.5">
+                      <div className="flex justify-between text-xs">
+                        <span className="font-bold text-gray-300">{city}</span>
+                        <span className="text-[#c5a059] font-black">PKR {value.toLocaleString()}</span>
+                      </div>
+                      <div className="w-full bg-gray-900 rounded-full h-3 overflow-hidden border border-gray-800">
+                        <div 
+                          className="bg-gradient-to-r from-[#c5a059] to-[#e2c98a] h-full rounded-full transition-all duration-1000"
+                          style={{ width: `${percentage}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          </div>
+
+          {/* Chart 2: Rooming Preference */}
+          <div className="bg-[#0e1217] p-6 rounded-xl border border-gray-800 flex flex-col justify-between">
+            <div>
+              <h3 className="text-base font-bold text-white mb-6 flex items-center gap-2">
+                <i className="fa-solid fa-chart-pie text-[#c5a059]"></i> Rooming Option Preferences
+              </h3>
+              {(() => {
+                const dist = bookings.reduce((acc: any, b: any) => {
+                  const rt = b.roomingType || 'sharing';
+                  acc[rt] = (acc[rt] || 0) + 1;
+                  return acc;
+                }, { sharing: 0, quad: 0, triple: 0, double: 0 });
+
+                const totalCount = bookings.length || 1;
+                const items = [
+                  { type: 'sharing', label: 'Sharing', count: dist.sharing, color: '#c5a059' },
+                  { type: 'quad', label: 'Quad Room', count: dist.quad, color: '#38bdf8' },
+                  { type: 'triple', label: 'Triple Room', count: dist.triple, color: '#a855f7' },
+                  { type: 'double', label: 'Double Room', count: dist.double, color: '#f43f5e' }
+                ];
+
+                return (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
+                    {items.map(item => {
+                      const pct = ((item.count / totalCount) * 100).toFixed(0);
+                      return (
+                        <div key={item.type} className="bg-[#05080a] p-4 rounded-lg border border-gray-800 text-center flex flex-col items-center">
+                          <div className="w-3.5 h-3.5 rounded-full mb-2" style={{ backgroundColor: item.color }}></div>
+                          <span className="text-xs text-gray-400 font-semibold">{item.label}</span>
+                          <span className="text-xl font-bold mt-1 text-white">{item.count}</span>
+                          <span className="text-[10px] text-gray-500 font-bold">{pct}%</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+            <div className="text-center text-xs text-gray-500 border-t border-gray-800/60 pt-4 mt-6">
+              Based on active checkout database records.
+            </div>
+          </div>
+        </div>
+
+        {/* Live Sales Bookings Table */}
+        <div className="bg-[#0e1217] p-6 rounded-xl border border-gray-800 mb-12 overflow-hidden">
+          <h3 className="text-base font-bold text-white mb-6 flex items-center gap-2">
+            <i className="fa-solid fa-list text-[#c5a059]"></i> Live Sales Booking Logs
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-gray-800 text-gray-400 uppercase font-extrabold tracking-wider">
+                  <th className="py-3 px-4">Booking ID</th>
+                  <th className="py-3 px-4">Contact</th>
+                  <th className="py-3 px-4">Package</th>
+                  <th className="py-3 px-4">Rooming</th>
+                  <th className="py-3 px-4 text-center">Pilgrims</th>
+                  <th className="py-3 px-4 text-right">Total Price</th>
+                  <th className="py-3 px-4 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-800 text-gray-300">
+                {bookings.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-8 text-center text-gray-500">No active bookings registered yet.</td>
+                  </tr>
+                ) : (
+                  bookings.map((booking: any, bIdx: number) => (
+                    <tr key={booking._id || bIdx} className="hover:bg-gray-900/40">
+                      <td className="py-3.5 px-4 font-mono text-[#c5a059] font-bold">{booking._id ? booking._id.substring(18) : `B-${1000+bIdx}`}</td>
+                      <td className="py-3.5 px-4">
+                        <div className="font-bold text-white">{booking.contact.name}</div>
+                        <div className="text-[10px] text-gray-500">{booking.contact.phone}</div>
+                      </td>
+                      <td className="py-3.5 px-4 font-semibold">{booking.packageName}</td>
+                      <td className="py-3.5 px-4 capitalize">{booking.roomingType}</td>
+                      <td className="py-3.5 px-4 text-center font-bold text-white">{booking.pilgrimsCount}</td>
+                      <td className="py-3.5 px-4 text-right font-black text-[#c5a059]">PKR {booking.totalPrice.toLocaleString()}</td>
+                      <td className="py-3.5 px-4 text-center">
+                        <span className="px-2 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 font-bold uppercase tracking-wider text-[9px]">
+                          {booking.status || 'Pending Payment'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Inquiries table */}
+        <div className="bg-[#0e1217] p-6 rounded-xl border border-gray-800 overflow-hidden">
+          <h3 className="text-base font-bold text-white mb-6 flex items-center gap-2">
+            <i className="fa-solid fa-envelope-open-text text-[#c5a059]"></i> Live Inquiries Received
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-gray-800 text-gray-400 uppercase font-extrabold tracking-wider">
+                  <th className="py-3 px-4">Date</th>
+                  <th className="py-3 px-4">Inquirer Name</th>
+                  <th className="py-3 px-4">Contact</th>
+                  <th className="py-3 px-4">Service Interest</th>
+                  <th className="py-3 px-4">Message</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-800 text-gray-300">
+                {inquiries.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-gray-500">No customer inquiries logged yet.</td>
+                  </tr>
+                ) : (
+                  inquiries.map((inquiry: any, iIdx: number) => (
+                    <tr key={inquiry._id || iIdx} className="hover:bg-gray-900/40">
+                      <td className="py-3.5 px-4 text-gray-500 font-semibold">{inquiry.createdAt ? new Date(inquiry.createdAt).toLocaleDateString() : '06/04/2026'}</td>
+                      <td className="py-3.5 px-4 font-bold text-white">{inquiry.name}</td>
+                      <td className="py-3.5 px-4">
+                        <div>{inquiry.phone}</div>
+                        <div className="text-[10px] text-gray-500">{inquiry.email}</div>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className="px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold uppercase tracking-wider text-[9px]">
+                          {inquiry.service}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-gray-400 max-w-xs truncate" title={inquiry.message}>{inquiry.message}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* SALES PORTAL VIEW Component (Migrated from manage_packages.php) */
+function SalesPortalView({ packages, subagents, bookings, BACKEND_URL, setSubagents, setPackages }: any) {
+  const [activeTab, setActiveTab] = useState<'rates' | 'agents' | 'sales'>('rates');
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  // Rate edit modal states
+  const [editingPkg, setEditingPkg] = useState<UmrahPackage | null>(null);
+  const [rateForm, setRateForm] = useState({
+    price_sharing: 0,
+    price_quad: 0,
+    price_triple: 0,
+    price_double: 0,
+    price_single: 0
+  });
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleStatusUpdate = async (agentId: string, status: string) => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/subagents/${agentId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setSubagents((prev: SubAgent[]) => prev.map(a => a.name === agentId ? { ...a, status } : a));
+      } else {
+        alert(data.error || 'Failed to update status.');
+      }
+    } catch (err) {
+      alert('Error updating agent status.');
+    }
+  };
+
+  const openRateModal = (pkg: UmrahPackage) => {
+    setEditingPkg(pkg);
+    setRateForm({
+      price_sharing: pkg.price_sharing || 0,
+      price_quad: pkg.price_quad || 0,
+      price_triple: pkg.price_triple || 0,
+      price_double: pkg.price_double || 0,
+      price_single: pkg.price_single || 0
+    });
+  };
+
+  const handleRateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPkg) return;
+    setIsSyncing(true);
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/packages/${editingPkg._id || editingPkg.title}/rates`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(rateForm)
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setPackages((prev: UmrahPackage[]) => prev.map(p => (p._id === editingPkg._id || p.title === editingPkg.title) ? { ...p, ...rateForm, price: `PKR ${rateForm.price_sharing.toLocaleString()}` } : p));
+        setEditingPkg(null);
+      } else {
+        alert(data.error || 'Failed to sync rates.');
+      }
+    } catch (err) {
+      alert('Error connecting to backend server.');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  // Stats Calculations
+  const approvedAgentsCount = subagents.filter((a: SubAgent) => a.status === 'Approved').length;
+  const totalBillings = bookings.reduce((sum: number, b: any) => sum + (b.totalPrice || 0), 0);
+  const totalCommissions = totalBillings * 0.05;
+
+  return (
+    <section className="py-16 bg-[#05080a] flex-grow text-gray-100 animate-fadeIn">
+      <div className="container mx-auto px-6 max-w-7xl">
+        <div className="bg-gradient-to-r from-[#0e1217] to-[#080b0f] border border-[#c5a059]/15 rounded-xl p-8 mb-12">
+          <div className="flex items-center gap-2.5 text-xs text-[#c5a059] font-bold uppercase tracking-wider mb-2">
+            <span>Staff Portal</span>
+            <span><i className="fa-solid fa-chevron-right text-[10px]"></i></span>
+            <span>Sales Portal Dashboard</span>
+          </div>
+          <h2 className="text-3xl font-serif text-white font-bold">Sales & Partner Administration</h2>
+          <p className="text-gray-400 text-sm mt-1">Manage package rates, approve sub-agents, and track sales commissions.</p>
+        </div>
+
+        {/* Tabs Row */}
+        <div className="flex gap-4 border-b border-gray-800 pb-3 mb-8">
+          <button 
+            onClick={() => { setActiveTab('rates'); setSearchTerm(''); }}
+            className={`px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded border transition-all ${
+              activeTab === 'rates' ? 'bg-[#c5a059] text-[#05080a]' : 'bg-transparent text-gray-400 border-transparent hover:text-white'
+            }`}
+          >
+            <i className="fa-solid fa-tags mr-2"></i> Package Pricing
+          </button>
+          <button 
+            onClick={() => { setActiveTab('agents'); setSearchTerm(''); }}
+            className={`px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded border transition-all ${
+              activeTab === 'agents' ? 'bg-[#c5a059] text-[#05080a]' : 'bg-transparent text-gray-400 border-transparent hover:text-white'
+            }`}
+          >
+            <i className="fa-solid fa-users mr-2"></i> Sub-Agents List
+          </button>
+          <button 
+            onClick={() => { setActiveTab('sales'); setSearchTerm(''); }}
+            className={`px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded border transition-all ${
+              activeTab === 'sales' ? 'bg-[#c5a059] text-[#05080a]' : 'bg-transparent text-gray-400 border-transparent hover:text-white'
+            }`}
+          >
+            <i className="fa-solid fa-chart-line mr-2"></i> Sales & Commissions
+          </button>
+        </div>
+
+        {/* Tab Search */}
+        <div className="relative max-w-sm mb-6">
+          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+            <i className="fa-solid fa-magnifying-glass text-xs"></i>
+          </span>
+          <input
+            type="text"
+            placeholder="Search active tab..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-[#0e1217] border border-gray-800 focus:border-[#c5a059] text-white pl-9 pr-4 py-2.5 rounded text-xs outline-none transition-all placeholder:text-gray-600"
+          />
+        </div>
+
+        {/* TAB 1: PRICING */}
+        {activeTab === 'rates' && (
+          <div className="bg-[#0e1217] border border-gray-800 rounded-xl overflow-hidden shadow-lg">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead className="bg-[#05080a] border-b border-gray-800 text-gray-400 uppercase font-bold">
+                  <tr>
+                    <th className="py-3.5 px-4">Package Name</th>
+                    <th className="py-3.5 px-4">Sharing</th>
+                    <th className="py-3.5 px-4">Quad</th>
+                    <th className="py-3.5 px-4">Triple</th>
+                    <th className="py-3.5 px-4">Double</th>
+                    <th className="py-3.5 px-4">Single</th>
+                    <th className="py-3.5 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-800 text-gray-300">
+                  {packages
+                    .filter((p: any) => p.title.toLowerCase().includes(searchTerm.toLowerCase()))
+                    .map((pkg: any, idx: number) => (
+                      <tr key={pkg._id || idx} className="hover:bg-gray-900/40">
+                        <td className="py-4 px-4 font-bold text-white">{pkg.title}</td>
+                        <td className="py-4 px-4 font-semibold text-[#c5a059]">{pkg.price_sharing ? `PKR ${pkg.price_sharing.toLocaleString()}` : 'N/A'}</td>
+                        <td className="py-4 px-4">{pkg.price_quad ? `PKR ${pkg.price_quad.toLocaleString()}` : 'N/A'}</td>
+                        <td className="py-4 px-4">{pkg.price_triple ? `PKR ${pkg.price_triple.toLocaleString()}` : 'N/A'}</td>
+                        <td className="py-4 px-4">{pkg.price_double ? `PKR ${pkg.price_double.toLocaleString()}` : 'N/A'}</td>
+                        <td className="py-4 px-4">{pkg.price_single ? `PKR ${pkg.price_single.toLocaleString()}` : 'N/A'}</td>
+                        <td className="py-4 px-4 text-right">
+                          <button 
+                            onClick={() => openRateModal(pkg)}
+                            className="px-3 py-1.5 bg-[#c5a059]/10 border border-[#c5a059]/25 text-[#c5a059] rounded font-bold hover:bg-[#c5a059] hover:text-[#05080a] transition-all"
+                          >
+                            Edit Rates
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: SUB-AGENTS */}
+        {activeTab === 'agents' && (
+          <div className="bg-[#0e1217] border border-gray-800 rounded-xl overflow-hidden shadow-lg">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead className="bg-[#05080a] border-b border-gray-800 text-gray-400 uppercase font-bold">
+                  <tr>
+                    <th className="py-3.5 px-4">Agency Details</th>
+                    <th className="py-3.5 px-4">Contact Person</th>
+                    <th className="py-3.5 px-4">Location</th>
+                    <th className="py-3.5 px-4">Experience</th>
+                    <th className="py-3.5 px-4">Status</th>
+                    <th className="py-3.5 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-800 text-gray-300">
+                  {subagents.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-8 text-center text-gray-500">No partner registrations registered.</td>
+                    </tr>
+                  ) : (
+                    subagents
+                      .filter((s: SubAgent) => s.agencyName.toLowerCase().includes(searchTerm.toLowerCase()) || s.contactName.toLowerCase().includes(searchTerm.toLowerCase()))
+                      .map((agent: SubAgent, idx: number) => (
+                        <tr key={agent.name || idx} className="hover:bg-gray-900/40">
+                          <td className="py-4 px-4">
+                            <div className="font-bold text-white">{agent.agencyName}</div>
+                            <div className="text-[10px] text-gray-500 font-mono mt-0.5">{agent.name}</div>
+                          </td>
+                          <td className="py-4 px-4">
+                            <div className="font-semibold">{agent.contactName}</div>
+                            <div className="text-[10px] text-gray-500">{agent.email} &bull; {agent.phone}</div>
+                          </td>
+                          <td className="py-4 px-4">{agent.address}</td>
+                          <td className="py-4 px-4 font-semibold">{agent.experience} Years</td>
+                          <td className="py-4 px-4">
+                            <span className={`px-2 py-0.5 rounded-full font-bold text-[9px] uppercase border ${
+                              agent.status === 'Approved' ? 'bg-green-500/10 border-green-500/20 text-green-400' :
+                              agent.status === 'Suspended' ? 'bg-red-500/10 border-red-500/20 text-red-400' :
+                              'bg-yellow-500/10 border-yellow-500/20 text-yellow-400'
+                            }`}>
+                              {agent.status}
+                            </span>
+                          </td>
+                          <td className="py-4 px-4 text-right flex gap-2 justify-end">
+                            {agent.status !== 'Approved' && (
+                              <button 
+                                onClick={() => handleStatusUpdate(agent.name, 'Approved')}
+                                className="px-2.5 py-1 bg-green-500/10 border border-green-500/25 text-green-400 rounded hover:bg-green-500 hover:text-white transition-all font-semibold"
+                              >
+                                Approve
+                              </button>
+                            )}
+                            {agent.status !== 'Suspended' && (
+                              <button 
+                                onClick={() => handleStatusUpdate(agent.name, 'Suspended')}
+                                className="px-2.5 py-1 bg-red-500/10 border border-red-500/25 text-red-400 rounded hover:bg-red-500 hover:text-white transition-all font-semibold"
+                              >
+                                Suspend
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: SALES & COMMISSIONS */}
+        {activeTab === 'sales' && (
+          <div className="flex flex-col gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
+              <div className="bg-[#0e1217] border border-gray-800 p-6 rounded-xl text-center">
+                <div className="text-xs text-gray-400 uppercase font-bold tracking-wider">Active Partners</div>
+                <div className="text-3xl font-black text-white mt-2">{approvedAgentsCount}</div>
+              </div>
+              <div className="bg-[#0e1217] border border-gray-800 p-6 rounded-xl text-center">
+                <div className="text-xs text-gray-400 uppercase font-bold tracking-wider">B2B Bookings</div>
+                <div className="text-3xl font-black text-[#c5a059] mt-2">{bookings.length}</div>
+              </div>
+              <div className="bg-[#0e1217] border border-gray-800 p-6 rounded-xl text-center">
+                <div className="text-xs text-gray-400 uppercase font-bold tracking-wider">Company Billings</div>
+                <div className="text-3xl font-black text-green-400 mt-2">PKR {totalBillings.toLocaleString()}</div>
+              </div>
+              <div className="bg-[#0e1217] border border-gray-800 p-6 rounded-xl text-center">
+                <div className="text-xs text-gray-400 uppercase font-bold tracking-wider">Est. Commissions</div>
+                <div className="text-3xl font-black text-blue-400 mt-2">PKR {totalCommissions.toLocaleString()}</div>
+              </div>
+            </div>
+
+
+            <div className="bg-[#0e1217] border border-gray-800 rounded-xl overflow-hidden shadow-lg">
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-[#05080a] border-b border-gray-800 text-gray-400 uppercase font-bold">
+                    <tr>
+                      <th className="py-3.5 px-4">Booking Ref</th>
+                      <th className="py-3.5 px-4">Customer</th>
+                      <th className="py-3.5 px-4">Package</th>
+                      <th className="py-3.5 px-4 text-right">Base Cost</th>
+                      <th className="py-3.5 px-4 text-center">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-800 text-gray-300">
+                    {bookings.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="py-8 text-center text-gray-500">No bookings logged.</td>
+                      </tr>
+                    ) : (
+                      bookings
+                        .filter((b: any) => b.packageName.toLowerCase().includes(searchTerm.toLowerCase()) || b.contact.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                        .map((b: any, idx: number) => (
+                          <tr key={b._id || idx} className="hover:bg-gray-900/40">
+                            <td className="py-4 px-4 font-mono text-[#c5a059] font-bold">{b._id ? b._id.substring(18) : `B-${idx}`}</td>
+                            <td className="py-4 px-4">
+                              <div className="font-bold text-white">{b.contact.name}</div>
+                              <div className="text-[10px] text-gray-500">Passport: {b.pilgrims[0]?.passportNumber || 'N/A'}</div>
+                            </td>
+                            <td className="py-4 px-4">{b.packageName}</td>
+                            <td className="py-4 px-4 text-right font-black text-white">PKR {b.totalPrice.toLocaleString()}</td>
+                            <td className="py-4 px-4 text-center">
+                              <span className="px-2 py-0.5 rounded bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 font-bold text-[9px]">
+                                {b.status || 'Pending Payment'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* RATE EDIT MODAL */}
+      {editingPkg && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-[#0e1217] w-full max-w-md rounded-xl border border-[#c5a059]/20 shadow-2xl overflow-hidden animate-fadeIn">
+            <div className="bg-[#05080a] py-4 px-6 border-b border-[#c5a059]/15 flex justify-between items-center">
+              <div>
+                <span className="text-xs text-[#c5a059] font-bold uppercase tracking-widest">Pricing Console</span>
+                <h3 className="text-base font-bold text-white mt-0.5">Update Package Rates</h3>
+              </div>
+              <button onClick={() => setEditingPkg(null)} className="text-gray-400 hover:text-white text-xl">&times;</button>
+            </div>
+
+            <form onSubmit={handleRateSubmit} className="p-6 flex flex-col gap-4">
+              <div className="bg-[#05080a] p-3 rounded border border-gray-800 text-xs text-gray-400 mb-2">
+                <div>Modifying rates for:</div>
+                <strong className="text-white text-sm">{editingPkg.title}</strong>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Sharing Price</label>
+                  <input 
+                    type="number" 
+                    value={rateForm.price_sharing} 
+                    onChange={(e) => setRateForm(prev => ({ ...prev, price_sharing: parseInt(e.target.value) }))}
+                    className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none" 
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Quad Price</label>
+                  <input 
+                    type="number" 
+                    value={rateForm.price_quad} 
+                    onChange={(e) => setRateForm(prev => ({ ...prev, price_quad: parseInt(e.target.value) }))}
+                    className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none" 
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Triple Price</label>
+                  <input 
+                    type="number" 
+                    value={rateForm.price_triple} 
+                    onChange={(e) => setRateForm(prev => ({ ...prev, price_triple: parseInt(e.target.value) }))}
+                    className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none" 
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Double Price</label>
+                  <input 
+                    type="number" 
+                    value={rateForm.price_double} 
+                    onChange={(e) => setRateForm(prev => ({ ...prev, price_double: parseInt(e.target.value) }))}
+                    className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none" 
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Single Price</label>
+                <input 
+                  type="number" 
+                  value={rateForm.price_single} 
+                  onChange={(e) => setRateForm(prev => ({ ...prev, price_single: parseInt(e.target.value) }))}
+                  className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none" 
+                />
+              </div>
+
+              <button 
+                type="submit" 
+                disabled={isSyncing}
+                className="w-full py-3 bg-[#c5a059] text-[#05080a] font-bold rounded mt-4"
+              >
+                {isSyncing ? 'Syncing...' : 'Save Real-time Sync'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }

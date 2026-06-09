@@ -13,6 +13,15 @@ app.use(cors());
 app.use(express.json());
 app.use('/scraped_packages', express.static(path.join(__dirname, 'public/scraped_packages')));
 
+const fs = require('fs');
+const uploadedFilesPath = fs.existsSync(path.join(__dirname, 'uploaded-files'))
+  ? path.join(__dirname, 'uploaded-files')
+  : (fs.existsSync(path.join(__dirname, '../uploadded-files'))
+      ? path.join(__dirname, '../uploadded-files')
+      : path.join(__dirname, 'uploadded-files'));
+app.use('/uploaded-files', express.static(uploadedFilesPath));
+
+
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)
   .then(async () => {
@@ -56,7 +65,8 @@ const UmrahPackageSchema = new mongoose.Schema({
   price_sharing: { type: Number },
   price_quad: { type: Number },
   price_triple: { type: Number },
-  price_double: { type: Number }
+  price_double: { type: Number },
+  price_single: { type: Number }
 });
 
 const UmrahPackage = mongoose.model('UmrahPackage', UmrahPackageSchema);
@@ -82,7 +92,24 @@ const BookingSchema = new mongoose.Schema({
 
 const Booking = mongoose.model('Booking', BookingSchema);
 
+const SubAgentSchema = new mongoose.Schema({
+  name: { type: String, unique: true },
+  agencyName: { type: String, required: true },
+  contactName: { type: String, required: true },
+  email: { type: String, required: true },
+  phone: { type: String, required: true },
+  licenseNo: { type: String },
+  address: { type: String, required: true },
+  experience: { type: Number, required: true },
+  bio: { type: String },
+  status: { type: String, default: 'Pending' },
+  createdAt: { type: Date, default: Date.now }
+});
+
+const SubAgent = mongoose.model('SubAgent', SubAgentSchema);
+
 // API Routes
+
 
 // 1. Get all packages
 app.get('/api/packages', async (req, res) => {
@@ -145,7 +172,6 @@ app.post('/api/packages/seed', async (req, res) => {
           "Buffet breakfast & dinner included",
           "Guided Ziyarat tours in Makkah & Madinah"
         ],
-        image: "https://meezabgroup.com/wp-content/uploads/2025/07/Lahore-Group-Pkgs_page-0001.jpg",
         price_sharing: 274850,
         price_quad: 283475,
         price_triple: 290950,
@@ -169,7 +195,6 @@ app.post('/api/packages/seed', async (req, res) => {
           "Catering plans available on request",
           "Complete historical Ziyarat guided program"
         ],
-        image: "https://meezabgroup.com/wp-content/uploads/2025/07/Islamabad-Group-Pkg-_page-0001.jpg",
         price_sharing: 312800,
         price_quad: 324875,
         price_triple: 345575,
@@ -275,10 +300,116 @@ app.get('/api/bookings', async (req, res) => {
   }
 });
 
+// 7. Verify staff credentials
+app.post('/api/auth/login', (req, res) => {
+  const { password } = req.body;
+  const expectedPassword = process.env.STAFF_PASSWORD || 'admin123';
+  if (password === expectedPassword) {
+    return res.json({ success: true, token: 'staff-session-token' });
+  }
+  return res.status(401).json({ success: false, error: 'Invalid portal password.' });
+});
+
+// 8. Submit partner sub-agent registration
+app.post('/api/subagents', async (req, res) => {
+  try {
+    const { agencyName, contactName, email, phone, licenseNo, address, experience, bio } = req.body;
+    if (!agencyName || !contactName || !email || !phone || !address || experience === undefined) {
+      return res.status(400).json({ error: 'Missing required subagent fields.' });
+    }
+    const count = await SubAgent.countDocuments({});
+    const year = new Date().getFullYear();
+    const agentId = `AGT-${year}-${String(count + 1).padStart(4, '0')}`;
+
+    const newAgent = new SubAgent({
+      name: agentId,
+      agencyName,
+      contactName,
+      email,
+      phone,
+      licenseNo,
+      address,
+      experience,
+      bio
+    });
+    await newAgent.save();
+
+    res.status(201).json({
+      success: true,
+      agent_id: agentId,
+      agency_name: agencyName,
+      message: 'Sub-agent registration application received.'
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to submit agent application: ' + error.message });
+  }
+});
+
+// 9. Get all sub-agents (staff only)
+app.get('/api/subagents', async (req, res) => {
+  try {
+    const agents = await SubAgent.find({}).sort({ createdAt: -1 });
+    res.json(agents);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to retrieve sub-agents.' });
+  }
+});
+
+// 10. Update sub-agent status (staff only)
+app.put('/api/subagents/:id/status', async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!['Approved', 'Suspended', 'Pending'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status value.' });
+    }
+    const agent = await SubAgent.findOneAndUpdate({ name: req.params.id }, { status }, { new: true });
+    if (!agent) {
+      return res.status(404).json({ error: 'Sub-agent not found.' });
+    }
+    res.json({ success: true, agent });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update agent status: ' + error.message });
+  }
+});
+
+// 11. Update package rates (staff only)
+app.put('/api/packages/:code/rates', async (req, res) => {
+  try {
+    const { price_sharing, price_quad, price_triple, price_double, price_single } = req.body;
+    
+    // Find by ID first, then by title
+    let pkg = await UmrahPackage.findById(req.params.code);
+    if (!pkg) {
+      pkg = await UmrahPackage.findOne({ title: req.params.code });
+    }
+    
+    if (!pkg) {
+      return res.status(404).json({ error: 'Package not found.' });
+    }
+    
+    if (price_sharing !== undefined) pkg.price_sharing = price_sharing;
+    if (price_quad !== undefined) pkg.price_quad = price_quad;
+    if (price_triple !== undefined) pkg.price_triple = price_triple;
+    if (price_double !== undefined) pkg.price_double = price_double;
+    if (price_single !== undefined) pkg.price_single = price_single;
+    
+    // Auto-update standard price text
+    if (price_sharing !== undefined) {
+      pkg.price = `PKR ${price_sharing.toLocaleString()}`;
+    }
+    
+    await pkg.save();
+    res.json({ success: true, package: pkg });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update rates: ' + error.message });
+  }
+});
+
 // Root Route
 app.get('/', (req, res) => {
   res.send('Insight Travel & Tourism Backend API is running.');
 });
+
 
 // Start Server
 app.listen(PORT, () => {
