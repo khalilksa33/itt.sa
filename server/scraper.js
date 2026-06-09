@@ -9,12 +9,12 @@ async function runScraper(UmrahPackage) {
     // Resolve the local directory path, checking both parent (local) and child (container) path options
     let targetDir = '';
     const pathsToTry = [
-      path.join(__dirname, 'uploaded-files/Meezab Packages'),
-      path.join(__dirname, 'uploaded-files/meezab packages'),
-      path.join(__dirname, '../uploaded-files/Meezab Packages'),
-      path.join(__dirname, '../uploaded-files/meezab packages'),
-      '/app/uploaded-files/Meezab Packages',
-      '/app/uploaded-files/meezab packages'
+      path.join(__dirname, 'uploadded-files/umrah packages'),
+      path.join(__dirname, 'uploaded-files/umrah packages'),
+      path.join(__dirname, '../uploadded-files/umrah packages'),
+      path.join(__dirname, '../uploaded-files/umrah packages'),
+      '/app/uploadded-files/umrah packages',
+      '/app/uploaded-files/umrah packages'
     ];
 
     for (const p of pathsToTry) {
