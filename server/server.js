@@ -77,6 +77,15 @@ const BookingSchema = new mongoose.Schema({
   roomingType: { type: String, required: true }, // 'sharing', 'quad', 'triple', 'double'
   pilgrimsCount: { type: Number, required: true },
   totalPrice: { type: Number, required: true },
+  partnerId: { type: String }, // optional sub-agent linking
+  isCustomized: { type: Boolean, default: false },
+  customServices: {
+    visa: { type: Boolean, default: true },
+    tickets: { type: Boolean, default: true },
+    ground: { type: Boolean, default: true },
+    catering: { type: Boolean, default: true },
+    accommodation: { type: Boolean, default: true }
+  },
   contact: {
     name: { type: String, required: true },
     email: { type: String, required: true },
@@ -103,6 +112,7 @@ const SubAgentSchema = new mongoose.Schema({
   experience: { type: Number, required: true },
   bio: { type: String },
   status: { type: String, default: 'Pending' },
+  jvConsent: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -270,7 +280,7 @@ app.post('/api/packages/scrape', async (req, res) => {
 // 5. Submit a booking (Checkout)
 app.post('/api/bookings', async (req, res) => {
   try {
-    const { packageId, packageName, roomingType, pilgrimsCount, totalPrice, contact, pilgrims } = req.body;
+    const { packageId, packageName, roomingType, pilgrimsCount, totalPrice, contact, pilgrims, partnerId, isCustomized, customServices } = req.body;
     if (!packageId || !packageName || !roomingType || !pilgrimsCount || !totalPrice || !contact || !pilgrims) {
       return res.status(400).json({ error: 'Missing required checkout information.' });
     }
@@ -280,6 +290,15 @@ app.post('/api/bookings', async (req, res) => {
       roomingType,
       pilgrimsCount,
       totalPrice,
+      partnerId,
+      isCustomized: !!isCustomized,
+      customServices: customServices || {
+        visa: true,
+        tickets: true,
+        ground: true,
+        catering: true,
+        accommodation: true
+      },
       contact,
       pilgrims
     });
@@ -313,7 +332,7 @@ app.post('/api/auth/login', (req, res) => {
 // 8. Submit partner sub-agent registration
 app.post('/api/subagents', async (req, res) => {
   try {
-    const { agencyName, contactName, email, phone, licenseNo, address, experience, bio } = req.body;
+    const { agencyName, contactName, email, phone, licenseNo, address, experience, bio, jvConsent } = req.body;
     if (!agencyName || !contactName || !email || !phone || !address || experience === undefined) {
       return res.status(400).json({ error: 'Missing required subagent fields.' });
     }
@@ -330,7 +349,8 @@ app.post('/api/subagents', async (req, res) => {
       licenseNo,
       address,
       experience,
-      bio
+      bio,
+      jvConsent: !!jvConsent
     });
     await newAgent.save();
 
@@ -402,6 +422,60 @@ app.put('/api/packages/:code/rates', async (req, res) => {
     res.json({ success: true, package: pkg });
   } catch (error) {
     res.status(500).json({ error: 'Failed to update rates: ' + error.message });
+  }
+});
+
+// 12. Partner Login for Dashboard
+app.post('/api/partner/login', async (req, res) => {
+  try {
+    const { agentId, phone } = req.body;
+    if (!agentId || !phone) {
+      return res.status(400).json({ error: 'Agent ID and Phone number are required.' });
+    }
+    const agent = await SubAgent.findOne({ name: agentId, phone: phone });
+    if (!agent) {
+      return res.status(401).json({ error: 'Invalid partner credentials.' });
+    }
+    if (agent.status !== 'Approved') {
+      return res.status(403).json({ error: 'Your partner account is pending approval or suspended.' });
+    }
+    res.json({ success: true, agent });
+  } catch (error) {
+    res.status(500).json({ error: 'Login failed: ' + error.message });
+  }
+});
+
+// 13. Get all bookings for a specific partner
+app.get('/api/partner/bookings/:agentId', async (req, res) => {
+  try {
+    const bookings = await Booking.find({ partnerId: req.params.agentId }).sort({ createdAt: -1 });
+    res.json(bookings);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to retrieve partner bookings.' });
+  }
+});
+
+// 14. Customer Booking Lookup
+app.post('/api/customer/lookup', async (req, res) => {
+  try {
+    const { query } = req.body; // Booking ID or passport number
+    if (!query) {
+      return res.status(400).json({ error: 'Please enter a Booking Reference ID or Passport Number.' });
+    }
+
+    let booking = null;
+    if (mongoose.Types.ObjectId.isValid(query)) {
+      booking = await Booking.findById(query);
+    }
+    if (!booking) {
+      booking = await Booking.findOne({ 'pilgrims.passportNumber': query });
+    }
+    if (!booking) {
+      return res.status(404).json({ error: 'No booking record found matching your query.' });
+    }
+    res.json({ success: true, booking });
+  } catch (error) {
+    res.status(500).json({ error: 'Lookup failed: ' + error.message });
   }
 });
 

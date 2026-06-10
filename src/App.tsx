@@ -38,6 +38,7 @@ interface SubAgent {
   experience: number;
   bio?: string;
   status: string;
+  jvConsent?: boolean;
   createdAt: string;
 }
 
@@ -110,6 +111,31 @@ export default function App() {
     packagesCount: 0
   });
 
+  const [exchangeRates, setExchangeRates] = useState({
+    sarToPkr: 74.5,
+    usdToPkr: 278.0,
+    usdToSar: 3.73,
+    isLive: false
+  });
+
+  useEffect(() => {
+    fetch('https://open.er-api.com/v6/latest/USD')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.rates && data.rates.PKR && data.rates.SAR) {
+          const pkr = data.rates.PKR;
+          const sar = data.rates.SAR;
+          setExchangeRates({
+            sarToPkr: pkr / sar,
+            usdToPkr: pkr,
+            usdToSar: sar,
+            isLive: true
+          });
+        }
+      })
+      .catch(err => console.warn('Could not fetch live exchange rates, using budget defaults:', err));
+  }, []);
+
   // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     return localStorage.getItem('staff_token') === 'staff-session-token';
@@ -136,6 +162,15 @@ export default function App() {
   const [pilgrimsCount, setPilgrimsCount] = useState<number>(1);
   const [contactInfo, setContactInfo] = useState({ name: '', email: '', phone: '' });
   const [pilgrims, setPilgrims] = useState<Pilgrim[]>([{ name: '', passportNumber: '' }]);
+  const [partnerId, setPartnerId] = useState('');
+  const [packageMode, setPackageMode] = useState<'complete' | 'customized'>('complete');
+  const [customServices, setCustomServices] = useState({
+    visa: true,
+    tickets: true,
+    ground: true,
+    catering: true,
+    accommodation: true
+  });
   const [bookingStatus, setBookingStatus] = useState<{ type: 'success' | 'error' | 'info' | null; message: string; bookingId?: string }>({
     type: null,
     message: ''
@@ -274,6 +309,9 @@ export default function App() {
     setPilgrimsCount(1);
     setContactInfo({ name: '', email: '', phone: '' });
     setPilgrims([{ name: '', passportNumber: '' }]);
+    setPartnerId('');
+    setPackageMode('complete');
+    setCustomServices({ visa: true, tickets: true, ground: true, catering: true, accommodation: true });
     setBookingStatus({ type: null, message: '' });
   };
 
@@ -302,12 +340,22 @@ export default function App() {
   };
 
   const getPricePerPilgrim = (pkg: UmrahPackage): number => {
+    let base = 270000;
     switch (roomingType) {
-      case 'sharing': return pkg.price_sharing || 270000;
-      case 'quad': return pkg.price_quad || 280000;
-      case 'triple': return pkg.price_triple || 295000;
-      case 'double': return pkg.price_double || 315000;
+      case 'sharing': base = pkg.price_sharing || 274850; break;
+      case 'quad': base = pkg.price_quad || 283475; break;
+      case 'triple': base = pkg.price_triple || 290950; break;
+      case 'double': base = pkg.price_double || 305325; break;
     }
+    if (packageMode === 'customized') {
+      if (!customServices.visa) base -= 45000;
+      if (!customServices.tickets) base -= 110000;
+      if (!customServices.ground) base -= 30000;
+      if (!customServices.catering) base -= 25000;
+      if (!customServices.accommodation) base -= 80000;
+      base = Math.max(base, 10000); // Minimum processing fee of PKR 10k
+    }
+    return base;
   };
 
   const handleCheckoutSubmit = (e: React.FormEvent) => {
@@ -324,7 +372,16 @@ export default function App() {
       pilgrimsCount,
       totalPrice: total,
       contact: contactInfo,
-      pilgrims
+      pilgrims,
+      partnerId: partnerId.trim() || undefined,
+      isCustomized: packageMode === 'customized',
+      customServices: packageMode === 'customized' ? customServices : {
+        visa: true,
+        tickets: true,
+        ground: true,
+        catering: true,
+        accommodation: true
+      }
     };
 
     fetch(`${BACKEND_URL}/api/bookings`, {
@@ -365,27 +422,29 @@ export default function App() {
           </a>
 
           {/* Desktop Nav */}
-          <nav className="hidden lg:flex items-center gap-8">
-            <a href="/" onClick={(e) => { e.preventDefault(); navigateTo('/'); }} className={`text-sm font-medium hover:text-[#c5a059] transition-colors ${location.pathname === '/' ? 'text-white' : 'text-gray-400'}`}>Home</a>
-            <a href="#services" onClick={(e) => { e.preventDefault(); navigateTo('/', 'services'); }} className="text-sm font-medium text-gray-400 hover:text-[#c5a059] transition-colors">Services</a>
-            <a href="#spiritual" onClick={(e) => { e.preventDefault(); navigateTo('/', 'spiritual'); }} className="text-sm font-medium text-gray-400 hover:text-[#c5a059] transition-colors">Spiritual Journeys</a>
-            <a href="#wonders" onClick={(e) => { e.preventDefault(); navigateTo('/', 'wonders'); }} className="text-sm font-medium text-gray-400 hover:text-[#c5a059] transition-colors">World Tours</a>
-            <a href="/portal" onClick={(e) => { e.preventDefault(); navigateTo('/portal'); }} className={`text-sm font-medium hover:text-[#c5a059] transition-colors ${location.pathname === '/portal' ? 'text-[#c5a059] font-bold' : 'text-gray-400'}`}>Umrah E-Portal</a>
-            <a href="/partner" onClick={(e) => { e.preventDefault(); navigateTo('/partner'); }} className={`text-sm font-medium hover:text-[#c5a059] transition-colors ${location.pathname === '/partner' ? 'text-[#c5a059] font-bold' : 'text-gray-400'}`}>Partner Register</a>
+          <nav className="hidden lg:flex items-center gap-6">
+            <a href="/" onClick={(e) => { e.preventDefault(); navigateTo('/'); }} className={`text-xs font-semibold hover:text-[#c5a059] transition-colors ${location.pathname === '/' ? 'text-white' : 'text-gray-400'}`}>Home</a>
+            <a href="#services" onClick={(e) => { e.preventDefault(); navigateTo('/', 'services'); }} className="text-xs font-semibold text-gray-400 hover:text-[#c5a059] transition-colors">Services</a>
+            <a href="#spiritual" onClick={(e) => { e.preventDefault(); navigateTo('/', 'spiritual'); }} className="text-xs font-semibold text-gray-400 hover:text-[#c5a059] transition-colors">Spiritual</a>
+            <a href="#wonders" onClick={(e) => { e.preventDefault(); navigateTo('/', 'wonders'); }} className="text-xs font-semibold text-gray-400 hover:text-[#c5a059] transition-colors">World Tours</a>
+            <a href="/portal" onClick={(e) => { e.preventDefault(); navigateTo('/portal'); }} className={`text-xs font-semibold hover:text-[#c5a059] transition-colors ${location.pathname === '/portal' ? 'text-[#c5a059] font-bold' : 'text-gray-400'}`}>Umrah E-Portal</a>
+            <a href="/partner" onClick={(e) => { e.preventDefault(); navigateTo('/partner'); }} className={`text-xs font-semibold hover:text-[#c5a059] transition-colors ${location.pathname === '/partner' ? 'text-[#c5a059] font-bold' : 'text-gray-400'}`}>Partner Register</a>
+            <a href="/partner/dashboard" onClick={(e) => { e.preventDefault(); navigateTo('/partner/dashboard'); }} className={`text-xs font-semibold hover:text-[#c5a059] transition-colors ${location.pathname === '/partner/dashboard' ? 'text-[#c5a059] font-bold' : 'text-gray-400'}`}>Partner Dashboard</a>
+            <a href="/customer/portal" onClick={(e) => { e.preventDefault(); navigateTo('/customer/portal'); }} className={`text-xs font-semibold hover:text-[#c5a059] transition-colors ${location.pathname === '/customer/portal' ? 'text-[#c5a059] font-bold' : 'text-gray-400'}`}>Customer Portal</a>
             
             {isAuthenticated ? (
               <>
-                <a href="/dashboard" onClick={(e) => { e.preventDefault(); navigateTo('/dashboard'); }} className={`text-sm font-medium hover:text-[#c5a059] transition-colors ${location.pathname === '/dashboard' ? 'text-[#c5a059] font-bold' : 'text-gray-400'}`}>BI Dashboard</a>
-                <a href="/sales" onClick={(e) => { e.preventDefault(); navigateTo('/sales'); }} className={`text-sm font-medium hover:text-[#c5a059] transition-colors ${location.pathname === '/sales' ? 'text-[#c5a059] font-bold' : 'text-gray-400'}`}>Sales Portal</a>
-                <button onClick={handleLogout} className="px-4 py-1.5 border border-red-500/30 text-red-400 text-xs font-semibold rounded hover:bg-red-500/10 transition-all">
+                <a href="/dashboard" onClick={(e) => { e.preventDefault(); navigateTo('/dashboard'); }} className={`text-xs font-semibold hover:text-[#c5a059] transition-colors ${location.pathname === '/dashboard' ? 'text-[#c5a059] font-bold' : 'text-gray-400'}`}>BI Dashboard</a>
+                <a href="/sales" onClick={(e) => { e.preventDefault(); navigateTo('/sales'); }} className={`text-xs font-semibold hover:text-[#c5a059] transition-colors ${location.pathname === '/sales' ? 'text-[#c5a059] font-bold' : 'text-gray-400'}`}>Sales Portal</a>
+                <button onClick={handleLogout} className="px-3 py-1 border border-red-500/30 text-red-400 text-[10px] font-bold rounded hover:bg-red-500/10 transition-all">
                   Log Out
                 </button>
               </>
             ) : (
-              <a href="/sales" onClick={(e) => { e.preventDefault(); navigateTo('/sales'); }} className="text-sm font-medium text-gray-400 hover:text-[#c5a059] transition-colors">Staff Login</a>
+              <a href="/sales" onClick={(e) => { e.preventDefault(); navigateTo('/sales'); }} className="text-xs font-semibold text-gray-400 hover:text-[#c5a059] transition-colors">Staff Login</a>
             )}
 
-            <a href="#contact" onClick={(e) => { e.preventDefault(); navigateTo('/', 'contact'); }} className="px-5 py-2 bg-[#c5a059] text-[#05080a] text-sm font-semibold rounded hover:bg-[#b48e47] transition-all">
+            <a href="#contact" onClick={(e) => { e.preventDefault(); navigateTo('/', 'contact'); }} className="px-4 py-1.5 bg-[#c5a059] text-[#05080a] text-xs font-bold rounded hover:bg-[#b48e47] transition-all">
               Inquire Now
             </a>
           </nav>
@@ -401,27 +460,29 @@ export default function App() {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="lg:hidden bg-[#0e1217] border-b border-[#c5a059]/15 py-6 px-8 flex flex-col gap-5">
-            <a href="/" onClick={(e) => { e.preventDefault(); navigateTo('/'); }} className="text-lg hover:text-[#c5a059] transition-colors">Home</a>
-            <a href="#services" onClick={(e) => { e.preventDefault(); navigateTo('/', 'services'); }} className="text-lg hover:text-[#c5a059] transition-colors">Services</a>
-            <a href="#spiritual" onClick={(e) => { e.preventDefault(); navigateTo('/', 'spiritual'); }} className="text-lg hover:text-[#c5a059] transition-colors">Spiritual Journeys</a>
-            <a href="#wonders" onClick={(e) => { e.preventDefault(); navigateTo('/', 'wonders'); }} className="text-lg hover:text-[#c5a059] transition-colors">World Tours</a>
-            <a href="/portal" onClick={(e) => { e.preventDefault(); navigateTo('/portal'); }} className="text-lg text-[#c5a059] font-bold">Umrah E-Portal</a>
-            <a href="/partner" onClick={(e) => { e.preventDefault(); navigateTo('/partner'); }} className="text-lg hover:text-[#c5a059] transition-colors">Partner Register</a>
+          <div className="lg:hidden bg-[#0e1217] border-b border-[#c5a059]/15 py-6 px-8 flex flex-col gap-4">
+            <a href="/" onClick={(e) => { e.preventDefault(); navigateTo('/'); }} className="text-base hover:text-[#c5a059] transition-colors">Home</a>
+            <a href="#services" onClick={(e) => { e.preventDefault(); navigateTo('/', 'services'); }} className="text-base hover:text-[#c5a059] transition-colors">Services</a>
+            <a href="#spiritual" onClick={(e) => { e.preventDefault(); navigateTo('/', 'spiritual'); }} className="text-base hover:text-[#c5a059] transition-colors">Spiritual Journeys</a>
+            <a href="#wonders" onClick={(e) => { e.preventDefault(); navigateTo('/', 'wonders'); }} className="text-base hover:text-[#c5a059] transition-colors">World Tours</a>
+            <a href="/portal" onClick={(e) => { e.preventDefault(); navigateTo('/portal'); }} className="text-base text-[#c5a059] font-bold">Umrah E-Portal</a>
+            <a href="/partner" onClick={(e) => { e.preventDefault(); navigateTo('/partner'); }} className="text-base hover:text-[#c5a059] transition-colors">Partner Register</a>
+            <a href="/partner/dashboard" onClick={(e) => { e.preventDefault(); navigateTo('/partner/dashboard'); }} className="text-base hover:text-[#c5a059] transition-colors">Partner Dashboard</a>
+            <a href="/customer/portal" onClick={(e) => { e.preventDefault(); navigateTo('/customer/portal'); }} className="text-base hover:text-[#c5a059] transition-colors">Customer Portal</a>
             
             {isAuthenticated ? (
               <>
-                <a href="/dashboard" onClick={(e) => { e.preventDefault(); navigateTo('/dashboard'); }} className="text-lg hover:text-[#c5a059] transition-colors">BI Dashboard</a>
-                <a href="/sales" onClick={(e) => { e.preventDefault(); navigateTo('/sales'); }} className="text-lg hover:text-[#c5a059] transition-colors">Sales Portal</a>
-                <button onClick={handleLogout} className="py-2.5 text-center border border-red-500/30 text-red-400 font-bold rounded">
+                <a href="/dashboard" onClick={(e) => { e.preventDefault(); navigateTo('/dashboard'); }} className="text-base hover:text-[#c5a059] transition-colors">BI Dashboard</a>
+                <a href="/sales" onClick={(e) => { e.preventDefault(); navigateTo('/sales'); }} className="text-base hover:text-[#c5a059] transition-colors">Sales Portal</a>
+                <button onClick={handleLogout} className="py-2 text-center border border-red-500/30 text-red-400 font-bold rounded">
                   Log Out
                 </button>
               </>
             ) : (
-              <a href="/sales" onClick={(e) => { e.preventDefault(); navigateTo('/sales'); }} className="text-lg hover:text-[#c5a059] transition-colors">Staff Login</a>
+              <a href="/sales" onClick={(e) => { e.preventDefault(); navigateTo('/sales'); }} className="text-base hover:text-[#c5a059] transition-colors">Staff Login</a>
             )}
             
-            <a href="#contact" onClick={(e) => { e.preventDefault(); navigateTo('/', 'contact'); }} className="py-3 text-center bg-[#c5a059] text-[#05080a] font-bold rounded">
+            <a href="#contact" onClick={(e) => { e.preventDefault(); navigateTo('/', 'contact'); }} className="py-2.5 text-center bg-[#c5a059] text-[#05080a] font-bold rounded">
               Inquire Now
             </a>
           </div>
@@ -433,11 +494,13 @@ export default function App() {
         <Route path="/" element={<HomeView navigateTo={navigateTo} handleFormChange={handleFormChange} handleInquirySubmit={handleInquirySubmit} formData={formData} submitStatus={submitStatus} />} />
         <Route path="/portal" element={<PortalView loading={loading} packages={packages} selectedCity={selectedCity} setSelectedCity={setSelectedCity} searchQuery={searchQuery} setSearchQuery={setSearchQuery} BACKEND_URL={BACKEND_URL} openBookingModal={openBookingModal} />} />
         <Route path="/partner" element={<PartnerRegisterView BACKEND_URL={BACKEND_URL} />} />
+        <Route path="/partner/dashboard" element={<PartnerDashboardView BACKEND_URL={BACKEND_URL} exchangeRates={exchangeRates} />} />
+        <Route path="/customer/portal" element={<CustomerPortalView BACKEND_URL={BACKEND_URL} exchangeRates={exchangeRates} />} />
         
         {/* Private Dashboard Routes */}
         <Route path="/dashboard" element={
           <ProtectedRoute isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} BACKEND_URL={BACKEND_URL}>
-            <DashboardView dashboardStats={dashboardStats} bookings={bookings} inquiries={inquiries} />
+            <DashboardView dashboardStats={dashboardStats} bookings={bookings} inquiries={inquiries} exchangeRates={exchangeRates} />
           </ProtectedRoute>
         } />
         <Route path="/sales" element={
@@ -461,6 +524,8 @@ export default function App() {
           </p>
           <div className="flex gap-4">
             <a href="/partner" onClick={(e) => { e.preventDefault(); navigateTo('/partner'); }} className="hover:text-[#c5a059]">Partner Registration</a>
+            <a href="/partner/dashboard" onClick={(e) => { e.preventDefault(); navigateTo('/partner/dashboard'); }} className="hover:text-[#c5a059]">Partner Dashboard</a>
+            <a href="/customer/portal" onClick={(e) => { e.preventDefault(); navigateTo('/customer/portal'); }} className="hover:text-[#c5a059]">Customer Portal</a>
             <a href="/sales" onClick={(e) => { e.preventDefault(); navigateTo('/sales'); }} className="hover:text-[#c5a059]">Sales Portal</a>
           </div>
         </div>
@@ -533,6 +598,65 @@ export default function App() {
                   </div>
                 </div>
 
+                <div>
+                  <label className="block text-xs font-bold uppercase text-[#c5a059] tracking-wider mb-2">2. Package Mode Choice</label>
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    {[
+                      { mode: 'complete', label: 'Complete Package', desc: 'All standard services included' },
+                      { mode: 'customized', label: 'Customized Package', desc: 'Select individual services separately' }
+                    ].map(opt => (
+                      <button
+                        key={opt.mode}
+                        type="button"
+                        onClick={() => setPackageMode(opt.mode as any)}
+                        className={`py-3 px-3 rounded-lg border text-left transition-all ${
+                          packageMode === opt.mode 
+                            ? 'border-[#c5a059] bg-[#c5a059]/10 text-white font-bold' 
+                            : 'border-gray-800 bg-[#05080a]/60 text-gray-400 hover:border-gray-700'
+                        }`}
+                      >
+                        <div className="text-xs font-bold text-white">{opt.label}</div>
+                        <div className="text-[10px] text-gray-400 mt-1 font-medium">{opt.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+
+                  {packageMode === 'customized' && (
+                    <div className="bg-[#05080a] border border-[#c5a059]/15 p-4 rounded-lg flex flex-col gap-3.5 animate-fadeIn">
+                      <div className="text-[10px] font-bold text-[#c5a059] uppercase tracking-wider border-b border-gray-800 pb-2 flex justify-between">
+                        <span>Select Services to Include</span>
+                        <span>Deduction Value if Deselected</span>
+                      </div>
+                      
+                      {[
+                        { key: 'visa', label: 'Visa Services & Processing', price: 45000 },
+                        { key: 'tickets', label: 'Air Tickets (Flights)', price: 110000 },
+                        { key: 'ground', label: 'Ground Travel Services (Bus/Private Car)', price: 30000 },
+                        { key: 'catering', label: 'Catering Services (Meals/Buffet)', price: 25000 },
+                        { key: 'accommodation', label: 'Accommodation (Hotels)', price: 80000 }
+                      ].map(srv => {
+                        const isChecked = (customServices as any)[srv.key];
+                        return (
+                          <div key={srv.key} className="flex items-center justify-between text-xs py-1">
+                            <label className="flex items-center gap-2.5 cursor-pointer text-gray-300 font-medium">
+                              <input 
+                                type="checkbox" 
+                                checked={isChecked}
+                                onChange={(e) => setCustomServices(prev => ({ ...prev, [srv.key]: e.target.checked }))}
+                                className="cursor-pointer accent-[#c5a059] rounded"
+                              />
+                              <span>{srv.label}</span>
+                            </label>
+                            <span className="font-mono text-[10px] text-red-400">
+                              - PKR {srv.price.toLocaleString()}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex justify-between items-center bg-[#05080a] p-4 rounded border border-gray-800">
                   <div>
                     <div className="text-sm font-bold text-white">Number of Pilgrims</div>
@@ -558,8 +682,8 @@ export default function App() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase text-[#c5a059] tracking-wider mb-2.5">2. Contact Details</label>
-                  <div className="grid sm:grid-cols-3 gap-4">
+                  <label className="block text-xs font-bold uppercase text-[#c5a059] tracking-wider mb-2.5">3. Contact Details</label>
+                  <div className="grid sm:grid-cols-4 gap-4">
                     <input
                       type="text"
                       placeholder="Contact Name"
@@ -584,11 +708,18 @@ export default function App() {
                       onChange={(e) => setContactInfo(prev => ({ ...prev, phone: e.target.value }))}
                       className="w-full bg-[#05080a]/60 border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none"
                     />
+                    <input
+                      type="text"
+                      placeholder="Partner Agent ID (Optional)"
+                      value={partnerId}
+                      onChange={(e) => setPartnerId(e.target.value)}
+                      className="w-full bg-[#05080a]/60 border border-[#c5a059]/30 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none placeholder:text-gray-650"
+                    />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase text-[#c5a059] tracking-wider mb-2.5">3. Pilgrim Information</label>
+                  <label className="block text-xs font-bold uppercase text-[#c5a059] tracking-wider mb-2.5">4. Pilgrim Information</label>
                   <div className="flex flex-col gap-3 max-h-40 overflow-y-auto pr-1">
                     {pilgrims.map((pilgrim, idx) => (
                       <div key={idx} className="grid grid-cols-12 gap-3 items-center bg-[#05080a]/40 p-2.5 rounded border border-gray-800/80">
@@ -1621,7 +1752,8 @@ function PartnerRegisterView({ BACKEND_URL }: { BACKEND_URL: string }) {
     licenseNo: '',
     address: '',
     experience: 3,
-    bio: ''
+    bio: '',
+    jvConsent: false
   });
   const [loading, setLoading] = useState(false);
   const [regResult, setRegResult] = useState<{ agent_id: string; agency_name: string } | null>(null);
@@ -1783,6 +1915,29 @@ function PartnerRegisterView({ BACKEND_URL }: { BACKEND_URL: string }) {
                 />
               </div>
 
+              <div className="flex items-start gap-3 bg-[#05080a] border border-[#c5a059]/10 p-4 rounded-lg">
+                <input 
+                  type="checkbox" 
+                  id="jvConsent"
+                  required 
+                  checked={form.jvConsent}
+                  onChange={(e) => setForm(prev => ({ ...prev, jvConsent: e.target.checked }))}
+                  className="mt-1 cursor-pointer accent-[#c5a059]"
+                />
+                <label htmlFor="jvConsent" className="text-xs text-gray-300 leading-relaxed cursor-pointer select-none">
+                  I accept and agree to the terms of the{' '}
+                  <a 
+                    href={`${BACKEND_URL}/uploaded-files/JV Partners/General JV Contract Template - Insight Travel N Tourism.pdf`}
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="text-[#c5a059] hover:underline font-bold inline-flex items-center gap-1"
+                  >
+                    Joint Venture Agreement <i className="fa-solid fa-file-pdf"></i>
+                  </a>
+                  {' '}as consent to proceed with partner registration.
+                </label>
+              </div>
+
               <button 
                 type="submit" 
                 disabled={loading}
@@ -1802,22 +1957,634 @@ function PartnerRegisterView({ BACKEND_URL }: { BACKEND_URL: string }) {
   );
 }
 
+/* PARTNER DASHBOARD VIEW */
+function PartnerDashboardView({ BACKEND_URL, exchangeRates }: { BACKEND_URL: string, exchangeRates: any }) {
+  const [agentId, setAgentId] = useState('');
+  const [phone, setPhone] = useState('');
+  const [partner, setPartner] = useState<any>(null);
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [loginError, setLoginError] = useState('');
+
+  const EXCHANGE_RATE = exchangeRates?.sarToPkr || 74.5;
+  const USD_RATE = exchangeRates?.usdToPkr || 278.0;
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setLoginError('');
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/partner/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentId: agentId.trim(), phone: phone.trim() })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setPartner(data.agent);
+        fetchBookings(data.agent.name);
+      } else {
+        setLoginError(data.error || 'Invalid credentials or pending approval.');
+      }
+    } catch (err) {
+      setLoginError('Network error. Unable to connect to server.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchBookings = async (id: string) => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/partner/bookings/${id}`);
+      const data = await res.json();
+      if (res.ok) {
+        setBookings(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch bookings', err);
+    }
+  };
+
+  const handleLogout = () => {
+    setPartner(null);
+    setBookings([]);
+    setAgentId('');
+    setPhone('');
+  };
+
+  const totalSalesPKR = bookings.reduce((sum, b) => sum + (b.totalPrice || 0), 0);
+  const totalSalesSAR = totalSalesPKR / EXCHANGE_RATE;
+  const totalSalesUSD = totalSalesPKR / USD_RATE;
+
+  const commissionPKR = totalSalesPKR * 0.05;
+  const commissionSAR = totalSalesSAR * 0.05;
+  const commissionUSD = totalSalesUSD * 0.05;
+
+  if (!partner) {
+    return (
+      <section className="py-24 bg-[#05080a] flex-grow animate-fadeIn">
+        <div className="container mx-auto px-6 max-w-md">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-extrabold text-white">Partner <span className="text-[#c5a059]">Dashboard</span></h1>
+            <p className="text-gray-400 text-xs mt-2">Sign in with your Agent ID and Registered Phone Number</p>
+          </div>
+
+          <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-2xl shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-[#c5a059] to-transparent"></div>
+            
+            <form onSubmit={handleLogin} className="flex flex-col gap-4">
+              {loginError && (
+                <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs p-3 rounded text-center font-semibold">
+                  {loginError}
+                </div>
+              )}
+              
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Agent Reference ID</label>
+                <input 
+                  type="text" 
+                  placeholder="AGT-2026-0001" 
+                  required 
+                  value={agentId}
+                  onChange={(e) => setAgentId(e.target.value)}
+                  className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3.5 py-2.5 rounded text-xs outline-none"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Registered Phone Number</label>
+                <input 
+                  type="tel" 
+                  placeholder="+92 300 1234567" 
+                  required 
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3.5 py-2.5 rounded text-xs outline-none"
+                />
+              </div>
+
+              <button 
+                type="submit" 
+                disabled={loading}
+                className="w-full py-3 bg-[#c5a059] text-[#05080a] font-bold rounded hover:bg-[#b48e47] transition-all flex items-center justify-center gap-2 mt-2 text-xs uppercase tracking-wider font-semibold"
+              >
+                {loading ? <i className="fa-solid fa-circle-notch fa-spin"></i> : 'Sign In'}
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="py-12 bg-[#05080a] flex-grow animate-fadeIn">
+      <div className="container mx-auto px-6 max-w-7xl">
+        {/* Portal Header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-800 pb-6 mb-8">
+          <div>
+            <div className="text-xs text-[#c5a059] font-bold uppercase tracking-widest font-mono">B2B Partner Portal</div>
+            <h1 className="text-3xl font-black text-white mt-1">{partner.agencyName}</h1>
+            <p className="text-gray-400 text-xs mt-1">Welcome back, {partner.contactName} &bull; ID: <strong className="text-[#c5a059] font-mono">{partner.name}</strong></p>
+          </div>
+          <div className="flex items-center gap-3">
+            <a 
+              href={`${BACKEND_URL}/uploaded-files/JV Partners/General JV Contract Template - Insight Travel N Tourism.pdf`}
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="px-4 py-2 bg-[#c5a059]/10 border border-[#c5a059]/25 text-[#c5a059] text-xs font-bold rounded hover:bg-[#c5a059] hover:text-[#05080a] transition-all flex items-center gap-2"
+            >
+              <i className="fa-solid fa-file-pdf"></i> Download JV Contract
+            </a>
+            <button 
+              onClick={handleLogout} 
+              className="px-4 py-2 border border-red-500/30 text-red-400 text-xs font-semibold rounded hover:bg-red-500/10 transition-all"
+            >
+              Log Out
+            </button>
+          </div>
+        </div>
+
+        {/* Dynamic currency alert bar */}
+        <div className="bg-[#0e1217] border border-[#c5a059]/15 p-4 rounded-xl flex flex-wrap gap-6 items-center justify-between text-xs mb-8">
+          <div className="flex items-center gap-2">
+            <span className="text-[#c5a059] text-base"><i className="fa-solid fa-calculator"></i></span>
+            <div>
+              <span className="font-bold text-white uppercase">Live Exchange Spot Rates Active</span>
+              <p className="text-gray-500 text-[10px]">Real-time commissions and booking values computed in 3 major currencies.</p>
+            </div>
+          </div>
+          <div className="flex gap-4 font-mono text-gray-400">
+            <span className="bg-[#05080a] px-3 py-1.5 rounded border border-gray-800">
+              1 SAR = <strong className="text-[#c5a059]">{EXCHANGE_RATE.toFixed(2)} PKR</strong>
+            </span>
+            <span className="bg-[#05080a] px-3 py-1.5 rounded border border-gray-800">
+              1 USD = <strong className="text-blue-400">{USD_RATE.toFixed(2)} PKR</strong>
+            </span>
+          </div>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          {/* Sales Volume */}
+          <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden flex flex-col justify-between">
+            <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-coins"></i></div>
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Total B2B Sales Volume</span>
+              <div className="text-2xl font-black text-white mt-2">
+                PKR {totalSalesPKR.toLocaleString(undefined, {maximumFractionDigits: 0})}
+              </div>
+              <div className="text-[11px] text-[#c5a059] font-mono mt-2 flex flex-col gap-0.5">
+                <span>SAR: {totalSalesSAR.toLocaleString(undefined, {maximumFractionDigits: 0})} SAR</span>
+                <span>USD: {totalSalesUSD.toLocaleString(undefined, {maximumFractionDigits: 0})} USD</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Commissions Card */}
+          <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden flex flex-col justify-between">
+            <div className="absolute -right-3 -bottom-3 text-7xl text-green-500/5"><i className="fa-solid fa-chart-line"></i></div>
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Commissions Earned (5%)</span>
+              <div className="text-2xl font-black text-green-400 mt-2">
+                PKR {commissionPKR.toLocaleString(undefined, {maximumFractionDigits: 0})}
+              </div>
+              <div className="text-[11px] text-gray-400 font-mono mt-2 flex flex-col gap-0.5">
+                <span>SAR: {commissionSAR.toLocaleString(undefined, {maximumFractionDigits: 0})} SAR</span>
+                <span>USD: {commissionUSD.toLocaleString(undefined, {maximumFractionDigits: 0})} USD</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Dynamic Bookings */}
+          <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden flex flex-col justify-between">
+            <div className="absolute -right-3 -bottom-3 text-7xl text-blue-500/5"><i className="fa-solid fa-user-group"></i></div>
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Bookings Logged</span>
+              <div className="text-3xl font-black text-blue-400 mt-2">
+                {bookings.length}
+              </div>
+              <div className="text-[11px] text-gray-500 mt-2">
+                Pilgrims Transited: <strong className="text-white font-bold">{bookings.reduce((acc, b) => acc + (b.pilgrimsCount || 0), 0)}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bookings Table */}
+        <div className="bg-[#0e1217] border border-gray-800 rounded-xl overflow-hidden shadow-lg">
+          <div className="bg-[#05080a] py-4 px-6 border-b border-gray-800 flex items-center justify-between">
+            <h3 className="text-sm font-bold text-white uppercase tracking-wider">Your B2B Bookings Log</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs text-left">
+              <thead className="bg-[#05080a] text-gray-400 uppercase font-bold border-b border-gray-800">
+                <tr>
+                  <th className="py-3.5 px-4">Booking ID</th>
+                  <th className="py-3.5 px-4">Contact</th>
+                  <th className="py-3.5 px-4">Package</th>
+                  <th className="py-3.5 px-4 text-center">Pilgrims</th>
+                  <th className="py-3.5 px-4 text-right">Base Cost</th>
+                  <th className="py-3.5 px-4 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-800 text-gray-300">
+                {bookings.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-gray-500">No B2B bookings registered yet. Use your Agent ID at checkout.</td>
+                  </tr>
+                ) : (
+                  bookings.map((booking: any, idx: number) => {
+                    const pricePKR = booking.totalPrice || 0;
+                    const priceSAR = pricePKR / EXCHANGE_RATE;
+                    const priceUSD = pricePKR / USD_RATE;
+                    return (
+                      <tr key={booking._id || idx} className="hover:bg-gray-900/40">
+                        <td className="py-4 px-4 font-mono text-[#c5a059] font-bold">{booking._id ? booking._id.substring(18) : `B-${idx}`}</td>
+                        <td className="py-4 px-4">
+                          <div className="font-bold text-white">{booking.contact.name}</div>
+                          <div className="text-[10px] text-gray-500">{booking.contact.phone}</div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="font-semibold text-white">{booking.packageName} ({booking.roomingType})</div>
+                          <div className="text-[10px] mt-1">
+                            {booking.isCustomized ? (
+                              <span className="text-yellow-400 font-bold bg-yellow-500/10 border border-yellow-500/20 px-1.5 py-0.5 rounded text-[9px]">Customized Pack</span>
+                            ) : (
+                              <span className="text-gray-400 bg-gray-800/60 border border-gray-700 px-1.5 py-0.5 rounded text-[9px]">Complete Pack</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-4 px-4 text-center font-bold text-white">{booking.pilgrimsCount}</td>
+                        <td className="py-4 px-4 text-right">
+                          <div className="font-black text-white">PKR {pricePKR.toLocaleString()}</div>
+                          <div className="text-[9px] text-gray-400 font-mono">
+                            {priceSAR.toLocaleString(undefined, {maximumFractionDigits:0})} SAR / {priceUSD.toLocaleString(undefined, {maximumFractionDigits:0})} USD
+                          </div>
+                        </td>
+                        <td className="py-4 px-4 text-center">
+                          <span className="px-2 py-0.5 rounded bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 font-bold text-[9px] uppercase">
+                            {booking.status || 'Pending Payment'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* CUSTOMER PORTAL VIEW */
+function CustomerPortalView({ BACKEND_URL, exchangeRates }: { BACKEND_URL: string, exchangeRates: any }) {
+  const [query, setQuery] = useState('');
+  const [booking, setBooking] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const EXCHANGE_RATE = exchangeRates?.sarToPkr || 74.5;
+  const USD_RATE = exchangeRates?.usdToPkr || 278.0;
+
+  const handleLookup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setBooking(null);
+
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/customer/lookup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: query.trim() })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setBooking(data.booking);
+      } else {
+        setError(data.error || 'No matching booking record found.');
+      }
+    } catch (err) {
+      setError('Connection error. Failed to reach the database.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <section className="py-24 bg-[#05080a] flex-grow animate-fadeIn">
+      <div className="container mx-auto px-6 max-w-3xl">
+        <div className="text-center mb-12">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-white">Customer <span className="text-[#c5a059]">Booking Portal</span></h1>
+          <p className="text-gray-400 text-sm mt-3 max-w-xl mx-auto">
+            Retrieve your official booking receipt, check status real-time, and download your travel itinerary documents.
+          </p>
+        </div>
+
+        {/* Lookup form */}
+        <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-2xl mb-8">
+          <form onSubmit={handleLookup} className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-grow flex flex-col gap-1.5">
+              <input 
+                type="text" 
+                placeholder="Enter Passport Number or Booking Reference ID" 
+                required 
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="w-full bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-4 py-3 rounded text-xs outline-none font-mono"
+              />
+            </div>
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="py-3 px-8 bg-[#c5a059] text-[#05080a] font-bold rounded hover:bg-[#b48e47] transition-all flex items-center justify-center gap-2 text-xs uppercase tracking-wider font-semibold whitespace-nowrap"
+            >
+              {loading ? <i className="fa-solid fa-circle-notch fa-spin"></i> : 'Lookup Booking'}
+            </button>
+          </form>
+          {error && <p className="text-red-400 text-xs font-semibold mt-3 text-center">{error}</p>}
+        </div>
+
+        {/* Results Container */}
+        {booking && (
+          <div className="bg-[#0e1217] border border-[#c5a059]/20 rounded-2xl shadow-2xl overflow-hidden relative font-sans">
+            <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-[#c5a059] to-transparent"></div>
+            
+            {/* Receipt Header */}
+            <div className="bg-[#05080a] py-6 px-8 border-b border-gray-850 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <span className="text-[10px] text-[#c5a059] font-bold uppercase tracking-widest font-mono">Official Booking Receipt</span>
+                <h3 className="text-lg font-bold text-white mt-0.5">Insight Travel & Tourism</h3>
+                <p className="text-[10px] text-gray-500 font-mono mt-0.5">Issued on: {new Date(booking.createdAt).toLocaleDateString()}</p>
+              </div>
+              <div className="text-right">
+                <span className="px-3 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 font-bold uppercase tracking-wider text-[10px]">
+                  {booking.status}
+                </span>
+                <div className="text-[10px] text-gray-400 font-mono mt-2">Ref: <span className="text-white font-bold">{booking._id}</span></div>
+              </div>
+            </div>
+
+            {/* Receipt Body */}
+            <div className="p-8 flex flex-col gap-6">
+              {/* Product and rooming details */}
+              <div className="grid grid-cols-2 gap-6 bg-[#05080a]/60 border border-gray-850 p-4 rounded-lg">
+                <div>
+                  <div className="text-[10px] text-gray-500 font-bold uppercase">Package Choice</div>
+                  <div className="text-sm font-bold text-white mt-1">{booking.packageName}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-gray-500 font-bold uppercase">Rooming Preference</div>
+                  <div className="text-sm font-bold text-white mt-1 capitalize">{booking.roomingType} Configuration</div>
+                </div>
+              </div>
+
+              {/* Package Customization Mode Indicator */}
+              <div className="bg-[#05080a]/60 border border-gray-850 p-4 rounded-lg text-xs">
+                <div className="text-[10px] text-[#c5a059] font-bold uppercase tracking-wider mb-2">Package Service Mode</div>
+                {!booking.isCustomized ? (
+                  <div className="text-gray-300 font-medium flex items-center gap-2">
+                    <span className="text-green-500"><i className="fa-solid fa-circle-check"></i></span> Complete Package (All standard services included)
+                  </div>
+                ) : (
+                  <div>
+                    <div className="text-yellow-400 font-bold mb-2 flex items-center gap-2">
+                      <span className="text-yellow-400"><i className="fa-solid fa-sliders"></i></span> Customized Package (Services selected below)
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2 font-mono text-[10px]">
+                      {[
+                        { key: 'visa', label: 'Visa Processing' },
+                        { key: 'tickets', label: 'Flight Tickets' },
+                        { key: 'ground', label: 'Ground Travel' },
+                        { key: 'catering', label: 'Catering/Meals' },
+                        { key: 'accommodation', label: 'Accommodation' }
+                      ].map(srv => {
+                        const included = booking.customServices?.[srv.key] !== false;
+                        return (
+                          <div key={srv.key} className="flex items-center gap-1.5">
+                            <span className={included ? 'text-green-500' : 'text-red-500'}>
+                              <i className={`fa-solid ${included ? 'fa-circle-check' : 'fa-circle-xmark'}`}></i>
+                            </span>
+                            <span className={included ? 'text-gray-300' : 'text-gray-500 line-through'}>{srv.label}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Passenger info */}
+              <div>
+                <h4 className="text-xs font-bold uppercase text-[#c5a059] tracking-wider mb-3">Pilgrims Registered</h4>
+                <div className="flex flex-col gap-2">
+                  {booking.pilgrims.map((p: any, idx: number) => (
+                    <div key={idx} className="flex justify-between items-center text-xs bg-[#05080a]/30 py-2.5 px-4 rounded border border-gray-850">
+                      <div className="font-bold text-white">{idx + 1}. {p.name}</div>
+                      <div className="font-mono text-gray-400">Passport: {p.passportNumber}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Pricing breakdown (Three-Currency Display) */}
+              <div>
+                <h4 className="text-xs font-bold uppercase text-[#c5a059] tracking-wider mb-3">Total Amount Breakdown</h4>
+                <div className="bg-[#05080a] border border-gray-850 p-5 rounded-lg flex flex-col gap-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-gray-400">Total Price in PKR</span>
+                    <span className="text-lg font-black text-white">PKR {booking.totalPrice.toLocaleString()}</span>
+                  </div>
+                  <div className="border-t border-gray-850/60 pt-3 flex justify-between items-center text-xs">
+                    <span className="text-gray-500">Saudi Riyal Equivalent</span>
+                    <span className="font-bold text-[#c5a059]">{(booking.totalPrice / EXCHANGE_RATE).toLocaleString(undefined, {maximumFractionDigits: 0})} SAR</span>
+                  </div>
+                  <div className="border-t border-gray-850/60 pt-3 flex justify-between items-center text-xs">
+                    <span className="text-gray-500">US Dollar Equivalent</span>
+                    <span className="font-bold text-blue-400">{(booking.totalPrice / USD_RATE).toLocaleString(undefined, {maximumFractionDigits: 0})} USD</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact Information */}
+              <div className="border-t border-gray-850/60 pt-6">
+                <div className="text-[10px] text-gray-500 font-bold uppercase mb-2">Booking Contact Details</div>
+                <div className="text-xs text-gray-400 leading-relaxed">
+                  For updates, please contact: <strong className="text-white">{booking.contact.name}</strong> ({booking.contact.phone} / {booking.contact.email}).
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 /* STAFF BI DASHBOARD VIEW Component */
-function DashboardView({ dashboardStats, bookings, inquiries }: any) {
+function DashboardView({ dashboardStats, bookings, inquiries, exchangeRates }: any) {
+  const [viewMode, setViewMode] = useState<'overview' | 'budget'>('overview');
+
+  // Exchange Rates (Dynamic Live Spot rate or static budget fallback)
+  const EXCHANGE_RATE = exchangeRates?.sarToPkr || 74.5;
+  const USD_RATE = exchangeRates?.usdToPkr || 278.0;
+  const USD_TO_SAR = exchangeRates?.usdToSar || 3.73;
+
+  // Budget Constants
+  const BUDGET_EXCHANGE_RATE = 74.5; // Static rate from budget sheet
+  const BUDGET_TOTAL_REVENUE_SAR = 105600000;
+  const BUDGET_TOTAL_REVENUE_PKR = BUDGET_TOTAL_REVENUE_SAR * BUDGET_EXCHANGE_RATE;
+  const BUDGET_TARGET_PILGRIMS = 30000;
+  const BUDGET_GROSS_PROFIT_SAR = 7050000;
+  const BUDGET_NET_PROFIT_SAR = 3930157;
+  const BUDGET_NET_PROFIT_PKR = BUDGET_NET_PROFIT_SAR * BUDGET_EXCHANGE_RATE;
+  const BUDGET_EXPENSES_SAR = 2137303;
+
+  // Monthly revenue targets in SAR
+  const monthlyBudgets = [
+    { label: 'Jun 2026', sar: 6600000, pkr: 6600000 * EXCHANGE_RATE, description: 'Muharram-48 kickoff' },
+    { label: 'Jul 2026', sar: 6600000, pkr: 6600000 * EXCHANGE_RATE, description: 'Safar-48 intake' },
+    { label: 'Aug 2026', sar: 14800000, pkr: 14800000 * EXCHANGE_RATE, description: 'Rabi Awal peak' },
+    { label: 'Sep 2026', sar: 6600000, pkr: 6600000 * EXCHANGE_RATE, description: 'Rabi Thani-48' },
+    { label: 'Oct 2026', sar: 6600000, pkr: 6600000 * EXCHANGE_RATE, description: 'Jamad Awal-48' },
+    { label: 'Nov 2026', sar: 6600000, pkr: 6600000 * EXCHANGE_RATE, description: 'Jamad Thani-48' },
+    { label: 'Dec 2026', sar: 10500000, pkr: 10500000 * EXCHANGE_RATE, description: 'Rajab-48 intake' },
+    { label: 'Jan 2027', sar: 16650000, pkr: 16650000 * EXCHANGE_RATE, description: 'Sha\'aban-48 rush' },
+    { label: 'Feb 2027', sar: 24050000, pkr: 24050000 * EXCHANGE_RATE, description: 'Ramadan-48 peak' },
+    { label: 'Mar 2027', sar: 6600000, pkr: 6600000 * EXCHANGE_RATE, description: 'Shawal-48 wrap-up' },
+    { label: 'Apr 2027', sar: 0, pkr: 0, description: 'Post-season review' },
+    { label: 'May 2027', sar: 0, pkr: 0, description: 'Off-season planning' },
+  ];
+
+  // Actual Stats Calculation
+  const actualSalesPKR = bookings.reduce((sum: number, b: any) => sum + (b.totalPrice || 0), 0);
+  const actualSalesSAR = actualSalesPKR / EXCHANGE_RATE;
+  const actualPilgrims = bookings.reduce((sum: number, b: any) => sum + (b.pilgrimsCount || 0), 0);
+
+  // Group actual sales by month
+  const actualSalesByMonthPKR = bookings.reduce((acc: any, b: any) => {
+    const date = b.createdAt ? new Date(b.createdAt) : new Date();
+    const monthName = date.toLocaleString('en-US', { month: 'short', year: 'numeric' }); // e.g. "Jun 2026"
+    acc[monthName] = (acc[monthName] || 0) + (b.totalPrice || 0);
+    return acc;
+  }, {});
+
+  // Milestones Timeline definitions
+  const milestones = [
+    {
+      id: 1,
+      phase: 'Phase 1',
+      title: 'Infrastructure Setup & Capex',
+      goal: 'Establish KSA & PK offices, downpayment for 8 staff/office cars, legal license guarantee & initial salaries.',
+      targetValSar: 1230000,
+      isCompleted: true,
+      current: false,
+      statusText: 'Completed',
+      details: 'Downpayment for Creta, MG5, Changan CS35, and Staria office cars completed. Hardware/software procurement done.'
+    },
+    {
+      id: 2,
+      phase: 'Phase 2',
+      title: 'Muharram-Safar Kickoff',
+      goal: 'Achieve SAR 13.2M in cumulative bookings from early-season pilgrims.',
+      targetValSar: 13200000,
+      isCompleted: actualSalesSAR >= 13200000,
+      current: actualSalesSAR < 13200000,
+      statusText: actualSalesSAR >= 13200000 ? 'Completed' : 'Active Intake',
+      details: 'Targeting 3,770 pilgrims starting departure June 15, 2026.'
+    },
+    {
+      id: 3,
+      phase: 'Phase 3',
+      title: 'Rabi Awal Peak Peak Season',
+      goal: 'Reach SAR 28M in cumulative bookings, capitalising on Rabi Awal peak interest.',
+      targetValSar: 28000000,
+      isCompleted: actualSalesSAR >= 28000000,
+      current: actualSalesSAR >= 13200000 && actualSalesSAR < 28000000,
+      statusText: actualSalesSAR >= 28000000 ? 'Completed' : (actualSalesSAR >= 13200000 ? 'Upcoming Goal' : 'Locked'),
+      details: 'Peak intake period targeting an additional 4,228 pilgrims in August.'
+    },
+    {
+      id: 4,
+      phase: 'Phase 4',
+      title: 'Mid-Season Operations Stability',
+      goal: 'Reach SAR 47.8M cumulative revenue across Rabi Thani and Jamad cohorts.',
+      targetValSar: 47800000,
+      isCompleted: actualSalesSAR >= 47800000,
+      current: actualSalesSAR >= 28000000 && actualSalesSAR < 47800000,
+      statusText: actualSalesSAR >= 47800000 ? 'Completed' : (actualSalesSAR >= 28000000 ? 'Upcoming Goal' : 'Locked'),
+      details: 'Stabilising operational overheads, including monthly car installments (SAR 10,650/mo).'
+    },
+    {
+      id: 5,
+      phase: 'Phase 5',
+      title: 'Rajab-Sha\'aban Spring Rush',
+      goal: 'Reach SAR 74.95M cumulative bookings during pre-Ramadan peak.',
+      targetValSar: 74950000,
+      isCompleted: actualSalesSAR >= 74950000,
+      current: actualSalesSAR >= 47800000 && actualSalesSAR < 74950000,
+      statusText: actualSalesSAR >= 74950000 ? 'Completed' : (actualSalesSAR >= 47800000 ? 'Upcoming Goal' : 'Locked'),
+      details: 'Managing spring accommodations booking lists near the Harams.'
+    },
+    {
+      id: 6,
+      phase: 'Phase 6',
+      title: 'Ramadan Grand Peak Goal',
+      goal: 'Achieve full target of 30,000 pilgrims and SAR 105.6M overall seasonal revenue.',
+      targetValSar: 105600000,
+      isCompleted: actualSalesSAR >= 105600000,
+      current: actualSalesSAR >= 74950000 && actualSalesSAR < 105600000,
+      statusText: actualSalesSAR >= 105600000 ? 'Completed' : (actualSalesSAR >= 74950000 ? 'Upcoming Goal' : 'Locked'),
+      details: 'Final cohort intake. Wrapping up operations before Shawal reviews.'
+    }
+  ];
+
   return (
     <section className="py-16 bg-[#05080a] flex-grow text-gray-100 animate-fadeIn">
       <div className="container mx-auto px-6 max-w-7xl">
-        <div className="bg-gradient-to-r from-[#0e1217] to-[#080b0f] border border-[#c5a059]/15 rounded-xl p-8 mb-12">
-          <div className="flex items-center gap-2.5 text-xs text-[#c5a059] font-bold uppercase tracking-wider mb-2">
-            <span>Staff Portal</span>
-            <span><i className="fa-solid fa-chevron-right text-[10px]"></i></span>
-            <span>BI Dashboard</span>
+        {/* Dashboard Title & Tabs */}
+        <div className="bg-gradient-to-r from-[#0e1217] to-[#080b0f] border border-[#c5a059]/15 rounded-xl p-8 mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div>
+            <div className="flex items-center gap-2.5 text-xs text-[#c5a059] font-bold uppercase tracking-wider mb-2">
+              <span>Staff Portal</span>
+              <span><i className="fa-solid fa-chevron-right text-[10px]"></i></span>
+              <span>BI Dashboard</span>
+            </div>
+            <h2 className="text-3xl font-serif text-white font-bold">Business Intelligence Display</h2>
+            <p className="text-gray-400 text-sm mt-1">Real-time sales tracking, commission logs, booking distributions, and budget comparisons.</p>
           </div>
-          <h2 className="text-3xl font-serif text-white font-bold">Business Intelligence Display</h2>
-          <p className="text-gray-400 text-sm mt-1">Real-time sales tracking, commission logs, booking distributions, and lead metrics.</p>
+          
+          <div className="bg-[#05080a] p-1.5 rounded-lg border border-gray-800 flex gap-2 w-full md:w-auto text-xs">
+            <button
+              onClick={() => setViewMode('overview')}
+              className={`px-5 py-2 rounded font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                viewMode === 'overview'
+                  ? 'bg-[#c5a059] text-[#05080a]'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <i className="fa-solid fa-chart-line"></i> BI Overview
+            </button>
+            <button
+              onClick={() => setViewMode('budget')}
+              className={`px-5 py-2 rounded font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                viewMode === 'budget'
+                  ? 'bg-[#c5a059] text-[#05080a]'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <i className="fa-solid fa-compass"></i> Budget & Milestones
+            </button>
+          </div>
         </div>
 
-        {/* KPI Cards Grid */}
+        {viewMode === 'overview' ? (
+          <>
+            {/* KPI Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
           <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden group">
             <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-coins"></i></div>
@@ -2026,9 +2793,260 @@ function DashboardView({ dashboardStats, bookings, inquiries }: any) {
             </table>
           </div>
         </div>
-      </div>
-    </section>
-  );
+      </>
+      ) : (
+        /* BUDGET & MILESTONES VIEW */
+        <div className="flex flex-col gap-8">
+          
+          {/* Exchange Rates Reference */}
+          <div className="bg-[#0e1217] border border-[#c5a059]/15 p-4 rounded-xl flex flex-wrap gap-6 items-center justify-between text-xs">
+            <div className="flex items-center gap-2">
+              <span className="text-[#c5a059] text-base"><i className="fa-solid fa-calculator"></i></span>
+              <div>
+                <span className="font-bold text-white uppercase">
+                  Currency Analytics Hub {exchangeRates?.isLive ? <span className="text-green-400 text-[9px] bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded ml-2 font-mono">Live Spot Rates Active</span> : <span className="text-yellow-400 text-[9px] bg-yellow-500/10 border border-yellow-500/20 px-2 py-0.5 rounded ml-2 font-mono">Budget Defaults</span>}
+                </span>
+                <p className="text-gray-500 text-[10px] mt-0.5">Automated conversion of booking actuals (PKR) and budget estimates (SAR).</p>
+              </div>
+            </div>
+            <div className="flex gap-4 font-mono text-gray-400">
+              <span className="bg-[#05080a] px-3 py-1.5 rounded border border-gray-800">
+                1 SAR = <strong className="text-[#c5a059]">{EXCHANGE_RATE.toFixed(2)} PKR</strong>
+              </span>
+              <span className="bg-[#05080a] px-3 py-1.5 rounded border border-gray-800">
+                1 USD = <strong className="text-blue-400">{USD_RATE.toFixed(2)} PKR</strong>
+              </span>
+              <span className="bg-[#05080a] px-3 py-1.5 rounded border border-gray-800">
+                1 USD = <strong className="text-green-400">{USD_TO_SAR.toFixed(2)} SAR</strong>
+              </span>
+            </div>
+          </div>
+
+          {/* Three-Currency Target Comparison Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            
+            {/* Revenue card */}
+            <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden flex flex-col justify-between">
+              <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-coins"></i></div>
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Revenue Goal (Budget vs Actual)</span>
+                <div className="text-2xl font-black text-[#c5a059] mt-2">
+                  PKR {actualSalesPKR.toLocaleString(undefined, {maximumFractionDigits: 0})}
+                </div>
+                <div className="text-[10px] text-gray-400 font-mono mt-1 flex flex-col gap-0.5">
+                  <span>SAR: {actualSalesSAR.toLocaleString(undefined, {maximumFractionDigits: 0})} / {BUDGET_TOTAL_REVENUE_SAR.toLocaleString()}</span>
+                  <span>USD: {(actualSalesPKR / USD_RATE).toLocaleString(undefined, {maximumFractionDigits: 0})} / {(BUDGET_TOTAL_REVENUE_PKR / USD_RATE).toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
+                </div>
+              </div>
+              <div className="mt-4">
+                <div className="flex justify-between text-[10px] font-bold text-gray-400 mb-1">
+                  <span>Target Achievement</span>
+                  <span className="text-[#c5a059]">{((actualSalesSAR / BUDGET_TOTAL_REVENUE_SAR) * 100).toFixed(2)}%</span>
+                </div>
+                <div className="w-full bg-gray-900 rounded-full h-2 overflow-hidden border border-gray-800">
+                  <div 
+                    className="bg-gradient-to-r from-[#c5a059] to-[#e2c98a] h-full rounded-full transition-all duration-1000"
+                    style={{ width: `${Math.min((actualSalesSAR / BUDGET_TOTAL_REVENUE_SAR) * 100, 100)}%` }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Pilgrims Card */}
+            <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden flex flex-col justify-between">
+              <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-user-group"></i></div>
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Pilgrims Goal (Target vs Actual)</span>
+                <div className="text-2xl font-black text-white mt-2">
+                  {actualPilgrims.toLocaleString()}
+                </div>
+                <div className="text-[10px] text-gray-400 font-mono mt-1">
+                  Target: <strong className="text-white">{BUDGET_TARGET_PILGRIMS.toLocaleString()}</strong> pilgrims from Pakistan.
+                </div>
+              </div>
+              <div className="mt-4">
+                <div className="flex justify-between text-[10px] font-bold text-gray-400 mb-1">
+                  <span>Pilgrims Reached</span>
+                  <span className="text-white">{((actualPilgrims / BUDGET_TARGET_PILGRIMS) * 100).toFixed(2)}%</span>
+                </div>
+                <div className="w-full bg-gray-900 rounded-full h-2 overflow-hidden border border-gray-800">
+                  <div 
+                    className="bg-gradient-to-r from-blue-500 to-indigo-500 h-full rounded-full transition-all duration-1000"
+                    style={{ width: `${Math.min((actualPilgrims / BUDGET_TARGET_PILGRIMS) * 100, 100)}%` }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Profit Card */}
+            <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden flex flex-col justify-between">
+              <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-chart-line"></i></div>
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Gross Profit (Budget vs Actual)</span>
+                <div className="text-2xl font-black text-green-400 mt-2">
+                  PKR {(actualSalesPKR * 0.0667).toLocaleString(undefined, {maximumFractionDigits: 0})}
+                </div>
+                <div className="text-[10px] text-gray-400 font-mono mt-1 flex flex-col gap-0.5">
+                  <span>SAR: {(actualSalesSAR * 0.0667).toLocaleString(undefined, {maximumFractionDigits: 0})} / {BUDGET_GROSS_PROFIT_SAR.toLocaleString()}</span>
+                  <span>USD: {((actualSalesPKR * 0.0667) / 278).toLocaleString(undefined, {maximumFractionDigits: 0})} / {((BUDGET_GROSS_PROFIT_SAR * EXCHANGE_RATE) / 278).toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
+                </div>
+                <div className="mt-2 text-[9px] text-gray-500 font-mono">
+                  Net Budget: PKR {BUDGET_NET_PROFIT_PKR.toLocaleString(undefined, {maximumFractionDigits: 0})} | SAR {BUDGET_NET_PROFIT_SAR.toLocaleString()} | USD {(BUDGET_NET_PROFIT_PKR / 278).toLocaleString(undefined, {maximumFractionDigits: 0})}
+                </div>
+              </div>
+              <div className="mt-4">
+                <div className="flex justify-between text-[10px] font-bold text-gray-400 mb-1">
+                  <span>GP Margin</span>
+                  <span className="text-green-400">6.67% (Pro-Rata)</span>
+                </div>
+                <div className="w-full bg-gray-900 rounded-full h-2 overflow-hidden border border-gray-800">
+                  <div 
+                    className="bg-gradient-to-r from-green-500 to-emerald-500 h-full rounded-full transition-all duration-1000"
+                    style={{ width: `${Math.min((actualSalesSAR / BUDGET_TOTAL_REVENUE_SAR) * 100, 100)}%` }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Expenses & ZATCA Tax */}
+            <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden flex flex-col justify-between">
+              <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-file-invoice-dollar"></i></div>
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Admin Expenses (SAR, PKR, USD)</span>
+                <div className="text-sm font-bold text-white mt-3">
+                  Budget: SAR {BUDGET_EXPENSES_SAR.toLocaleString()}
+                </div>
+                <div className="text-[10px] text-gray-400 font-mono mt-1 flex flex-col gap-0.5">
+                  <span>PKR: {(BUDGET_EXPENSES_SAR * EXCHANGE_RATE).toLocaleString(undefined, {maximumFractionDigits: 0})} total services budget</span>
+                  <span>USD: {(BUDGET_EXPENSES_SAR * EXCHANGE_RATE / 278).toLocaleString(undefined, {maximumFractionDigits: 0})} operating overheads</span>
+                </div>
+              </div>
+              <div className="mt-4 text-[10px] text-[#c5a059] bg-[#c5a059]/5 border border-[#c5a059]/20 p-2 rounded">
+                Includes ZATCA Income Tax (20%): SAR 982.5k (PKR 73.2M | USD 263.3k)
+              </div>
+            </div>
+
+          </div>
+
+          {/* Milestone Progress Path */}
+          <div className="bg-[#0e1217] p-6 rounded-xl border border-gray-800">
+            <h3 className="text-base font-bold text-white mb-6 flex items-center gap-2">
+              <i className="fa-solid fa-flag-checkered text-[#c5a059]"></i> Hijri 1448 Season Milestones Roadmap
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6 relative">
+              {milestones.map((m) => (
+                <div key={m.id} className={`p-4 rounded-lg border relative flex flex-col justify-between transition-all ${
+                  m.isCompleted 
+                    ? 'bg-green-500/5 border-green-500/20 text-gray-300' 
+                    : m.current 
+                      ? 'bg-[#c5a059]/10 border-[#c5a059] text-white' 
+                      : 'bg-[#05080a] border-gray-800 text-gray-500'
+                }`}>
+                  <div>
+                    <div className="flex justify-between items-start">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{m.phase}</span>
+                      <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
+                        m.isCompleted 
+                          ? 'bg-green-500/10 text-green-400' 
+                          : m.current 
+                            ? 'bg-[#c5a059]/20 text-[#c5a059]' 
+                            : 'bg-gray-800 text-gray-600'
+                      }`}>
+                        {m.statusText}
+                      </span>
+                    </div>
+                    
+                    <h4 className="text-xs font-bold mt-2.5 text-white">{m.title}</h4>
+                    <p className="text-[10px] text-gray-400 mt-2 leading-relaxed">{m.goal}</p>
+                  </div>
+
+                  <div className="mt-4 border-t border-gray-800 pt-3 flex flex-col gap-1">
+                    <span className="text-[10px] text-[#c5a059] font-mono font-bold">Goal Target:</span>
+                    <span className="text-[11px] font-mono text-white font-extrabold">SAR {m.targetValSar.toLocaleString()}</span>
+                    <span className="text-[9px] text-gray-400 font-mono">
+                      PKR: PKR {(m.targetValSar * EXCHANGE_RATE).toLocaleString(undefined, {maximumFractionDigits: 0})}
+                    </span>
+                    <span className="text-[9px] text-gray-400 font-mono">
+                      USD: USD {(m.targetValSar * EXCHANGE_RATE / USD_RATE).toLocaleString(undefined, {maximumFractionDigits: 0})}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Monthly Comparison Breakdown */}
+          <div className="bg-[#0e1217] p-6 rounded-xl border border-gray-800 overflow-hidden">
+            <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+              <i className="fa-solid fa-calendar-days text-[#c5a059]"></i> Monthly Target Analysis (USD, SAR, PKR)
+            </h3>
+            <p className="text-gray-400 text-xs mb-6">Compare budgeted sales volumes with current booking registers sorted by creation date.</p>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-gray-800 text-gray-400 uppercase font-bold tracking-wider">
+                    <th className="py-3 px-4">Fiscal Month</th>
+                    <th className="py-3 px-4 text-center">Budget Target (SAR / PKR / USD)</th>
+                    <th className="py-3 px-4 text-center">Actual Bookings (SAR / PKR / USD)</th>
+                    <th className="py-3 px-4">Completion Progress</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-800 text-gray-300">
+                  {monthlyBudgets.map((mb, idx) => {
+                    const actualPKR = actualSalesByMonthPKR[mb.label] || 0;
+                    const actualSAR = actualPKR / EXCHANGE_RATE;
+                    const actualUSD = actualPKR / USD_RATE;
+
+                    const percentage = mb.sar > 0 ? Math.min((actualSAR / mb.sar) * 100, 100) : 0;
+                    
+                    return (
+                      <tr key={idx} className="hover:bg-gray-900/40">
+                        <td className="py-4 px-4">
+                          <div className="font-bold text-white">{mb.label}</div>
+                          <div className="text-[10px] text-gray-500">{mb.description}</div>
+                        </td>
+                        <td className="py-4 px-4 text-center">
+                          <div className="font-semibold text-white">SAR {mb.sar.toLocaleString()}</div>
+                          <div className="text-[10px] text-gray-400 font-mono mt-0.5">
+                            PKR {mb.pkr.toLocaleString()} | USD {(mb.pkr / USD_RATE).toLocaleString(undefined, {maximumFractionDigits: 0})}
+                          </div>
+                        </td>
+                        <td className="py-4 px-4 text-center">
+                          <div className="font-semibold text-[#c5a059]">SAR {actualSAR.toLocaleString(undefined, {maximumFractionDigits: 0})}</div>
+                          <div className="text-[10px] text-gray-400 font-mono mt-0.5">
+                            PKR {actualPKR.toLocaleString()} | USD {actualUSD.toLocaleString(undefined, {maximumFractionDigits: 0})}
+                          </div>
+                        </td>
+                        <td className="py-4 px-4">
+                          {mb.sar > 0 ? (
+                            <div className="flex items-center gap-3">
+                              <div className="w-full bg-gray-900 rounded-full h-2 overflow-hidden border border-gray-800">
+                                <div 
+                                  className="bg-gradient-to-r from-[#c5a059] to-[#e2c98a] h-full rounded-full transition-all duration-1000"
+                                  style={{ width: `${percentage}%` }}
+                                ></div>
+                              </div>
+                              <span className="font-bold font-mono text-[#c5a059] whitespace-nowrap">{percentage.toFixed(1)}%</span>
+                            </div>
+                          ) : (
+                            <span className="text-gray-500 italic">No Target</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      )}
+    </div>
+  </section>
+);
 }
 
 /* SALES PORTAL VIEW Component (Migrated from manage_packages.php) */
@@ -2235,7 +3253,20 @@ function SalesPortalView({ packages, subagents, bookings, BACKEND_URL, setSubage
                           </td>
                           <td className="py-4 px-4">
                             <div className="font-semibold">{agent.contactName}</div>
-                            <div className="text-[10px] text-gray-500">{agent.email} &bull; {agent.phone}</div>
+                            <div className="text-[10px] text-gray-500 flex flex-wrap items-center gap-1.5 mt-0.5">
+                              <span>{agent.email} &bull; {agent.phone}</span>
+                              {agent.jvConsent && (
+                                <a 
+                                  href={`${BACKEND_URL}/uploaded-files/JV Partners/General JV Contract Template - Insight Travel N Tourism.pdf`}
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-[#c5a059] hover:underline font-bold inline-flex items-center gap-0.5 ml-1"
+                                  title="View/Download JV Contract"
+                                >
+                                  [<i className="fa-solid fa-file-pdf"></i> Signed JV]
+                                </a>
+                              )}
+                            </div>
                           </td>
                           <td className="py-4 px-4">{agent.address}</td>
                           <td className="py-4 px-4 font-semibold">{agent.experience} Years</td>
@@ -2325,7 +3356,16 @@ function SalesPortalView({ packages, subagents, bookings, BACKEND_URL, setSubage
                               <div className="font-bold text-white">{b.contact.name}</div>
                               <div className="text-[10px] text-gray-500">Passport: {b.pilgrims[0]?.passportNumber || 'N/A'}</div>
                             </td>
-                            <td className="py-4 px-4">{b.packageName}</td>
+                            <td className="py-4 px-4">
+                              <div className="font-semibold text-white">{b.packageName} ({b.roomingType})</div>
+                              <div className="text-[10px] mt-0.5">
+                                {b.isCustomized ? (
+                                  <span className="text-yellow-400 font-bold bg-yellow-500/10 border border-yellow-500/20 px-1.5 py-0.5 rounded text-[9px]">Customized</span>
+                                ) : (
+                                  <span className="text-gray-400 bg-gray-800/60 border border-gray-700 px-1.5 py-0.5 rounded text-[9px]">Complete</span>
+                                )}
+                              </div>
+                            </td>
                             <td className="py-4 px-4 text-right font-black text-white">PKR {b.totalPrice.toLocaleString()}</td>
                             <td className="py-4 px-4 text-center">
                               <span className="px-2 py-0.5 rounded bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 font-bold text-[9px]">
