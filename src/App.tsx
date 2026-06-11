@@ -1412,78 +1412,8 @@ function HomeView({ navigateTo, handleFormChange, handleInquirySubmit, formData,
   );
 }
 
-/* PORTAL VIEW COMPONENT */
-const flyerImages: { [city: string]: string[] } = {
-  Islamabad: Array.from({ length: 12 }, (_, i) => `Islamabad-Group-Pkg-_page-${String(i + 1).padStart(4, '0')}.jpg`),
-  Lahore: [
-    "Lahore-Group-Pkgs_page-0023.jpg",
-    "Lahore-Group-Pkgs_page-0024.jpg",
-    "Lahore-Group-Pkgs_page-0025.jpg",
-    "Lahore-Group-Pkgs_page-0026.jpg"
-  ],
-  Faisalabad: Array.from({ length: 4 }, (_, i) => `Faislabad-Group-Pkgs-_page-${String(i + 1).padStart(4, '0')}.jpg`),
-  Multan: Array.from({ length: 4 }, (_, i) => `Multan-Group-Pkgs-_page-${String(i + 1).padStart(4, '0')}.jpg`),
-  Peshawar: Array.from({ length: 8 }, (_, i) => `Peshawar-Group-Pkgs_page-${String(i + 1).padStart(4, '0')}.jpg`),
-  Sialkot: [
-    "Sialkot-Group-Pkgs_page-0001-1.jpg",
-    "Sialkot-Group-Pkgs_page-0002-1.jpg",
-    "Sialkot-Group-Pkgs_page-0003-1.jpg",
-    "Sialkot-Group-Pkgs_page-0004-1.jpg",
-    "Sialkot-Group-Pkgs_page-0005-1.jpg",
-    "Sialkot-Group-Pkgs_page-0006.jpg",
-    "Sialkot-Group-Pkgs_page-0007.jpg",
-    "Sialkot-Group-Pkgs_page-0008.jpg",
-    "Sialkot-Group-Pkgs_page-0009.jpg",
-    "Sialkot-Group-Pkgs_page-0010.jpg",
-    "Sialkot-Group-Pkgs_page-0011.jpg",
-    "Sialkot-Group-Pkgs_page-0012.jpg",
-    "Sialkot-Group-Pkgs_page-0013.jpg"
-  ],
-  Karachi: [
-    "WhatsApp-Image-2026-05-22-at-14.13.46-1.jpeg",
-    "WhatsApp-Image-2026-05-22-at-14.13.47-1.jpeg",
-    "WhatsApp-Image-2026-05-22-at-14.13.47.jpeg",
-    "WhatsApp-Image-2026-05-22-at-14.13.48-1.jpeg",
-    "WhatsApp-Image-2026-05-22-at-14.13.48-2.jpeg",
-    "WhatsApp-Image-2026-05-22-at-14.13.48.jpeg"
-  ]
-};
-
 function PortalView({ loading, packages, selectedCity, setSelectedCity, searchQuery, setSearchQuery, BACKEND_URL, openBookingModal }: any) {
   const navigate = useNavigate();
-  const [viewMode, setViewMode] = useState<'interactive' | 'flyers'>('interactive');
-  const [selectedFlyer, setSelectedFlyer] = useState<string | null>(null);
-  const [selectedFlyerIndex, setSelectedFlyerIndex] = useState<number>(-1);
-  const [activeFlyerList, setActiveFlyerList] = useState<string[]>([]);
-
-  const getFilteredFlyers = () => {
-    if (selectedCity === 'All') {
-      return Object.values(flyerImages).flat();
-    }
-    return flyerImages[selectedCity] || [];
-  };
-
-  const openLightbox = (imgUrl: string, list: string[], idx: number) => {
-    setSelectedFlyer(imgUrl);
-    setActiveFlyerList(list);
-    setSelectedFlyerIndex(idx);
-  };
-
-  const nextFlyer = () => {
-    if (selectedFlyerIndex < activeFlyerList.length - 1) {
-      const nextIdx = selectedFlyerIndex + 1;
-      setSelectedFlyerIndex(nextIdx);
-      setSelectedFlyer(`${BACKEND_URL}/uploaded-files/umrah-packages/${encodeURIComponent(activeFlyerList[nextIdx])}`);
-    }
-  };
-
-  const prevFlyer = () => {
-    if (selectedFlyerIndex > 0) {
-      const prevIdx = selectedFlyerIndex - 1;
-      setSelectedFlyerIndex(prevIdx);
-      setSelectedFlyer(`${BACKEND_URL}/uploaded-files/umrah-packages/${encodeURIComponent(activeFlyerList[prevIdx])}`);
-    }
-  };
 
   return (
     <section className="py-16 bg-[#05080a] flex-grow animate-fadeIn">
@@ -1509,279 +1439,159 @@ function PortalView({ loading, packages, selectedCity, setSelectedCity, searchQu
           </button>
         </div>
 
-        {/* View Mode Toggle Segment */}
-        <div className="flex justify-center mb-10">
-          <div className="bg-[#0e1217] p-1.5 rounded-xl border border-gray-800 flex gap-2">
-            <button 
-              onClick={() => setViewMode('interactive')}
-              className={`px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
-                viewMode === 'interactive' 
-                  ? 'bg-[#c5a059] text-[#05080a] shadow-lg shadow-[#c5a059]/15' 
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              <i className="fa-solid fa-kaaba"></i> Interactive Packages
-            </button>
-            <button 
-              onClick={() => setViewMode('flyers')}
-              className={`px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
-                viewMode === 'flyers' 
-                  ? 'bg-[#c5a059] text-[#05080a] shadow-lg shadow-[#c5a059]/15' 
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              <i className="fa-solid fa-images"></i> Package Flyer Sheets
-            </button>
+        {/* Filters Row */}
+        <div className="flex flex-col md:flex-row gap-6 justify-between items-center mb-10 bg-[#0e1217] p-5 rounded-lg border border-[#c5a059]/10">
+          <div className="flex flex-wrap gap-2 w-full md:w-auto">
+            {['All', 'Islamabad', 'Karachi', 'Lahore', 'Sialkot', 'Peshawar', 'Multan', 'Faisalabad'].map(city => (
+              <button
+                key={city}
+                onClick={() => setSelectedCity(city)}
+                className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider border transition-all ${
+                  selectedCity === city 
+                    ? 'bg-[#c5a059] text-[#05080a] border-[#c5a059] shadow-lg shadow-[#c5a059]/15' 
+                    : 'bg-[#05080a] text-gray-400 border-gray-800 hover:border-gray-700 hover:text-white'
+                }`}
+              >
+                {city === 'All' ? 'All Cities' : `From ${city}`}
+              </button>
+            ))}
+          </div>
+
+          <div className="relative w-full md:w-80">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+              <i className="fa-solid fa-magnifying-glass text-xs"></i>
+            </span>
+            <input
+              type="text"
+              placeholder="Search packages or hotels..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-[#05080a]/80 border border-gray-800 focus:border-[#c5a059] text-white pl-9 pr-4 py-2 rounded text-xs outline-none transition-all placeholder:text-gray-600"
+            />
           </div>
         </div>
 
-        {/* Filters Row - Only for Interactive Packages */}
-        {viewMode === 'interactive' && (
-          <div className="flex flex-col md:flex-row gap-6 justify-between items-center mb-10 bg-[#0e1217] p-5 rounded-lg border border-[#c5a059]/10">
-            <div className="flex flex-wrap gap-2 w-full md:w-auto">
-              {['All', 'Islamabad', 'Karachi', 'Lahore', 'Sialkot', 'Peshawar', 'Multan', 'Faisalabad'].map(city => (
-                <button
-                  key={city}
-                  onClick={() => setSelectedCity(city)}
-                  className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider border transition-all ${
-                    selectedCity === city 
-                      ? 'bg-[#c5a059] text-[#05080a] border-[#c5a059] shadow-lg shadow-[#c5a059]/15' 
-                      : 'bg-[#05080a] text-gray-400 border-gray-800 hover:border-gray-700 hover:text-white'
-                  }`}
-                >
-                  {city === 'All' ? 'All Cities' : `From ${city}`}
-                </button>
-              ))}
-            </div>
-
-            <div className="relative w-full md:w-80">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
-                <i className="fa-solid fa-magnifying-glass text-xs"></i>
-              </span>
-              <input
-                type="text"
-                placeholder="Search packages or hotels..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-[#05080a]/80 border border-gray-800 focus:border-[#c5a059] text-white pl-9 pr-4 py-2 rounded text-xs outline-none transition-all placeholder:text-gray-600"
-              />
-            </div>
+        {/* Dynamic Display */}
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <span className="text-[#c5a059] text-4xl animate-spin"><i className="fa-solid fa-circle-notch"></i></span>
+            <p className="text-gray-400 text-sm">Loading dynamic packages...</p>
           </div>
-        )}
-
-        {/* Sub-navigation City Tabs - Only for Package Flyer Sheets */}
-        {viewMode === 'flyers' && (
-          <div className="mb-10 text-center">
-            <div className="inline-flex flex-wrap justify-center gap-3 bg-[#0e1217] p-2.5 rounded-2xl border border-gray-800/80 shadow-xl max-w-full">
-              {['All', 'Islamabad', 'Karachi', 'Lahore', 'Sialkot', 'Peshawar', 'Multan', 'Faisalabad'].map(city => {
-                const count = city === 'All' 
-                  ? Object.values(flyerImages).reduce((acc, curr) => acc + curr.length, 0)
-                  : (flyerImages[city] || []).length;
-                
-                const isActive = selectedCity === city;
-                return (
-                  <button
-                    key={city}
-                    onClick={() => setSelectedCity(city)}
-                    className={`relative px-5 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2.5 border ${
-                      isActive 
-                        ? 'bg-[#c5a059] text-[#05080a] border-[#c5a059] shadow-lg shadow-[#c5a059]/20 scale-102 font-extrabold' 
-                        : 'bg-[#05080a]/80 text-gray-400 border-gray-900 hover:border-gray-800 hover:text-white hover:bg-gray-950'
-                    }`}
-                  >
-                    <i className={`fa-solid ${
-                      city === 'All' ? 'fa-globe' :
-                      city === 'Islamabad' ? 'fa-mosque' :
-                      city === 'Karachi' ? 'fa-ship' :
-                      city === 'Lahore' ? 'fa-archway' :
-                      city === 'Sialkot' ? 'fa-plane-departure' :
-                      city === 'Peshawar' ? 'fa-mountain' :
-                      city === 'Multan' ? 'fa-gopuram' : 'fa-city'
-                    }`}></i>
-                    <span>{city === 'All' ? 'All Cities' : `From ${city}`}</span>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
-                      isActive ? 'bg-[#05080a]/20 text-[#05080a]' : 'bg-gray-800/60 text-gray-400'
-                    }`}>
-                      {count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-            <p className="text-gray-500 text-xs mt-4">
-              Select a city tab to browse printed/scanned leaflet packages. Click any flyer sheet to open the high-resolution lightbox view.
-            </p>
-          </div>
-        )}
-
-        {/* Dynamic Display based on View Mode */}
-        {viewMode === 'interactive' ? (
-          loading ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-4">
-              <span className="text-[#c5a059] text-4xl animate-spin"><i className="fa-solid fa-circle-notch"></i></span>
-              <p className="text-gray-400 text-sm">Loading dynamic packages...</p>
-            </div>
-          ) : (
-            (() => {
-              const filtered = packages.filter((pkg: any) => {
-                const matchesCity = selectedCity === 'All' || pkg.city.toLowerCase() === selectedCity.toLowerCase();
-                const matchesSearch = searchQuery === '' || 
-                  pkg.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  pkg.hotels.makkah.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  pkg.hotels.madinah.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  pkg.description.toLowerCase().includes(searchQuery.toLowerCase());
-                return matchesCity && matchesSearch;
-              });
-
-              if (filtered.length === 0) {
-                return (
-                  <div className="text-center py-20 bg-[#0e1217] rounded-lg border border-gray-800">
-                    <span className="text-5xl text-gray-700 block mb-4"><i className="fa-solid fa-folder-open"></i></span>
-                    <h4 className="text-lg font-bold text-white mb-1">No Packages Found</h4>
-                    <p className="text-gray-500 text-xs">Try selecting another city tab or clearing your search filter.</p>
-                  </div>
-                );
-              }
-
-              return (
-                <div className="grid md:grid-cols-2 gap-8">
-                  {filtered.map((pkg: any, index: number) => {
-                    const imageSrc = pkg.image ? (pkg.image.startsWith('http') ? pkg.image : BACKEND_URL + pkg.image) : '';
-                    return (
-                      <div key={pkg._id || index} className="bg-[#0e1217] rounded-xl overflow-hidden border border-[#c5a059]/10 hover:border-[#c5a059]/20 transition-all flex flex-col group shadow-lg">
-                        <div className="relative h-64 w-full overflow-hidden">
-                          {imageSrc ? (
-                            <img 
-                              src={imageSrc} 
-                              alt={pkg.title} 
-                              className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-[#0e1217] via-[#05080a] to-[#0e1217] flex flex-col items-center justify-center border-b border-[#c5a059]/10 relative">
-                              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(197,160,89,0.05)_0%,transparent_70%)]"></div>
-                              <span className="text-[#c5a059]/30 text-5xl mb-3"><i className="fa-solid fa-kaaba"></i></span>
-                              <span className="text-[10px] text-gray-500 uppercase tracking-widest font-mono">Premium Sacred Package</span>
-                            </div>
-                          )}
-                          <div className="absolute inset-0 bg-gradient-to-t from-[#0e1217] via-transparent to-transparent"></div>
-                          <div className="absolute top-4 left-4 px-3 py-1 bg-[#05080a]/95 border border-[#c5a059]/30 text-[#c5a059] text-xs font-bold rounded uppercase tracking-wider">
-                            {pkg.duration}
-                          </div>
-                          <div className="absolute bottom-4 right-4 px-4 py-1.5 bg-[#c5a059] text-[#05080a] text-sm font-extrabold rounded shadow">
-                            Starts {pkg.price}
-                          </div>
-                        </div>
-                        
-                        <div className="p-8 flex flex-col flex-grow">
-                          <div className="flex justify-between items-center gap-2 mb-2">
-                            <h3 className="text-xl font-bold text-white">{pkg.title}</h3>
-                            <span className="px-2.5 py-1 bg-[#c5a059]/10 border border-[#c5a059]/20 text-[#c5a059] rounded text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
-                              <i className="fa-solid fa-plane-departure mr-1.5"></i> From {pkg.city}
-                            </span>
-                          </div>
-                          <p className="text-gray-400 text-sm leading-relaxed mb-6">{pkg.description}</p>
-                          
-                          <div className="bg-[#05080a]/60 border border-gray-800/80 p-4 rounded-lg flex flex-col gap-2.5 mb-6">
-                            <div className="flex items-center gap-3 text-xs text-gray-300">
-                              <span className="text-[#c5a059]"><i className="fa-solid fa-kaaba"></i></span>
-                              <span>Makkah Accommodation: <strong>{pkg.hotels.makkah}</strong></span>
-                            </div>
-                            <div className="flex items-center gap-3 text-xs text-gray-300">
-                              <span className="text-[#c5a059]"><i className="fa-solid fa-mosque"></i></span>
-                              <span>Madinah Accommodation: <strong>{pkg.hotels.madinah}</strong></span>
-                            </div>
-                          </div>
-
-                          <div className="mb-6">
-                            <h4 className="text-xs font-bold uppercase text-[#c5a059] tracking-wider mb-2.5">Package Inclusions</h4>
-                            <div className="grid grid-cols-2 gap-2 text-[11px] text-gray-400">
-                              {pkg.features ? pkg.features.slice(0, 6).map((feat: string, fIdx: number) => (
-                                <div key={fIdx} className="flex items-center gap-2">
-                                  <span className="text-green-500"><i className="fa-solid fa-circle-check text-[9px]"></i></span>
-                                  <span className="truncate">{feat}</span>
-                                </div>
-                              )) : (
-                                <>
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-green-500"><i className="fa-solid fa-circle-check text-[9px]"></i></span>
-                                    <span>Airline Flights Included</span>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-green-500"><i className="fa-solid fa-circle-check text-[9px]"></i></span>
-                                    <span>Umrah Visa & Insurance</span>
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="border border-gray-800 rounded-lg overflow-hidden mb-6 text-xs bg-[#05080a]/30">
-                            <div className="bg-gray-900/40 grid grid-cols-4 py-2 px-3 text-gray-400 font-bold border-b border-gray-800 text-center">
-                              <div>Double</div>
-                              <div>Triple</div>
-                              <div>Quad</div>
-                              <div>Sharing</div>
-                            </div>
-                            <div className="grid grid-cols-4 py-2.5 px-3 text-center text-[#c5a059] font-bold">
-                              <div>{pkg.price_double ? `${(pkg.price_double/1000).toFixed(0)}k` : '305k'}</div>
-                              <div>{pkg.price_triple ? `${(pkg.price_triple/1000).toFixed(0)}k` : '290k'}</div>
-                              <div>{pkg.price_quad ? `${(pkg.price_quad/1000).toFixed(0)}k` : '283k'}</div>
-                              <div>{pkg.price_sharing ? `${(pkg.price_sharing/1000).toFixed(0)}k` : '274k'}</div>
-                            </div>
-                          </div>
-
-                          <button 
-                            onClick={() => openBookingModal(pkg)}
-                            className="mt-auto w-full py-3 bg-[#c5a059] text-[#05080a] font-bold rounded-lg hover:bg-[#b48e47] transition-all flex items-center justify-center gap-2 shadow shadow-[#c5a059]/10"
-                          >
-                            Book & Checkout Online <i className="fa-solid fa-cart-shopping"></i>
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            })()
-          )
         ) : (
-          /* FLYER SHEETS IMAGE VIEW */
           (() => {
-            const flyers = getFilteredFlyers();
-            if (flyers.length === 0) {
+            const filtered = packages.filter((pkg: any) => {
+              const matchesCity = selectedCity === 'All' || pkg.city.toLowerCase() === selectedCity.toLowerCase();
+              const matchesSearch = searchQuery === '' || 
+                pkg.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                pkg.hotels.makkah.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                pkg.hotels.madinah.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                pkg.description.toLowerCase().includes(searchQuery.toLowerCase());
+              return matchesCity && matchesSearch;
+            });
+
+            if (filtered.length === 0) {
               return (
                 <div className="text-center py-20 bg-[#0e1217] rounded-lg border border-gray-800">
-                  <span className="text-5xl text-gray-700 block mb-4"><i className="fa-solid fa-image"></i></span>
-                  <h4 className="text-lg font-bold text-white mb-1">No Flyer Sheets Found</h4>
-                  <p className="text-gray-500 text-xs">There are no package flyer scans uploaded for the selected city.</p>
+                  <span className="text-5xl text-gray-700 block mb-4"><i className="fa-solid fa-folder-open"></i></span>
+                  <h4 className="text-lg font-bold text-white mb-1">No Packages Found</h4>
+                  <p className="text-gray-500 text-xs">Try selecting another city tab or clearing your search filter.</p>
                 </div>
               );
             }
 
             return (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {flyers.map((filename: string, idx: number) => {
-                  const flyerUrl = `${BACKEND_URL}/uploaded-files/umrah-packages/${encodeURIComponent(filename)}`;
+              <div className="grid md:grid-cols-2 gap-8 animate-fadeIn">
+                {filtered.map((pkg: any, index: number) => {
+                  const imageSrc = pkg.image ? (pkg.image.startsWith('http') ? pkg.image : BACKEND_URL + pkg.image) : '';
                   return (
-                    <div 
-                      key={idx} 
-                      onClick={() => openLightbox(flyerUrl, flyers, idx)}
-                      className="bg-[#0e1217] border border-gray-800 rounded-xl overflow-hidden hover:border-[#c5a059]/40 transition-all cursor-pointer group shadow-lg"
-                    >
-                      <div className="relative aspect-[3/4] w-full overflow-hidden bg-black flex items-center justify-center">
-                        <img 
-                          src={flyerUrl} 
-                          alt={`Flyer Sheet ${idx + 1}`} 
-                          className="max-h-full max-w-full object-contain group-hover:scale-102 transition-transform duration-300"
-                        />
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <span className="px-4 py-2 bg-[#c5a059] text-[#05080a] font-bold text-xs rounded uppercase tracking-wider flex items-center gap-1.5 shadow">
-                            <i className="fa-solid fa-magnifying-glass-plus"></i> View Sheet
-                          </span>
+                    <div key={pkg._id || index} className="bg-[#0e1217] rounded-xl overflow-hidden border border-[#c5a059]/10 hover:border-[#c5a059]/20 transition-all flex flex-col group shadow-lg">
+                      <div className="relative h-64 w-full overflow-hidden">
+                        {imageSrc ? (
+                          <img 
+                            src={imageSrc} 
+                            alt={pkg.title} 
+                            className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-[#0e1217] via-[#05080a] to-[#0e1217] flex flex-col items-center justify-center border-b border-[#c5a059]/10 relative">
+                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(197,160,89,0.05)_0%,transparent_70%)]"></div>
+                            <span className="text-[#c5a059]/30 text-5xl mb-3"><i className="fa-solid fa-kaaba"></i></span>
+                            <span className="text-[10px] text-gray-500 uppercase tracking-widest font-mono">Premium Sacred Package</span>
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#0e1217] via-transparent to-transparent"></div>
+                        <div className="absolute top-4 left-4 px-3 py-1 bg-[#05080a]/95 border border-[#c5a059]/30 text-[#c5a059] text-xs font-bold rounded uppercase tracking-wider">
+                          {pkg.duration}
+                        </div>
+                        <div className="absolute bottom-4 right-4 px-4 py-1.5 bg-[#c5a059] text-[#05080a] text-sm font-extrabold rounded shadow">
+                          Starts {pkg.price}
                         </div>
                       </div>
-                      <div className="p-3 border-t border-gray-800/60 bg-[#0c0f13] text-center">
-                        <div className="text-[10px] text-gray-400 truncate font-mono font-medium">{filename}</div>
+                      
+                      <div className="p-8 flex flex-col flex-grow">
+                        <div className="flex justify-between items-center gap-2 mb-2">
+                          <h3 className="text-xl font-bold text-white">{pkg.title}</h3>
+                          <span className="px-2.5 py-1 bg-[#c5a059]/10 border border-[#c5a059]/20 text-[#c5a059] rounded text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
+                            <i className="fa-solid fa-plane-departure mr-1.5"></i> From {pkg.city}
+                          </span>
+                        </div>
+                        <p className="text-gray-400 text-sm leading-relaxed mb-6">{pkg.description}</p>
+                        
+                        <div className="bg-[#05080a]/60 border border-gray-800/80 p-4 rounded-lg flex flex-col gap-2.5 mb-6">
+                          <div className="flex items-center gap-3 text-xs text-gray-300">
+                            <span className="text-[#c5a059]"><i className="fa-solid fa-kaaba"></i></span>
+                            <span>Makkah Accommodation: <strong>{pkg.hotels.makkah}</strong></span>
+                          </div>
+                          <div className="flex items-center gap-3 text-xs text-gray-300">
+                            <span className="text-[#c5a059]"><i className="fa-solid fa-mosque"></i></span>
+                            <span>Madinah Accommodation: <strong>{pkg.hotels.madinah}</strong></span>
+                          </div>
+                        </div>
+
+                        <div className="mb-6">
+                          <h4 className="text-xs font-bold uppercase text-[#c5a059] tracking-wider mb-2.5">Package Inclusions</h4>
+                          <div className="grid grid-cols-2 gap-2 text-[11px] text-gray-400">
+                            {pkg.features ? pkg.features.slice(0, 6).map((feat: string, fIdx: number) => (
+                              <div key={fIdx} className="flex items-center gap-2">
+                                <span className="text-green-500"><i className="fa-solid fa-circle-check text-[9px]"></i></span>
+                                <span className="truncate">{feat}</span>
+                              </div>
+                            )) : (
+                              <>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-green-500"><i className="fa-solid fa-circle-check text-[9px]"></i></span>
+                                  <span>Airline Flights Included</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-green-500"><i className="fa-solid fa-circle-check text-[9px]"></i></span>
+                                  <span>Umrah Visa & Insurance</span>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="border border-gray-800 rounded-lg overflow-hidden mb-6 text-xs bg-[#05080a]/30">
+                          <div className="bg-gray-900/40 grid grid-cols-4 py-2 px-3 text-gray-400 font-bold border-b border-gray-800 text-center">
+                            <div>Double</div>
+                            <div>Triple</div>
+                            <div>Quad</div>
+                            <div>Sharing</div>
+                          </div>
+                          <div className="grid grid-cols-4 py-2.5 px-3 text-center text-[#c5a059] font-bold">
+                            <div>{pkg.price_double ? `${(pkg.price_double/1000).toFixed(0)}k` : '305k'}</div>
+                            <div>{pkg.price_triple ? `${(pkg.price_triple/1000).toFixed(0)}k` : '290k'}</div>
+                            <div>{pkg.price_quad ? `${(pkg.price_quad/1000).toFixed(0)}k` : '283k'}</div>
+                            <div>{pkg.price_sharing ? `${(pkg.price_sharing/1000).toFixed(0)}k` : '274k'}</div>
+                          </div>
+                        </div>
+
+                        <button 
+                          onClick={() => openBookingModal(pkg)}
+                          className="mt-auto w-full py-3 bg-[#c5a059] text-[#05080a] font-bold rounded-lg hover:bg-[#b48e47] transition-all flex items-center justify-center gap-2 shadow shadow-[#c5a059]/10"
+                        >
+                          Book & Checkout Online <i className="fa-solid fa-cart-shopping"></i>
+                        </button>
                       </div>
                     </div>
                   );
@@ -1791,68 +1601,6 @@ function PortalView({ loading, packages, selectedCity, setSelectedCity, searchQu
           })()
         )}
       </div>
-
-      {/* FULL-SCREEN LIGHTBOX MODAL */}
-      {selectedFlyer && (
-        <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex flex-col justify-between p-4">
-          {/* Header toolbar */}
-          <div className="flex justify-between items-center py-2 px-6 bg-black/40 border-b border-white/5">
-            <span className="text-xs text-gray-400 font-mono truncate max-w-md">{activeFlyerList[selectedFlyerIndex]}</span>
-            <div className="flex items-center gap-6">
-              <a 
-                href={selectedFlyer} 
-                download={activeFlyerList[selectedFlyerIndex]}
-                target="_blank"
-                rel="noreferrer"
-                className="text-gray-300 hover:text-[#c5a059] text-sm font-semibold flex items-center gap-1.5 transition-colors"
-              >
-                <i className="fa-solid fa-download"></i> Download
-              </a>
-              <button 
-                onClick={() => setSelectedFlyer(null)}
-                className="text-gray-400 hover:text-white text-2xl transition-colors"
-              >
-                <i className="fa-solid fa-xmark"></i>
-              </button>
-            </div>
-          </div>
-
-          {/* Main image content with navigation arrows */}
-          <div className="flex-grow flex items-center justify-between relative max-h-[80vh] my-4">
-            {/* Left Nav Arrow */}
-            <button 
-              onClick={prevFlyer} 
-              disabled={selectedFlyerIndex === 0}
-              className={`absolute left-4 z-10 w-12 h-12 rounded-full flex items-center justify-center bg-black/50 text-white border border-white/10 hover:border-[#c5a059] hover:text-[#c5a059] transition-all disabled:opacity-20 disabled:pointer-events-none text-xl`}
-            >
-              <i className="fa-solid fa-chevron-left"></i>
-            </button>
-
-            {/* Central image container */}
-            <div className="w-full h-full flex items-center justify-center">
-              <img 
-                src={selectedFlyer} 
-                alt="Flyer Lightbox" 
-                className="max-h-full max-w-full object-contain shadow-2xl rounded"
-              />
-            </div>
-
-            {/* Right Nav Arrow */}
-            <button 
-              onClick={nextFlyer} 
-              disabled={selectedFlyerIndex === activeFlyerList.length - 1}
-              className={`absolute right-4 z-10 w-12 h-12 rounded-full flex items-center justify-center bg-black/50 text-white border border-white/10 hover:border-[#c5a059] hover:text-[#c5a059] transition-all disabled:opacity-20 disabled:pointer-events-none text-xl`}
-            >
-              <i className="fa-solid fa-chevron-right"></i>
-            </button>
-          </div>
-
-          {/* Bottom indicator */}
-          <div className="text-center py-2 text-xs text-gray-500 font-bold">
-            Sheet {selectedFlyerIndex + 1} of {activeFlyerList.length}
-          </div>
-        </div>
-      )}
     </section>
   );
 }
