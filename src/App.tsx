@@ -1356,7 +1356,7 @@ function PortalView({ loading, packages, selectedCity, setSelectedCity, searchQu
     if (selectedFlyerIndex < activeFlyerList.length - 1) {
       const nextIdx = selectedFlyerIndex + 1;
       setSelectedFlyerIndex(nextIdx);
-      setSelectedFlyer(`${BACKEND_URL}/uploaded-files/umrah packages/${encodeURIComponent(activeFlyerList[nextIdx])}`);
+      setSelectedFlyer(`${BACKEND_URL}/uploaded-files/umrah-packages/${encodeURIComponent(activeFlyerList[nextIdx])}`);
     }
   };
 
@@ -1364,7 +1364,7 @@ function PortalView({ loading, packages, selectedCity, setSelectedCity, searchQu
     if (selectedFlyerIndex > 0) {
       const prevIdx = selectedFlyerIndex - 1;
       setSelectedFlyerIndex(prevIdx);
-      setSelectedFlyer(`${BACKEND_URL}/uploaded-files/umrah packages/${encodeURIComponent(activeFlyerList[prevIdx])}`);
+      setSelectedFlyer(`${BACKEND_URL}/uploaded-files/umrah-packages/${encodeURIComponent(activeFlyerList[prevIdx])}`);
     }
   };
 
@@ -1644,7 +1644,7 @@ function PortalView({ loading, packages, selectedCity, setSelectedCity, searchQu
             return (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {flyers.map((filename: string, idx: number) => {
-                  const flyerUrl = `${BACKEND_URL}/uploaded-files/umrah packages/${encodeURIComponent(filename)}`;
+                  const flyerUrl = `${BACKEND_URL}/uploaded-files/umrah-packages/${encodeURIComponent(filename)}`;
                   return (
                     <div 
                       key={idx} 
