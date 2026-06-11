@@ -1,6 +1,7 @@
 services:
   # React App served via Nginx
   itt-app:
+    image: khalilksa33/itt.sa:latest
     build: .
     container_name: insight-travel-app
     ports:
