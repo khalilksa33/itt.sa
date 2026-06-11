@@ -14,12 +14,15 @@ app.use(express.json());
 app.use('/scraped_packages', express.static(path.join(__dirname, 'public/scraped_packages')));
 
 const fs = require('fs');
-const uploadedFilesPath = fs.existsSync(path.join(__dirname, 'uploaded-files'))
-  ? path.join(__dirname, 'uploaded-files')
-  : (fs.existsSync(path.join(__dirname, '../uploadded-files'))
-      ? path.join(__dirname, '../uploadded-files')
-      : path.join(__dirname, 'uploadded-files'));
+const uploadedFilesPath = fs.existsSync(path.join(__dirname, '../uploaded-files'))
+  ? path.join(__dirname, '../uploaded-files')
+  : (fs.existsSync(path.join(__dirname, 'uploaded-files'))
+      ? path.join(__dirname, 'uploaded-files')
+      : (fs.existsSync('/app/uploaded-files')
+          ? '/app/uploaded-files'
+          : path.join(__dirname, '../uploadded-files')));
 app.use('/uploaded-files', express.static(uploadedFilesPath));
+console.log('[Server] Serving uploaded files from:', uploadedFilesPath);
 
 
 // MongoDB Connection
@@ -28,9 +31,11 @@ mongoose.connect(process.env.MONGODB_URI)
     console.log('Successfully connected to MongoDB.');
     try {
       const count = await UmrahPackage.countDocuments({});
-      if (count === 0) {
-        console.log('No packages found in database. Running meezab scraper...');
+      if (count < 10) {
+        console.log(`Only ${count} packages in DB (< 10). Running local file scraper...`);
         await runScraper(UmrahPackage);
+      } else {
+        console.log(`Database has ${count} packages. Skipping auto-scrape.`);
       }
     } catch (err) {
       console.error('Could not auto-run scraper on startup:', err.message);
@@ -274,6 +279,17 @@ app.post('/api/packages/scrape', async (req, res) => {
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: 'Scraper failed: ' + error.message });
+  }
+});
+
+// 4b. Force re-seed packages from local uploaded files (bypasses count check)
+app.post('/api/packages/reseed', async (req, res) => {
+  try {
+    console.log('[Admin] Force reseed triggered via API...');
+    const result = await runScraper(UmrahPackage);
+    res.json({ success: true, ...result, path: uploadedFilesPath });
+  } catch (error) {
+    res.status(500).json({ error: 'Force reseed failed: ' + error.message });
   }
 });
 

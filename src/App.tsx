@@ -3145,6 +3145,8 @@ function DashboardView({ dashboardStats, bookings, inquiries, exchangeRates, sub
 function SalesPortalView({ packages, subagents, bookings, BACKEND_URL, setSubagents, setPackages }: any) {
   const [activeTab, setActiveTab] = useState<'rates' | 'agents' | 'sales'>('rates');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isReseeding, setIsReseeding] = useState(false);
+  const [reseedStatus, setReseedStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
   
   // Rate edit modal states
   const [editingPkg, setEditingPkg] = useState<UmrahPackage | null>(null);
@@ -3211,6 +3213,28 @@ function SalesPortalView({ packages, subagents, bookings, BACKEND_URL, setSubage
     }
   };
 
+  const handleReseed = async () => {
+    setIsReseeding(true);
+    setReseedStatus({ type: null, message: '' });
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/packages/reseed`, { method: 'POST' });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setReseedStatus({ type: 'success', message: `✓ Reseeded ${data.count} packages from: ${data.path || 'uploaded-files'}` });
+        // Refresh packages list
+        const pkgRes = await fetch(`${BACKEND_URL}/api/packages`);
+        const pkgs = await pkgRes.json();
+        if (pkgs && pkgs.length > 0) setPackages(pkgs);
+      } else {
+        setReseedStatus({ type: 'error', message: data.error || 'Reseed failed.' });
+      }
+    } catch (err) {
+      setReseedStatus({ type: 'error', message: 'Network error reaching backend.' });
+    } finally {
+      setIsReseeding(false);
+    }
+  };
+
   // Stats Calculations
   const approvedAgentsCount = subagents.filter((a: SubAgent) => a.status === 'Approved').length;
   const totalBillings = bookings.reduce((sum: number, b: any) => sum + (b.totalPrice || 0), 0);
@@ -3273,6 +3297,33 @@ function SalesPortalView({ packages, subagents, bookings, BACKEND_URL, setSubage
 
         {/* TAB 1: PRICING */}
         {activeTab === 'rates' && (
+          <div className="flex flex-col gap-4">
+            {/* Reseed Action Bar */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#0e1217] border border-gray-800 rounded-xl p-4">
+              <div>
+                <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                  <i className="fa-solid fa-database text-[#c5a059]"></i>
+                  Package Database Control
+                </h4>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Currently showing {packages.length} packages. Force reload from uploaded-files to refresh all 51+ packages.
+                </p>
+                {reseedStatus.type && (
+                  <p className={`text-xs mt-1.5 font-bold ${reseedStatus.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>
+                    {reseedStatus.message}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={handleReseed}
+                disabled={isReseeding}
+                className="px-4 py-2 bg-[#c5a059]/10 border border-[#c5a059]/30 text-[#c5a059] hover:bg-[#c5a059] hover:text-[#05080a] rounded font-bold text-xs transition-all flex items-center gap-2 whitespace-nowrap"
+              >
+                <i className={`fa-solid ${isReseeding ? 'fa-circle-notch animate-spin' : 'fa-arrows-rotate'}`}></i>
+                {isReseeding ? 'Reloading...' : 'Reload Packages from Files'}
+              </button>
+            </div>
+
           <div className="bg-[#0e1217] border border-gray-800 rounded-xl overflow-hidden shadow-lg">
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left">
@@ -3311,6 +3362,7 @@ function SalesPortalView({ packages, subagents, bookings, BACKEND_URL, setSubage
                 </tbody>
               </table>
             </div>
+          </div>
           </div>
         )}
 

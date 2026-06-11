@@ -61,6 +61,10 @@ async function runScraper(UmrahPackage) {
       "Faisalabad": [
         "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=600", // Elegant design Faisalabad clock tower feel
         "https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=600"  // Faisalabad local aesthetic
+      ],
+      "Karachi": [
+        "https://images.unsplash.com/photo-1618218168350-6e7c81151b64?q=80&w=600", // Mazar-e-Quaid, Karachi
+        "https://images.unsplash.com/photo-1566908829550-e6551b00979b?q=80&w=600"  // Karachi sea view / beach
       ]
     };
 
@@ -90,6 +94,7 @@ async function runScraper(UmrahPackage) {
       else if (filename.toLowerCase().includes('peshawar')) city = "Peshawar";
       else if (filename.toLowerCase().includes('sialkot')) city = "Sialkot";
       else if (filename.toLowerCase().includes('faislabad')) city = "Faisalabad";
+      else if (filename.toLowerCase().includes('karachi') || filename.toLowerCase().includes('whatsapp-image')) city = "Karachi";
 
       // Guess page number or part
       const pageMatch = filename.match(/page-(\d+)/i) || filename.match(/_page-(\d+)/i) || filename.match(/-(\d+)\.jpg/i);
