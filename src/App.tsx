@@ -86,6 +86,123 @@ const fallbackPackages: UmrahPackage[] = [
     price_triple: 345575,
     price_double: 387550,
     price_single: 520000
+  },
+  {
+    title: "Faisalabad Economy Plus Package",
+    city: "Faisalabad",
+    price: "PKR 215,000",
+    duration: "21 Days",
+    description: "Extended spiritual retreat designed for families. Stay in comfortable, clean, and modern 3-star standard accommodations with easily accessible transport links.",
+    hotels: {
+      makkah: "Standard Makkah Towers (3-Star)",
+      madinah: "Al Shourfah Hotel Madinah (3-Star)"
+    },
+    features: [
+      "Flights from Faisalabad (LYP) with stops",
+      "Complete visa processing & assistance",
+      "21 Days total duration (10 Makkah / 11 Madinah)",
+      "Clean hotels within 600m - 800m of the Haram",
+      "24/7 dedicated local staff support",
+      "Standard ground transportation"
+    ],
+    price_sharing: 215000,
+    price_quad: 225000,
+    price_triple: 235000,
+    price_double: 255000,
+    price_single: 350000
+  },
+  {
+    title: "Peshawar Executive Umrah Package",
+    city: "Peshawar",
+    price: "PKR 245,000",
+    duration: "15 Days",
+    description: "Specially tailored for our pilgrims from KP, offering direct travel convenience, highly rated hotels, and dedicated local guide assistance throughout the sacred rituals.",
+    hotels: {
+      makkah: "Retaj Al Rayyan Makkah (4-Star)",
+      madinah: "Arac Revan Hotel Madinah (4-Star)"
+    },
+    features: [
+      "Convenient flights from Peshawar (PEW)",
+      "Hassle-free visa & insurance handling",
+      "Premium properties within 400m",
+      "Guided tour of Islamic heritage sites",
+      "24/7 on-call customer care in KSA",
+      "Comfortable group airport and intercity transfers"
+    ],
+    price_sharing: 245000,
+    price_quad: 255000,
+    price_triple: 265000,
+    price_double: 285000,
+    price_single: 390000
+  },
+  {
+    title: "Karachi Economy Comfort Package",
+    city: "Karachi",
+    price: "PKR 195,000",
+    duration: "15 Days",
+    description: "Value-packed pilgrimage starting from Karachi. Enjoy budget-friendly yet clean lodging with regular shuttle services to the Haram gates.",
+    hotels: {
+      makkah: "Al Kiswah Towers Makkah (3-Star)",
+      madinah: "Dar Al Naeem Madinah (3-Star)"
+    },
+    features: [
+      "Direct flights from Karachi (KHI)",
+      "Visa processing and basic medical insurance",
+      "Clean rooms with 24/7 Haram shuttle services",
+      "Ziyarat tours in Makkah and Madinah included",
+      "Dedicated airport meet and assist service"
+    ],
+    price_sharing: 195000,
+    price_quad: 205000,
+    price_triple: 215000,
+    price_double: 235000,
+    price_single: 320000
+  },
+  {
+    title: "Multan Premium Umrah Package",
+    city: "Multan",
+    price: "PKR 260,000",
+    duration: "15 Days",
+    description: "Comfortable spiritual journey from the City of Saints. Premium 4-star lodging closer to the Harams with buffet meal options available.",
+    hotels: {
+      makkah: "Swissôtel Makkah (4-Star)",
+      madinah: "Al Aqeeq Madinah Hotel (4-Star)"
+    },
+    features: [
+      "Convenient flights from Multan (MUX)",
+      "Express visa processing & flight booking",
+      "Luxury accommodation within walking distance",
+      "Private air-conditioned bus transfers",
+      "Complete historical Ziyarat program"
+    ],
+    price_sharing: 260000,
+    price_quad: 270000,
+    price_triple: 285000,
+    price_double: 310000,
+    price_single: 430000
+  },
+  {
+    title: "Sialkot Saver Umrah Package",
+    city: "Sialkot",
+    price: "PKR 225,000",
+    duration: "21 Days",
+    description: "Affordable and extensive 3-star package departing from Sialkot. Ideal for families looking for an extended stay in the holy cities.",
+    hotels: {
+      makkah: "Standard Makkah Towers (3-Star)",
+      madinah: "Al Shourfah Hotel Madinah (3-Star)"
+    },
+    features: [
+      "Departures from Sialkot International Airport (SKT)",
+      "Visa and complete logistical assistance",
+      "Clean standard hotels within 500m of the outer courtyards",
+      "Guided spiritual group tours in KSA",
+      "Complimentary Zamzam water bottle distribution"
+    ],
+    price_sharing: 225000,
+    price_quad: 235000,
+    price_triple: 245000,
+    price_double: 265000,
+    price_single: 360000
   }
 ];
 
@@ -500,7 +617,7 @@ export default function App() {
         {/* Private Dashboard Routes */}
         <Route path="/dashboard" element={
           <ProtectedRoute isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} BACKEND_URL={BACKEND_URL}>
-            <DashboardView dashboardStats={dashboardStats} bookings={bookings} inquiries={inquiries} exchangeRates={exchangeRates} />
+            <DashboardView dashboardStats={dashboardStats} bookings={bookings} inquiries={inquiries} exchangeRates={exchangeRates} subagents={subagents} BACKEND_URL={BACKEND_URL} />
           </ProtectedRoute>
         } />
         <Route path="/sales" element={
@@ -2426,8 +2543,52 @@ function CustomerPortalView({ BACKEND_URL, exchangeRates }: { BACKEND_URL: strin
 }
 
 /* STAFF BI DASHBOARD VIEW Component */
-function DashboardView({ dashboardStats, bookings, inquiries, exchangeRates }: any) {
-  const [viewMode, setViewMode] = useState<'overview' | 'budget'>('overview');
+function DashboardView({ dashboardStats, bookings, inquiries, exchangeRates, subagents = [], BACKEND_URL }: any) {
+  const [viewMode, setViewMode] = useState<'overview' | 'budget' | 'partners'>('overview');
+  const [partnerFiles, setPartnerFiles] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (BACKEND_URL) {
+      fetch(`${BACKEND_URL}/api/partners/files`)
+        .then(res => res.json())
+        .then(data => setPartnerFiles(data))
+        .catch(err => console.warn('Could not load partner files:', err));
+    }
+  }, [BACKEND_URL]);
+
+  const partnerStats = React.useMemo(() => {
+    const stats: { [agentId: string]: { name: string; agency: string; bookingsCount: number; revenue: number } } = {};
+    
+    subagents.forEach((agent: any) => {
+      stats[agent.name] = {
+        name: agent.contactName,
+        agency: agent.agencyName,
+        bookingsCount: 0,
+        revenue: 0
+      };
+    });
+
+    bookings.forEach((booking: any) => {
+      if (booking.partnerId) {
+        const id = booking.partnerId;
+        if (!stats[id]) {
+          stats[id] = {
+            name: 'External Partner',
+            agency: `Partner ID: ${id}`,
+            bookingsCount: 0,
+            revenue: 0
+          };
+        }
+        stats[id].bookingsCount += 1;
+        stats[id].revenue += booking.totalPrice || 0;
+      }
+    });
+
+    return Object.entries(stats).map(([id, info]) => ({
+      id,
+      ...info
+    })).sort((a, b) => b.revenue - a.revenue);
+  }, [bookings, subagents]);
 
   // Exchange Rates (Dynamic Live Spot rate or static budget fallback)
   const EXCHANGE_RATE = exchangeRates?.sarToPkr || 74.5;
@@ -2558,7 +2719,7 @@ function DashboardView({ dashboardStats, bookings, inquiries, exchangeRates }: a
             <p className="text-gray-400 text-sm mt-1">Real-time sales tracking, commission logs, booking distributions, and budget comparisons.</p>
           </div>
           
-          <div className="bg-[#05080a] p-1.5 rounded-lg border border-gray-800 flex gap-2 w-full md:w-auto text-xs">
+          <div className="bg-[#05080a] p-1.5 rounded-lg border border-gray-800 flex flex-wrap gap-2 w-full md:w-auto text-xs text-center justify-center">
             <button
               onClick={() => setViewMode('overview')}
               className={`px-5 py-2 rounded font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
@@ -2578,6 +2739,16 @@ function DashboardView({ dashboardStats, bookings, inquiries, exchangeRates }: a
               }`}
             >
               <i className="fa-solid fa-compass"></i> Budget & Milestones
+            </button>
+            <button
+              onClick={() => setViewMode('partners')}
+              className={`px-5 py-2 rounded font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                viewMode === 'partners'
+                  ? 'bg-[#c5a059] text-[#05080a]'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <i className="fa-solid fa-user-group"></i> Partner & JV Analytics
             </button>
           </div>
         </div>
@@ -2794,7 +2965,7 @@ function DashboardView({ dashboardStats, bookings, inquiries, exchangeRates }: a
           </div>
         </div>
       </>
-      ) : (
+      ) : viewMode === 'budget' ? (
         /* BUDGET & MILESTONES VIEW */
         <div className="flex flex-col gap-8">
           
@@ -3042,6 +3213,179 @@ function DashboardView({ dashboardStats, bookings, inquiries, exchangeRates }: a
             </div>
           </div>
 
+        </div>
+      ) : (
+        /* PARTNERS & JV ANALYTICS VIEW */
+        <div className="flex flex-col gap-8 animate-fadeIn">
+          {/* Partner KPI Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden group">
+              <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-users"></i></div>
+              <div className="text-xs font-bold uppercase tracking-wider text-gray-400">Registered Sub-Agents</div>
+              <div className="text-2xl font-black text-[#c5a059] mt-2">{subagents.length} Agents</div>
+              <div className="text-[10px] text-gray-500 mt-1">Pending and approved commission partners</div>
+            </div>
+
+            <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden group">
+              <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-file-contract"></i></div>
+              <div className="text-xs font-bold uppercase tracking-wider text-gray-400">JV Contracts Directory</div>
+              <div className="text-2xl font-black text-white mt-2">{partnerFiles.length} Agreements</div>
+              <div className="text-[10px] text-gray-500 mt-1">Scanned PDF contracts from partners folder</div>
+            </div>
+
+            <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden group">
+              <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-money-bill-trend-up"></i></div>
+              <div className="text-xs font-bold uppercase tracking-wider text-gray-400">Partner Sales Share</div>
+              <div className="text-2xl font-black text-green-400 mt-2">
+                PKR {partnerStats.reduce((sum: number, p: any) => sum + p.revenue, 0).toLocaleString()}
+              </div>
+              <div className="text-[10px] text-gray-550 mt-1 flex justify-between w-full">
+                <span>Bookings: {partnerStats.reduce((sum: number, p: any) => sum + p.bookingsCount, 0)}</span>
+                <span>Share: {((partnerStats.reduce((sum: number, p: any) => sum + p.revenue, 0) / (dashboardStats.totalSales || 1)) * 100).toFixed(1)}%</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            {/* Scanned JV Contracts Directory Section */}
+            <div className="bg-[#0e1217] p-6 rounded-xl border border-gray-800 lg:col-span-5 flex flex-col">
+              <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+                <i className="fa-solid fa-file-pdf text-red-500"></i> Signed JV Contracts Directory
+              </h3>
+              <p className="text-gray-400 text-xs mb-6">These agreements are loaded dynamically from the `partners` folder. Click to view or download.</p>
+              
+              <div className="flex flex-col gap-3.5 max-h-[480px] overflow-y-auto pr-1">
+                {partnerFiles.length === 0 ? (
+                  <div className="text-center py-12 text-gray-500 border border-dashed border-gray-800 rounded-lg">
+                    <i className="fa-solid fa-folder-open text-4xl text-gray-700 block mb-2"></i>
+                    No signed contract PDFs detected.
+                  </div>
+                ) : (
+                  partnerFiles.map((file, idx) => (
+                    <div key={idx} className="bg-[#05080a] border border-gray-800 hover:border-[#c5a059]/30 rounded-lg p-3.5 flex items-center justify-between gap-4 transition-all">
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        <span className="text-2xl text-red-450 flex-shrink-0"><i className="fa-solid fa-file-pdf"></i></span>
+                        <div className="overflow-hidden">
+                          <h4 className="text-xs font-bold text-white truncate" title={file.companyName}>{file.companyName}</h4>
+                          <span className="text-[10px] text-gray-500 block truncate mt-0.5">{file.filename}</span>
+                        </div>
+                      </div>
+                      <a 
+                        href={`${BACKEND_URL}${file.url}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="px-3 py-1.5 bg-[#c5a059]/10 hover:bg-[#c5a059] border border-[#c5a059]/30 hover:border-[#c5a059] text-[#c5a059] hover:text-[#05080a] text-[10px] font-bold rounded transition-all flex-shrink-0"
+                      >
+                        View Contract
+                      </a>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Sub-Agent Performance Leaderboard Section */}
+            <div className="bg-[#0e1217] p-6 rounded-xl border border-gray-800 lg:col-span-7">
+              <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+                <i className="fa-solid fa-trophy text-yellow-500"></i> Partner & Sub-Agent Activity Tracking
+              </h3>
+              <p className="text-gray-400 text-xs mb-6">Real-time revenue attribution and commission logs generated per Sub-Agent ID.</p>
+              
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-gray-800 text-gray-400 uppercase font-extrabold tracking-wider">
+                      <th className="py-2.5 px-3">Agent ID / Name</th>
+                      <th className="py-2.5 px-3">Agency Name</th>
+                      <th className="py-2.5 px-3 text-center">Bookings</th>
+                      <th className="py-2.5 px-3 text-right">Attributed Sales</th>
+                      <th className="py-2.5 px-3 text-right">Commissions (5%)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-800 text-gray-300">
+                    {partnerStats.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="py-8 text-center text-gray-500">No partner activity recorded.</td>
+                      </tr>
+                    ) : (
+                      partnerStats.map((agent, aIdx) => (
+                        <tr key={aIdx} className="hover:bg-gray-900/40">
+                          <td className="py-3 px-3">
+                            <div className="font-bold text-white">{agent.id}</div>
+                            <div className="text-[10px] text-gray-500 mt-0.5">{agent.name}</div>
+                          </td>
+                          <td className="py-3 px-3 font-semibold text-gray-300">{agent.agency}</td>
+                          <td className="py-3 px-3 text-center font-bold text-white">{agent.bookingsCount}</td>
+                          <td className="py-3 px-3 text-right font-black text-[#c5a059]">PKR {agent.revenue.toLocaleString()}</td>
+                          <td className="py-3 px-3 text-right font-bold text-green-400">PKR {(agent.revenue * 0.05).toLocaleString()}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {/* Registered Sub-Agents General Directory */}
+          <div className="bg-[#0e1217] p-6 rounded-xl border border-gray-800 overflow-hidden">
+            <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+              <i className="fa-solid fa-address-book text-[#c5a059]"></i> Sub-Agent Partner General Directory
+            </h3>
+            <p className="text-gray-400 text-xs mb-6">Profiles of registered sub-agents and franchise partners registered via E-Portal.</p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-gray-800 text-gray-400 uppercase font-extrabold tracking-wider">
+                    <th className="py-2.5 px-3">Agent ID</th>
+                    <th className="py-2.5 px-3">Agency Details</th>
+                    <th className="py-2.5 px-3">Contact</th>
+                    <th className="py-2.5 px-3 text-center">Exp.</th>
+                    <th className="py-2.5 px-3 text-center">Consent</th>
+                    <th className="py-2.5 px-3 text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-800 text-gray-300">
+                  {subagents.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-8 text-center text-gray-500">No sub-agents registered in database.</td>
+                    </tr>
+                  ) : (
+                    subagents.map((agent: any, sIdx: number) => (
+                      <tr key={sIdx} className="hover:bg-gray-900/40">
+                        <td className="py-3 px-3 font-mono text-[#c5a059] font-bold">{agent.name}</td>
+                        <td className="py-3 px-3">
+                          <div className="font-bold text-white">{agent.agencyName}</div>
+                          <div className="text-[10px] text-gray-500 mt-0.5">{agent.address}</div>
+                        </td>
+                        <td className="py-3 px-3">
+                          <div>{agent.contactName}</div>
+                          <div className="text-[10px] text-gray-500 mt-0.5">{agent.email} | {agent.phone}</div>
+                        </td>
+                        <td className="py-3 px-3 text-center font-bold text-white">{agent.experience} Yrs</td>
+                        <td className="py-3 px-3 text-center">
+                          <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
+                            agent.jvConsent ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                          }`}>
+                            {agent.jvConsent ? 'JV Agreed' : 'No JV'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-center">
+                          <span className={`px-2 py-0.5 rounded-full font-bold uppercase tracking-wider text-[9px] ${
+                            agent.status === 'Approved' ? 'bg-green-500/10 border border-green-500/20 text-green-400' :
+                            agent.status === 'Suspended' ? 'bg-red-500/10 border border-red-500/20 text-red-400' :
+                            'bg-yellow-500/10 border border-yellow-500/20 text-yellow-400'
+                          }`}>
+                            {agent.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
     </div>

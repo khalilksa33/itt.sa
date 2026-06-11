@@ -329,6 +329,41 @@ app.post('/api/auth/login', (req, res) => {
   return res.status(401).json({ success: false, error: 'Invalid portal password.' });
 });
 
+// 7b. Get partners from scanned JV Contract PDFs in uploaded-files/partners
+app.get('/api/partners/files', (req, res) => {
+  try {
+    const partnersDir = path.join(uploadedFilesPath, 'partners');
+    if (!fs.existsSync(partnersDir)) {
+      return res.json([]);
+    }
+    const files = fs.readdirSync(partnersDir);
+    const parsedPartners = files
+      .filter(f => f.endsWith('.pdf'))
+      .map(f => {
+        // Parse company name from filename
+        let companyName = f.replace(' - JV Contract - Insight Travel N Tourism', '')
+                           .replace('JV Contract Template - Insight Travel N Tourism', 'Template')
+                           .replace('JV Insight Travel N Tourism Vs ', '')
+                           .replace('.pdf', '')
+                           .trim();
+        
+        // Remove trailing date like "-01-06-2026" or " - 18-5-2026"
+        companyName = companyName.replace(/-\d{1,2}-\d{1,2}-\d{4}/, '')
+                                 .replace(/\s*-\s*\d{1,2}-\d{1,2}-\d{4}/, '')
+                                 .trim();
+        
+        return {
+          filename: f,
+          companyName: companyName,
+          url: `/uploaded-files/partners/${encodeURIComponent(f)}`
+        };
+      });
+    res.json(parsedPartners);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to retrieve partner files: ' + error.message });
+  }
+});
+
 // 8. Submit partner sub-agent registration
 app.post('/api/subagents', async (req, res) => {
   try {
