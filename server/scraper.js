@@ -9,12 +9,16 @@ async function runScraper(UmrahPackage) {
     // Resolve the local directory path, checking both parent (local) and child (container) path options
     let targetDir = '';
     const pathsToTry = [
-      path.join(__dirname, 'uploadded-files/umrah-packages'),
+      // Docker: working_dir=/app maps to ./server, uploaded-files volume at /app/uploaded-files
       path.join(__dirname, 'uploaded-files/umrah-packages'),
-      path.join(__dirname, '../uploadded-files/umrah-packages'),
+      // One level up (local dev: running from server/ folder)
       path.join(__dirname, '../uploaded-files/umrah-packages'),
+      // Absolute Docker paths
+      '/app/uploaded-files/umrah-packages',
+      // Legacy typo fallbacks
+      path.join(__dirname, 'uploadded-files/umrah-packages'),
+      path.join(__dirname, '../uploadded-files/umrah-packages'),
       '/app/uploadded-files/umrah-packages',
-      '/app/uploaded-files/umrah-packages'
     ];
 
     for (const p of pathsToTry) {

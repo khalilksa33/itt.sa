@@ -18,6 +18,7 @@ services:
     volumes:
       - ./server:/app
       - ./uploaded-files:/app/uploaded-files
+      - ./uploaded-files:/uploaded-files
 
     command: sh -c "npm install && npm start"
     ports:
