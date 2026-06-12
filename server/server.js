@@ -25,24 +25,6 @@ app.use('/uploaded-files', express.static(uploadedFilesPath));
 console.log('[Server] Serving uploaded files from:', uploadedFilesPath);
 
 
-// MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI)
-  .then(async () => {
-    console.log('Successfully connected to MongoDB.');
-    try {
-      const count = await UmrahPackage.countDocuments({});
-      if (count < 10) {
-        console.log(`Only ${count} packages in DB (< 10). Running local file scraper...`);
-        await runScraper(UmrahPackage);
-      } else {
-        console.log(`Database has ${count} packages. Skipping auto-scrape.`);
-      }
-    } catch (err) {
-      console.error('Could not auto-run scraper on startup:', err.message);
-    }
-  })
-  .catch(err => console.error('MongoDB connection error:', err));
-
 // Mongoose Schemas & Models
 const InquirySchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -122,6 +104,24 @@ const SubAgentSchema = new mongoose.Schema({
 });
 
 const SubAgent = mongoose.model('SubAgent', SubAgentSchema);
+
+// MongoDB Connection
+mongoose.connect(process.env.MONGODB_URI)
+  .then(async () => {
+    console.log('Successfully connected to MongoDB.');
+    try {
+      const count = await UmrahPackage.countDocuments({});
+      if (count < 10) {
+        console.log(`Only ${count} packages in DB (< 10). Running local file scraper...`);
+        await runScraper(UmrahPackage);
+      } else {
+        console.log(`Database has ${count} packages. Skipping auto-scrape.`);
+      }
+    } catch (err) {
+      console.error('Could not auto-run scraper on startup:', err.message);
+    }
+  })
+  .catch(err => console.error('MongoDB connection error:', err));
 
 // API Routes
 
