@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: DEV CI/CD Pipeline
 
 on:
   push:
@@ -31,31 +31,32 @@ jobs:
           context: .
           push: true
           tags: |
-            khalilksa33/itt.sa:latest
-            khalilksa33/itt.sa:${{ github.sha }}
+            khalilksa33/itt.sa-dev:latest
+            khalilksa33/itt.sa-dev:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
   deploy:
-    runs-on: self-hosted
+    runs-on: [self-hosted, self-hosted-hostb]
     needs: build-and-push
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Sync Code to Production and Deploy
+      - name: Sync Code to Host B and Deploy
         run: |
           export PATH=$PATH:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+          mkdir -p /home/iicc2/itt.sa-dev
           {
-            echo "=== Deployment Run ==="
+            echo "=== DEV Deployment Run ==="
             date
-            echo "Syncing workspace code to /home/frappe/itt.sa..."
-            rsync -av --exclude='.git' --exclude='node_modules' ./ /home/frappe/itt.sa/
-            
-            echo "Deploying containers..."
-            cd /home/frappe/itt.sa
+            echo "Syncing workspace code to /home/iicc2/itt.sa-dev..."
+            rsync -av --exclude='.git' --exclude='node_modules' ./ /home/iicc2/itt.sa-dev/
+
+            echo "Deploying DEV containers on port 8090..."
+            cd /home/iicc2/itt.sa-dev
             docker compose pull
             docker compose up -d --remove-orphans
-            echo "=== Deployment Finished ==="
-          } > /home/frappe/itt.sa/deploy_step.log 2>&1
+            echo "=== DEV Deployment Finished ==="
+          } > /home/iicc2/itt.sa-dev/deploy_step.log 2>&1
