@@ -1226,6 +1226,7 @@ function HomeView({ navigateTo, handleFormChange, handleInquirySubmit, formData,
             </div>
           </div>
 
+          {/* TEMPORARILY HIDDEN: Umrah Booking E-Portal section
           <div className="mt-20 bg-[#0e1217] border border-[#c5a059]/15 rounded-xl p-8 sm:p-12 text-center max-w-4xl mx-auto shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 left-0 w-2 h-full bg-[#c5a059]"></div>
             <h3 className="text-2xl font-serif text-white font-bold mb-4">Umrah Booking E-Portal</h3>
@@ -1239,6 +1240,7 @@ function HomeView({ navigateTo, handleFormChange, handleInquirySubmit, formData,
               Enter Sacred Umrah Portal <i className="fa-solid fa-arrow-right-to-bracket ml-2"></i>
             </button>
           </div>
+          */}
         </div>
       </section>
 
