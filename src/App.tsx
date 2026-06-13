@@ -642,7 +642,6 @@ export default function App() {
         <div className="container mx-auto px-6 max-w-7xl flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-3">
             <span className="text-[#c5a059] text-lg"><i className="fa-solid fa-compass"></i></span>
-            <span className="text-sm font-bold tracking-wide text-white uppercase">
             <span className="text-xl font-bold tracking-wide text-white uppercase">
               Travel & <span className="text-[#c5a059] font-serif capitalize">Tourism Agency</span>
             </span>
