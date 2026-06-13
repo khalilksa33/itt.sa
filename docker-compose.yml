@@ -5,7 +5,7 @@ services:
     build: .
     container_name: insight-travel-app-dev
     ports:
-      - "8090:80"
+      - "8095:80"
     restart: always
     depends_on:
       - itt-backend

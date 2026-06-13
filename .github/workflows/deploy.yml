@@ -55,7 +55,7 @@ jobs:
           echo "=== Syncing Workspace ==="
           rsync -av --exclude='.git' --exclude='node_modules' ./ /home/iicc2/itt.sa-dev/
           
-          echo "=== Deploying DEV Containers ==="
+          echo "=== Deploying DEV Containers on Port 8095 ==="
           cd /home/iicc2/itt.sa-dev
           docker compose down || true
           docker compose pull
