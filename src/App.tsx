@@ -534,7 +534,7 @@ export default function App() {
           <a href="/" onClick={(e) => { e.preventDefault(); navigateTo('/'); }} className="flex items-center gap-3">
             <span className="text-[#c5a059] text-2.5xl animate-spin-slow inline-block"><i className="fa-solid fa-compass"></i></span>
             <span className="text-xl font-bold tracking-wide text-white uppercase">
-              Insight <span className="text-[#c5a059] font-serif capitalize">Travel & Tourism</span>
+              Travel & <span className="text-[#c5a059] font-serif capitalize">Tourism Agency</span>
             </span>
           </a>
 
@@ -643,11 +643,12 @@ export default function App() {
           <div className="flex items-center gap-3">
             <span className="text-[#c5a059] text-lg"><i className="fa-solid fa-compass"></i></span>
             <span className="text-sm font-bold tracking-wide text-white uppercase">
-              Insight <span className="text-[#c5a059] font-serif capitalize">Travel & Tourism</span>
+            <span className="text-xl font-bold tracking-wide text-white uppercase">
+              Travel & <span className="text-[#c5a059] font-serif capitalize">Tourism Agency</span>
             </span>
           </div>
           <p className="text-center">
-            &copy; 2026 Insight Travel and Tours. Based in Madinah Al-Munawarah. Powered by IICC IT Department.
+            &copy; 2026 Travel & Tourism Agency. All Rights Reserved.
           </p>
           <div className="flex gap-4">
             <a href="/partner" onClick={(e) => { e.preventDefault(); navigateTo('/partner'); }} className="hover:text-[#c5a059]">Partner Registration</a>
@@ -1006,7 +1007,7 @@ function HomeView({ navigateTo, handleFormChange, handleInquirySubmit, formData,
               </span>
             </h1>
             <p className="text-gray-400 text-base sm:text-lg mb-10 leading-relaxed font-sans max-w-xl">
-              Specializing in spiritual, serene Umrah pilgrimages and premium, tailored World Tour packages. Connect with Insight Travel & Tourism for trusted guidance, comfort, and premium arrangements.
+              Specializing in spiritual, serene Umrah pilgrimages and premium, tailored World Tour packages. Connect with our Travel & Tourism Agency for trusted guidance, comfort, and premium arrangements.
             </p>
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <button 
@@ -1258,23 +1259,23 @@ function HomeView({ navigateTo, handleFormChange, handleInquirySubmit, formData,
               <span className="self-start px-3 py-1 bg-[#c5a059]/10 text-[#c5a059] text-xs font-bold uppercase tracking-wider rounded border border-[#c5a059]/20 mb-4">
                 Team Head
               </span>
-              <h3 className="text-2xl font-bold text-white mb-1">Mr. Hafiz Laique Shahid</h3>
+              <h3 className="text-2xl font-bold text-white mb-1">Mr. John Doe</h3>
               <p className="text-sm text-[#c5a059] font-semibold mb-2 font-serif">CEO</p>
-              <p className="text-xs text-gray-400 mb-6"><i className="fa-solid fa-location-dot"></i> Lahore, Pakistan Office</p>
+              <p className="text-xs text-gray-400 mb-6"><i className="fa-solid fa-location-dot"></i> Lahore Office</p>
               
               <div className="flex flex-col gap-3 mt-auto pt-6 border-t border-gray-800">
                 <div className="flex items-center gap-3 text-sm text-gray-300">
                   <span className="text-[#c5a059] w-5"><i className="fa-solid fa-envelope"></i></span>
                   <div className="flex flex-col">
-                    <a href="mailto:hlaique@yahoo.com" className="hover:text-[#c5a059] transition-colors">hlaique@yahoo.com</a>
-                    <a href="mailto:hijartulharamtravels@gmail.com" className="hover:text-[#c5a059] transition-colors">hijartulharamtravels@gmail.com</a>
+                    <a href="mailto:ceo@agency.com" className="hover:text-[#c5a059] transition-colors">ceo@agency.com</a>
+                    <a href="mailto:support@agency.com" className="hover:text-[#c5a059] transition-colors">support@agency.com</a>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 text-sm text-gray-300">
                   <span className="text-[#c5a059] w-5"><i className="fa-solid fa-phone"></i></span>
                   <div className="flex flex-col">
-                    <a href="tel:+923018490804" className="hover:text-[#c5a059] transition-colors">+92 301-8490804</a>
-                    <a href="tel:+966552945129" className="hover:text-[#c5a059] transition-colors">+966 55-294-5129</a>
+                    <a href="tel:+923000000000" className="hover:text-[#c5a059] transition-colors">+92 300-0000000</a>
+                    <a href="tel:+966500000000" className="hover:text-[#c5a059] transition-colors">+966 50-000-0000</a>
                   </div>
                 </div>
               </div>
@@ -1284,18 +1285,18 @@ function HomeView({ navigateTo, handleFormChange, handleInquirySubmit, formData,
               <span className="self-start px-3 py-1 bg-[#c5a059]/10 text-[#c5a059] text-xs font-bold uppercase tracking-wider rounded border border-[#c5a059]/20 mb-4">
                 Executive Director
               </span>
-              <h3 className="text-2xl font-bold text-white mb-1">Ahmad Hasan Marjan</h3>
+              <h3 className="text-2xl font-bold text-white mb-1">Jane Smith</h3>
               <p className="text-sm text-[#c5a059] font-semibold mb-2 font-serif">Executive Director</p>
-              <p className="text-xs text-gray-400 mb-6"><i className="fa-solid fa-location-dot"></i> Lahore, Pakistan Office</p>
+              <p className="text-xs text-gray-400 mb-6"><i className="fa-solid fa-location-dot"></i> Lahore Office</p>
               
               <div className="flex flex-col gap-3 mt-auto pt-6 border-t border-gray-800">
                 <div className="flex items-center gap-3 text-sm text-gray-300">
                   <span className="text-[#c5a059] w-5"><i className="fa-solid fa-envelope"></i></span>
-                  <a href="mailto:m@itt.sa" className="hover:text-[#c5a059] transition-colors">m@itt.sa</a>
+                  <a href="mailto:director@agency.com" className="hover:text-[#c5a059] transition-colors">director@agency.com</a>
                 </div>
                 <div className="flex items-center gap-3 text-sm text-gray-300">
                   <span className="text-[#c5a059] w-5"><i className="fa-solid fa-phone"></i></span>
-                  <a href="tel:+966500860633" className="hover:text-[#c5a059] transition-colors">+966 50-086-0633</a>
+                  <a href="tel:+966500000000" className="hover:text-[#c5a059] transition-colors">+966 50-000-0000</a>
                 </div>
               </div>
             </div>
@@ -1311,11 +1312,11 @@ function HomeView({ navigateTo, handleFormChange, handleInquirySubmit, formData,
             <h3 className="text-[#c5a059] text-xs uppercase tracking-widest font-semibold mb-2">Chairman's Message</h3>
             <h4 className="text-2xl font-serif text-white mb-4 font-bold">A Sacred Commitment to Quality</h4>
             <p className="text-gray-400 text-sm leading-relaxed mb-6 italic max-w-2xl mx-auto">
-              "Our mission at Insight Travel is rooted in trust, integrity, and absolute devotion. Having guided thousands of pilgrims from Pakistan and across the globe, we pledge our signature standards of comfort and care as you answer the sacred call. Your spiritual satisfaction is our ultimate reward."
+              "Our mission is rooted in trust, integrity, and absolute devotion. Having guided thousands of pilgrims, we pledge our signature standards of comfort and care as you answer the sacred call. Your spiritual satisfaction is our ultimate reward."
             </p>
             <div>
-              <p className="text-white font-bold text-sm">Chauhdry Muhammad Aslam</p>
-              <p className="text-[#c5a059] text-xs">Chairman, Insight Travel & Tourism</p>
+              <p className="text-white font-bold text-sm">Founder & Chairman</p>
+              <p className="text-[#c5a059] text-xs">Chairman, Travel & Tourism Agency</p>
             </div>
           </div>
         </div>
@@ -1336,11 +1337,11 @@ function HomeView({ navigateTo, handleFormChange, handleInquirySubmit, formData,
               </div>
               <div className="flex items-center gap-4 text-sm text-gray-300">
                 <span className="text-[#c5a059] text-xl"><i className="fa-solid fa-envelope"></i></span>
-                <span>info@itt.sa</span>
+                <span>info@agency.com</span>
               </div>
               <div className="flex items-center gap-4 text-sm text-gray-300">
                 <span className="text-[#c5a059] text-xl"><i className="fa-solid fa-phone"></i></span>
-                <span>+966 50 086 1820</span>
+                <span>+966 50 000 0000</span>
               </div>
             </div>
           </div>
@@ -1665,7 +1666,7 @@ function PartnerRegisterView({ BACKEND_URL }: { BACKEND_URL: string }) {
     <section className="py-24 bg-[#05080a] flex-grow animate-fadeIn">
       <div className="container mx-auto px-6 max-w-3xl">
         <div className="text-center mb-12">
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-white">Partner With <span className="text-[#c5a059]">Insight Travel</span></h1>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-white">Partner With <span className="text-[#c5a059]">Our Travel Agency</span></h1>
           <p className="text-gray-400 text-sm mt-3 max-w-xl mx-auto">
             Grow your pilgrimage business by becoming an authorized sub-agent. Access premium rates, real-time booking, and white-label tools instantly.
           </p>
@@ -1807,7 +1808,7 @@ function PartnerRegisterView({ BACKEND_URL }: { BACKEND_URL: string }) {
                 <label htmlFor="jvConsent" className="text-xs text-gray-300 leading-relaxed cursor-pointer select-none">
                   I accept and agree to the terms of the{' '}
                   <a 
-                    href={`${BACKEND_URL}/uploaded-files/JV Partners/General JV Contract Template - Insight Travel N Tourism.pdf`}
+                    href={`${BACKEND_URL}/uploaded-files/JV Partners/General JV Contract Template.pdf`}
                     target="_blank" 
                     rel="noopener noreferrer" 
                     className="text-[#c5a059] hover:underline font-bold inline-flex items-center gap-1"
@@ -1969,7 +1970,7 @@ function PartnerDashboardView({ BACKEND_URL, exchangeRates }: { BACKEND_URL: str
           </div>
           <div className="flex items-center gap-3">
             <a 
-              href={`${BACKEND_URL}/uploaded-files/JV Partners/General JV Contract Template - Insight Travel N Tourism.pdf`}
+              href={`${BACKEND_URL}/uploaded-files/JV Partners/General JV Contract Template.pdf`}
               target="_blank" 
               rel="noopener noreferrer"
               className="px-4 py-2 bg-[#c5a059]/10 border border-[#c5a059]/25 text-[#c5a059] text-xs font-bold rounded hover:bg-[#c5a059] hover:text-[#05080a] transition-all flex items-center gap-2"
@@ -2198,7 +2199,7 @@ function CustomerPortalView({ BACKEND_URL, exchangeRates }: { BACKEND_URL: strin
             <div className="bg-[#05080a] py-6 px-8 border-b border-gray-850 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
                 <span className="text-[10px] text-[#c5a059] font-bold uppercase tracking-widest font-mono">Official Booking Receipt</span>
-                <h3 className="text-lg font-bold text-white mt-0.5">Insight Travel & Tourism</h3>
+                <h3 className="text-lg font-bold text-white mt-0.5">Travel & Tourism Agency</h3>
                 <p className="text-[10px] text-gray-500 font-mono mt-0.5">Issued on: {new Date(booking.createdAt).toLocaleDateString()}</p>
               </div>
               <div className="text-right">
@@ -3416,7 +3417,7 @@ function SalesPortalView({ packages, subagents, bookings, BACKEND_URL, setSubage
                               <span>{agent.email} &bull; {agent.phone}</span>
                               {agent.jvConsent && (
                                 <a 
-                                  href={`${BACKEND_URL}/uploaded-files/JV Partners/General JV Contract Template - Insight Travel N Tourism.pdf`}
+                                  href={`${BACKEND_URL}/uploaded-files/JV Partners/General JV Contract Template.pdf`}
                                   target="_blank" 
                                   rel="noopener noreferrer"
                                   className="text-[#c5a059] hover:underline font-bold inline-flex items-center gap-0.5 ml-1"

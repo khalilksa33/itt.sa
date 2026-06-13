@@ -532,7 +532,7 @@ app.post('/api/customer/lookup', async (req, res) => {
 
 // Root Route
 app.get('/', (req, res) => {
-  res.send('Insight Travel & Tourism Backend API is running.');
+  res.send('Travel & Tourism Backend API is running.');
 });
 
 

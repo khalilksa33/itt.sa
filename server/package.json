@@ -1,7 +1,7 @@
 {
   "name": "itt-backend",
   "version": "1.0.0",
-  "description": "Backend API for Insight Travel & Tourism",
+  "description": "Backend API for Travel & Tourism Agency",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
