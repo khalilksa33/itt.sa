@@ -49,9 +49,6 @@ jobs:
           export PATH=$PATH:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
           mkdir -p /home/iicc2/itt.sa-dev
           
-          echo "=== Diagnostic: Pre-deploy Docker Status ==="
-          docker ps -a
-          
           echo "=== Syncing Workspace ==="
           rsync -av --exclude='.git' --exclude='node_modules' ./ /home/iicc2/itt.sa-dev/
           
@@ -60,13 +57,4 @@ jobs:
           docker compose down || true
           docker compose pull
           docker compose up -d --remove-orphans
-          
-          echo "=== Diagnostic: Post-deploy Docker Status ==="
-          docker ps -a
-          
-          echo "=== Diagnostic: Check Port Bindings ==="
-          docker compose ps
-          
-          echo "=== Diagnostic: Container Logs (last 50 lines) ==="
-          docker logs insight-travel-app-dev --tail 50 || true
-          docker logs insight-travel-backend-dev --tail 50 || true
+          echo "=== DEV Deployment Finished ==="
