@@ -544,17 +544,20 @@ export default function App() {
             <a href="#services" onClick={(e) => { e.preventDefault(); navigateTo('/', 'services'); }} className="text-xs font-semibold text-gray-400 hover:text-[#c5a059] transition-colors">Services</a>
             <a href="#spiritual" onClick={(e) => { e.preventDefault(); navigateTo('/', 'spiritual'); }} className="text-xs font-semibold text-gray-400 hover:text-[#c5a059] transition-colors">Spiritual</a>
             <a href="#wonders" onClick={(e) => { e.preventDefault(); navigateTo('/', 'wonders'); }} className="text-xs font-semibold text-gray-400 hover:text-[#c5a059] transition-colors">World Tours</a>
-            {/* TEMPORARILY HIDDEN: Umrah E-Portal */}
+            {/* TEMPORARILY HIDDEN: Umrah Booking E-Portal */}
             {/* <a href="/portal" onClick={(e) => { e.preventDefault(); navigateTo('/portal'); }} className={`text-xs font-semibold hover:text-[#c5a059] transition-colors ${location.pathname === '/portal' ? 'text-[#c5a059] font-bold' : 'text-gray-400'}`}>Umrah E-Portal</a> */}
             <a href="/partner" onClick={(e) => { e.preventDefault(); navigateTo('/partner'); }} className={`text-xs font-semibold hover:text-[#c5a059] transition-colors ${location.pathname === '/partner' ? 'text-[#c5a059] font-bold' : 'text-gray-400'}`}>Partner Register</a>
-            <a href="/partner/dashboard" onClick={(e) => { e.preventDefault(); navigateTo('/partner/dashboard'); }} className={`text-xs font-semibold hover:text-[#c5a059] transition-colors ${location.pathname === '/partner/dashboard' ? 'text-[#c5a059] font-bold' : 'text-gray-400'}`}>Partner Dashboard</a>
-            <a href="/customer/portal" onClick={(e) => { e.preventDefault(); navigateTo('/customer/portal'); }} className={`text-xs font-semibold hover:text-[#c5a059] transition-colors ${location.pathname === '/customer/portal' ? 'text-[#c5a059] font-bold' : 'text-gray-400'}`}>Customer Portal</a>
+            {/* TEMPORARILY HIDDEN: Partner Dashboard */}
+            {/* <a href="/partner/dashboard" onClick={(e) => { e.preventDefault(); navigateTo('/partner/dashboard'); }} className={`text-xs font-semibold hover:text-[#c5a059] transition-colors ${location.pathname === '/partner/dashboard' ? 'text-[#c5a059] font-bold' : 'text-gray-400'}`}>Partner Dashboard</a> */}
+            {/* TEMPORARILY HIDDEN: Customer Booking Portal */}
+            {/* <a href="/customer/portal" onClick={(e) => { e.preventDefault(); navigateTo('/customer/portal'); }} className={`text-xs font-semibold hover:text-[#c5a059] transition-colors ${location.pathname === '/customer/portal' ? 'text-[#c5a059] font-bold' : 'text-gray-400'}`}>Customer Portal</a> */}
             
             {isAuthenticated ? (
               <>
                 {/* TEMPORARILY HIDDEN: BI Dashboard */}
                 {/* <a href="/dashboard" onClick={(e) => { e.preventDefault(); navigateTo('/dashboard'); }} className={`text-xs font-semibold hover:text-[#c5a059] transition-colors ${location.pathname === '/dashboard' ? 'text-[#c5a059] font-bold' : 'text-gray-400'}`}>BI Dashboard</a> */}
-                <a href="/sales" onClick={(e) => { e.preventDefault(); navigateTo('/sales'); }} className={`text-xs font-semibold hover:text-[#c5a059] transition-colors ${location.pathname === '/sales' ? 'text-[#c5a059] font-bold' : 'text-gray-400'}`}>Sales Portal</a>
+                {/* TEMPORARILY HIDDEN: Staff Access Portal */}
+                {/* <a href="/sales" onClick={(e) => { e.preventDefault(); navigateTo('/sales'); }} className={`text-xs font-semibold hover:text-[#c5a059] transition-colors ${location.pathname === '/sales' ? 'text-[#c5a059] font-bold' : 'text-gray-400'}`}>Sales Portal</a> */}
                 <button onClick={handleLogout} className="px-3 py-1 border border-red-500/30 text-red-400 text-[10px] font-bold rounded hover:bg-red-500/10 transition-all">
                   Log Out
                 </button>
@@ -585,17 +588,20 @@ export default function App() {
             <a href="#services" onClick={(e) => { e.preventDefault(); navigateTo('/', 'services'); }} className="text-base hover:text-[#c5a059] transition-colors">Services</a>
             <a href="#spiritual" onClick={(e) => { e.preventDefault(); navigateTo('/', 'spiritual'); }} className="text-base hover:text-[#c5a059] transition-colors">Spiritual Journeys</a>
             <a href="#wonders" onClick={(e) => { e.preventDefault(); navigateTo('/', 'wonders'); }} className="text-base hover:text-[#c5a059] transition-colors">World Tours</a>
-            {/* TEMPORARILY HIDDEN: Umrah E-Portal */}
+            {/* TEMPORARILY HIDDEN: Umrah Booking E-Portal */}
             {/* <a href="/portal" onClick={(e) => { e.preventDefault(); navigateTo('/portal'); }} className="text-base text-[#c5a059] font-bold">Umrah E-Portal</a> */}
             <a href="/partner" onClick={(e) => { e.preventDefault(); navigateTo('/partner'); }} className="text-base hover:text-[#c5a059] transition-colors">Partner Register</a>
-            <a href="/partner/dashboard" onClick={(e) => { e.preventDefault(); navigateTo('/partner/dashboard'); }} className="text-base hover:text-[#c5a059] transition-colors">Partner Dashboard</a>
-            <a href="/customer/portal" onClick={(e) => { e.preventDefault(); navigateTo('/customer/portal'); }} className="text-base hover:text-[#c5a059] transition-colors">Customer Portal</a>
+            {/* TEMPORARILY HIDDEN: Partner Dashboard */}
+            {/* <a href="/partner/dashboard" onClick={(e) => { e.preventDefault(); navigateTo('/partner/dashboard'); }} className="text-base hover:text-[#c5a059] transition-colors">Partner Dashboard</a> */}
+            {/* TEMPORARILY HIDDEN: Customer Booking Portal */}
+            {/* <a href="/customer/portal" onClick={(e) => { e.preventDefault(); navigateTo('/customer/portal'); }} className="text-base hover:text-[#c5a059] transition-colors">Customer Portal</a> */}
             
             {isAuthenticated ? (
               <>
                 {/* TEMPORARILY HIDDEN: BI Dashboard */}
                 {/* <a href="/dashboard" onClick={(e) => { e.preventDefault(); navigateTo('/dashboard'); }} className="text-base hover:text-[#c5a059] transition-colors">BI Dashboard</a> */}
-                <a href="/sales" onClick={(e) => { e.preventDefault(); navigateTo('/sales'); }} className="text-base hover:text-[#c5a059] transition-colors">Sales Portal</a>
+                {/* TEMPORARILY HIDDEN: Staff Access Portal */}
+                {/* <a href="/sales" onClick={(e) => { e.preventDefault(); navigateTo('/sales'); }} className="text-base hover:text-[#c5a059] transition-colors">Sales Portal</a> */}
                 <button onClick={handleLogout} className="py-2 text-center border border-red-500/30 text-red-400 font-bold rounded">
                   Log Out
                 </button>
@@ -648,9 +654,12 @@ export default function App() {
           </p>
           <div className="flex gap-4">
             <a href="/partner" onClick={(e) => { e.preventDefault(); navigateTo('/partner'); }} className="hover:text-[#c5a059]">Partner Registration</a>
-            <a href="/partner/dashboard" onClick={(e) => { e.preventDefault(); navigateTo('/partner/dashboard'); }} className="hover:text-[#c5a059]">Partner Dashboard</a>
-            <a href="/customer/portal" onClick={(e) => { e.preventDefault(); navigateTo('/customer/portal'); }} className="hover:text-[#c5a059]">Customer Portal</a>
-            <a href="/sales" onClick={(e) => { e.preventDefault(); navigateTo('/sales'); }} className="hover:text-[#c5a059]">Sales Portal</a>
+            {/* TEMPORARILY HIDDEN: Partner Dashboard */}
+            {/* <a href="/partner/dashboard" onClick={(e) => { e.preventDefault(); navigateTo('/partner/dashboard'); }} className="hover:text-[#c5a059]">Partner Dashboard</a> */}
+            {/* TEMPORARILY HIDDEN: Customer Booking Portal */}
+            {/* <a href="/customer/portal" onClick={(e) => { e.preventDefault(); navigateTo('/customer/portal'); }} className="hover:text-[#c5a059]">Customer Portal</a> */}
+            {/* TEMPORARILY HIDDEN: Staff Access Portal */}
+            {/* <a href="/sales" onClick={(e) => { e.preventDefault(); navigateTo('/sales'); }} className="hover:text-[#c5a059]">Sales Portal</a> */}
           </div>
         </div>
       </footer>
