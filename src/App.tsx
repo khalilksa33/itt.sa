@@ -563,7 +563,6 @@ export default function App() {
                 </button>
               </>
             ) : (
-              {/* TEMPORARILY HIDDEN: Staff Login */}
               null
             )}
 
@@ -608,8 +607,6 @@ export default function App() {
               </>
             ) : (
               null
-              {/* TEMPORARILY HIDDEN: Staff Login */}
-              {/* <a href="/sales" onClick={(e) => { e.preventDefault(); navigateTo('/sales'); }} className="text-base hover:text-[#c5a059] transition-colors">Staff Login</a> */}
             )}
             
             <a href="#contact" onClick={(e) => { e.preventDefault(); navigateTo('/', 'contact'); }} className="py-2.5 text-center bg-[#c5a059] text-[#05080a] font-bold rounded">
