@@ -1,7 +1,7 @@
 services:
   # React App served via Nginx — DEV environment
   itt-app:
-    image: khalilksa33/itt.sa-dev:latest
+    image: ghcr.io/khalilksa33/itt.sa-dev:latest
     build: .
     container_name: insight-travel-app-dev
     ports:
