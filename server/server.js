@@ -105,6 +105,18 @@ const SubAgentSchema = new mongoose.Schema({
 
 const SubAgent = mongoose.model('SubAgent', SubAgentSchema);
 
+const TeamMemberSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  role: { type: String, required: true },
+  designation: { type: String, required: true },
+  office: { type: String, required: true },
+  emails: [{ type: String }],
+  phones: [{ type: String }],
+  createdAt: { type: Date, default: Date.now }
+});
+
+const TeamMember = mongoose.model('TeamMember', TeamMemberSchema);
+
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)
   .then(async () => {
@@ -120,10 +132,86 @@ mongoose.connect(process.env.MONGODB_URI)
     } catch (err) {
       console.error('Could not auto-run scraper on startup:', err.message);
     }
+
+    try {
+      const memberCount = await TeamMember.countDocuments({});
+      if (memberCount === 0) {
+        console.log('Seeding default team members into database...');
+        await TeamMember.insertMany([
+          {
+            name: "Mr. Hafiz Laique Shahid",
+            role: "Team Head",
+            designation: "CEO",
+            office: "Lahore Office",
+            emails: ["ceo@itt.sa", "support@itt.sa"],
+            phones: ["+92 300-0860633", "+966 50-086-0633"]
+          },
+          {
+            name: "Ahmad Hasan Marjan",
+            role: "Executive Director",
+            designation: "Executive Director",
+            office: "Lahore Office",
+            emails: ["director@itt.sa"],
+            phones: ["+966 50-086-1820"]
+          }
+        ]);
+      }
+    } catch (err) {
+      console.error('Could not seed team members on startup:', err.message);
+    }
   })
   .catch(err => console.error('MongoDB connection error:', err));
 
 // API Routes
+
+// Team CRUD API Routes
+app.get('/api/team', async (req, res) => {
+  try {
+    const members = await TeamMember.find({}).sort({ createdAt: 1 });
+    res.json(members);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch team members.' });
+  }
+});
+
+app.post('/api/team', async (req, res) => {
+  try {
+    const { name, role, designation, office, emails, phones } = req.body;
+    if (!name || !role || !designation || !office) {
+      return res.status(400).json({ error: 'Name, role, designation, and office are required.' });
+    }
+    const newMember = new TeamMember({ name, role, designation, office, emails, phones });
+    await newMember.save();
+    res.status(201).json({ success: true, member: newMember });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create team member.' });
+  }
+});
+
+app.put('/api/team/:id', async (req, res) => {
+  try {
+    const { name, role, designation, office, emails, phones } = req.body;
+    const updatedMember = await TeamMember.findByIdAndUpdate(
+      req.params.id,
+      { name, role, designation, office, emails, phones },
+      { new: true }
+    );
+    if (!updatedMember) return res.status(404).json({ error: 'Team member not found.' });
+    res.json({ success: true, member: updatedMember });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update team member.' });
+  }
+});
+
+app.delete('/api/team/:id', async (req, res) => {
+  try {
+    const deletedMember = await TeamMember.findByIdAndDelete(req.params.id);
+    if (!deletedMember) return res.status(404).json({ error: 'Team member not found.' });
+    res.json({ success: true, message: 'Team member deleted successfully.' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete team member.' });
+  }
+});
 
 
 // 1. Get all packages

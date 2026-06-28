@@ -42,6 +42,36 @@ interface SubAgent {
   createdAt: string;
 }
 
+interface TeamMember {
+  _id?: string;
+  name: string;
+  role: string;
+  designation: string;
+  office: string;
+  emails: string[];
+  phones: string[];
+  createdAt?: string;
+}
+
+const fallbackTeam: TeamMember[] = [
+  {
+    name: "Mr. Hafiz Laique Shahid",
+    role: "Team Head",
+    designation: "CEO",
+    office: "Lahore Office",
+    emails: ["ceo@itt.sa", "support@itt.sa"],
+    phones: ["+92 300-0860633", "+966 50-086-0633"]
+  },
+  {
+    name: "Ahmad Hasan Marjan",
+    role: "Executive Director",
+    designation: "Executive Director",
+    office: "Lahore Office",
+    emails: ["director@itt.sa"],
+    phones: ["+966 50-086-1820"]
+  }
+];
+
 const fallbackPackages: UmrahPackage[] = [
   {
     title: "Lahore VIP Umrah Package",
@@ -212,10 +242,11 @@ export default function App() {
   const location = useLocation();
 
   const [packages, setPackages] = useState<UmrahPackage[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCity, setSelectedCity] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  
+
   // BI Dashboard states
   const [bookings, setBookings] = useState<any[]>([]);
   const [inquiries, setInquiries] = useState<any[]>([]);
@@ -270,7 +301,7 @@ export default function App() {
     type: null,
     message: ''
   });
-  
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // E-commerce Checkout Modal States
@@ -293,8 +324,8 @@ export default function App() {
     message: ''
   });
 
-  const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-    ? 'http://localhost:5000' 
+  const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:5000'
     : '';
 
   useEffect(() => {
@@ -315,6 +346,25 @@ export default function App() {
         console.warn('Backend server unreachable, rendering fallback packages:', err);
         setPackages(fallbackPackages);
         setLoading(false);
+      });
+  }, [BACKEND_URL]);
+
+  useEffect(() => {
+    fetch(`${BACKEND_URL}/api/team`)
+      .then(res => {
+        if (!res.ok) throw new Error("API status error");
+        return res.json();
+      })
+      .then(data => {
+        if (data && data.length > 0) {
+          setTeamMembers(data);
+        } else {
+          setTeamMembers(fallbackTeam);
+        }
+      })
+      .catch(err => {
+        console.warn('Backend server unreachable, rendering fallback team:', err);
+        setTeamMembers(fallbackTeam);
       });
   }, [BACKEND_URL]);
 
@@ -405,17 +455,17 @@ export default function App() {
         return res.json();
       })
       .then(() => {
-        setSubmitStatus({ 
-          type: 'success', 
-          message: 'Thank you! Your inquiry details have been saved successfully. Our team will get back to you shortly.' 
+        setSubmitStatus({
+          type: 'success',
+          message: 'Thank you! Your inquiry details have been saved successfully. Our team will get back to you shortly.'
         });
         setFormData({ name: '', email: '', phone: '', service: '', message: '' });
       })
       .catch(err => {
         console.error('Inquiry submit failed:', err);
-        setSubmitStatus({ 
-          type: 'error', 
-          message: 'Unable to connect to the backend server. Please try again later.' 
+        setSubmitStatus({
+          type: 'error',
+          message: 'Unable to connect to the backend server. Please try again later.'
         });
       });
   };
@@ -551,7 +601,7 @@ export default function App() {
             <a href="/partner/dashboard" onClick={(e) => { e.preventDefault(); navigateTo('/partner/dashboard'); }} className={`text-xs font-semibold hover:text-[#c5a059] transition-colors ${location.pathname === '/partner/dashboard' ? 'text-[#c5a059] font-bold' : 'text-gray-400'}`}>Partner Dashboard</a>
             {/* Customer Booking Portal */}
             <a href="/customer/portal" onClick={(e) => { e.preventDefault(); navigateTo('/customer/portal'); }} className={`text-xs font-semibold hover:text-[#c5a059] transition-colors ${location.pathname === '/customer/portal' ? 'text-[#c5a059] font-bold' : 'text-gray-400'}`}>Customer Portal</a>
-            
+
             {isAuthenticated ? (
               <>
                 {/* BI Dashboard */}
@@ -572,7 +622,7 @@ export default function App() {
           </nav>
 
           {/* Mobile Toggle */}
-          <button 
+          <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="lg:hidden text-2xl text-white hover:text-[#c5a059] transition-colors"
           >
@@ -594,7 +644,7 @@ export default function App() {
             <a href="/partner/dashboard" onClick={(e) => { e.preventDefault(); navigateTo('/partner/dashboard'); }} className="text-base hover:text-[#c5a059] transition-colors">Partner Dashboard</a>
             {/* Customer Booking Portal */}
             <a href="/customer/portal" onClick={(e) => { e.preventDefault(); navigateTo('/customer/portal'); }} className="text-base hover:text-[#c5a059] transition-colors">Customer Portal</a>
-            
+
             {isAuthenticated ? (
               <>
                 {/* BI Dashboard */}
@@ -608,7 +658,7 @@ export default function App() {
             ) : (
               null
             )}
-            
+
             <a href="#contact" onClick={(e) => { e.preventDefault(); navigateTo('/', 'contact'); }} className="py-2.5 text-center bg-[#c5a059] text-[#05080a] font-bold rounded">
               Inquire Now
             </a>
@@ -618,12 +668,12 @@ export default function App() {
 
       {/* ROUTES CONFIGURATION */}
       <Routes>
-        <Route path="/" element={<HomeView navigateTo={navigateTo} handleFormChange={handleFormChange} handleInquirySubmit={handleInquirySubmit} formData={formData} submitStatus={submitStatus} />} />
+        <Route path="/" element={<HomeView navigateTo={navigateTo} handleFormChange={handleFormChange} handleInquirySubmit={handleInquirySubmit} formData={formData} submitStatus={submitStatus} teamMembers={teamMembers} fallbackTeam={fallbackTeam} />} />
         <Route path="/portal" element={<PortalView loading={loading} packages={packages} selectedCity={selectedCity} setSelectedCity={setSelectedCity} searchQuery={searchQuery} setSearchQuery={setSearchQuery} BACKEND_URL={BACKEND_URL} openBookingModal={openBookingModal} />} />
         <Route path="/partner" element={<PartnerRegisterView BACKEND_URL={BACKEND_URL} />} />
         <Route path="/partner/dashboard" element={<PartnerDashboardView BACKEND_URL={BACKEND_URL} exchangeRates={exchangeRates} />} />
         <Route path="/customer/portal" element={<CustomerPortalView BACKEND_URL={BACKEND_URL} exchangeRates={exchangeRates} />} />
-        
+
         {/* Private Dashboard Routes */}
         <Route path="/dashboard" element={
           <ProtectedRoute isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} BACKEND_URL={BACKEND_URL}>
@@ -632,7 +682,7 @@ export default function App() {
         } />
         <Route path="/sales" element={
           <ProtectedRoute isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} BACKEND_URL={BACKEND_URL}>
-            <SalesPortalView packages={packages} subagents={subagents} bookings={bookings} BACKEND_URL={BACKEND_URL} setSubagents={setSubagents} setPackages={setPackages} />
+            <SalesPortalView packages={packages} subagents={subagents} bookings={bookings} teamMembers={teamMembers} BACKEND_URL={BACKEND_URL} setSubagents={setSubagents} setPackages={setPackages} setTeamMembers={setTeamMembers} />
           </ProtectedRoute>
         } />
       </Routes>
@@ -671,8 +721,8 @@ export default function App() {
                 <span className="text-xs text-[#c5a059] font-bold uppercase tracking-widest">E-Portal Checkout</span>
                 <h3 className="text-lg font-bold text-white mt-0.5">{selectedPkg.title}</h3>
               </div>
-              <button 
-                onClick={() => setSelectedPkg(null)} 
+              <button
+                onClick={() => setSelectedPkg(null)}
                 className="text-gray-400 hover:text-white text-xl"
               >
                 <i className="fa-solid fa-xmark"></i>
@@ -690,8 +740,8 @@ export default function App() {
                 <p className="text-gray-400 text-sm max-w-md leading-relaxed mt-2">
                   {bookingStatus.message}
                 </p>
-                <button 
-                  onClick={() => setSelectedPkg(null)} 
+                <button
+                  onClick={() => setSelectedPkg(null)}
                   className="mt-6 px-8 py-3 bg-[#c5a059] text-[#05080a] font-bold rounded hover:bg-[#b48e47] transition-all"
                 >
                   Return to Dashboard
@@ -713,15 +763,14 @@ export default function App() {
                         key={room.type}
                         type="button"
                         onClick={() => setRoomingType(room.type as any)}
-                        className={`py-3 px-1.5 rounded border text-center transition-all ${
-                          roomingType === room.type 
-                            ? 'border-[#c5a059] bg-[#c5a059]/10 text-white font-bold' 
+                        className={`py-3 px-1.5 rounded border text-center transition-all ${roomingType === room.type
+                            ? 'border-[#c5a059] bg-[#c5a059]/10 text-white font-bold'
                             : 'border-gray-800 bg-[#05080a]/60 text-gray-400 hover:border-gray-700'
-                        }`}
+                          }`}
                       >
                         <div className="text-xs">{room.label}</div>
                         <div className="text-xs text-[#c5a059] mt-1 font-extrabold">
-                          {room.price ? `${(room.price/1000).toFixed(0)}k` : 'N/A'}
+                          {room.price ? `${(room.price / 1000).toFixed(0)}k` : 'N/A'}
                         </div>
                       </button>
                     ))}
@@ -739,11 +788,10 @@ export default function App() {
                         key={opt.mode}
                         type="button"
                         onClick={() => setPackageMode(opt.mode as any)}
-                        className={`py-3 px-3 rounded-lg border text-left transition-all ${
-                          packageMode === opt.mode 
-                            ? 'border-[#c5a059] bg-[#c5a059]/10 text-white font-bold' 
+                        className={`py-3 px-3 rounded-lg border text-left transition-all ${packageMode === opt.mode
+                            ? 'border-[#c5a059] bg-[#c5a059]/10 text-white font-bold'
                             : 'border-gray-800 bg-[#05080a]/60 text-gray-400 hover:border-gray-700'
-                        }`}
+                          }`}
                       >
                         <div className="text-xs font-bold text-white">{opt.label}</div>
                         <div className="text-[10px] text-gray-400 mt-1 font-medium">{opt.desc}</div>
@@ -757,7 +805,7 @@ export default function App() {
                         <span>Select Services to Include</span>
                         <span>Deduction Value if Deselected</span>
                       </div>
-                      
+
                       {[
                         { key: 'visa', label: 'Visa Services & Processing', price: 45000 },
                         { key: 'tickets', label: 'Air Tickets (Flights)', price: 110000 },
@@ -769,8 +817,8 @@ export default function App() {
                         return (
                           <div key={srv.key} className="flex items-center justify-between text-xs py-1">
                             <label className="flex items-center gap-2.5 cursor-pointer text-gray-300 font-medium">
-                              <input 
-                                type="checkbox" 
+                              <input
+                                type="checkbox"
                                 checked={isChecked}
                                 onChange={(e) => setCustomServices(prev => ({ ...prev, [srv.key]: e.target.checked }))}
                                 className="cursor-pointer accent-[#c5a059] rounded"
@@ -793,16 +841,16 @@ export default function App() {
                     <div className="text-xs text-gray-400 mt-0.5">Adjust count to calculate total</div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={() => handlePilgrimCountChange(pilgrimsCount - 1)}
                       className="w-8 h-8 rounded bg-gray-800 text-white font-bold flex items-center justify-center hover:bg-gray-700 text-lg"
                     >
                       -
                     </button>
                     <span className="text-lg font-extrabold text-white w-6 text-center">{pilgrimsCount}</span>
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={() => handlePilgrimCountChange(pilgrimsCount + 1)}
                       className="w-8 h-8 rounded bg-[#c5a059] text-[#05080a] font-bold flex items-center justify-center hover:bg-[#b48e47] text-lg"
                     >
@@ -952,7 +1000,7 @@ function ProtectedRoute({ isAuthenticated, setIsAuthenticated, BACKEND_URL, chil
         <span className="text-[#c5a059] text-3xl mb-4 inline-block"><i className="fa-solid fa-lock"></i></span>
         <h3 className="text-xl font-bold text-white mb-2">Staff Access Portal</h3>
         <p className="text-gray-400 text-xs mb-6">Enter portal password to view dashboards and manage sales transactions.</p>
-        
+
         {errorMsg && (
           <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded mb-4 font-semibold">
             {errorMsg}
@@ -962,17 +1010,17 @@ function ProtectedRoute({ isAuthenticated, setIsAuthenticated, BACKEND_URL, chil
         <form onSubmit={handleLoginSubmit} className="flex flex-col gap-4 text-left">
           <div>
             <label className="block text-[10px] font-bold uppercase text-[#c5a059] tracking-wider mb-2">Authentication Password</label>
-            <input 
-              type="password" 
+            <input
+              type="password"
               placeholder="••••••••••••"
-              required 
+              required
               value={passwordInput}
               onChange={(e) => setPasswordInput(e.target.value)}
               className="w-full bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-4 py-3 rounded text-sm outline-none transition-all"
             />
           </div>
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={isSubmitting}
             className="w-full py-3 bg-[#c5a059] text-[#05080a] font-bold rounded hover:bg-[#b48e47] transition-all flex items-center justify-center gap-2"
           >
@@ -989,7 +1037,7 @@ function ProtectedRoute({ isAuthenticated, setIsAuthenticated, BACKEND_URL, chil
 }
 
 /* HOME VIEW COMPONENT */
-function HomeView({ navigateTo, handleFormChange, handleInquirySubmit, formData, submitStatus }: any) {
+function HomeView({ navigateTo, handleFormChange, handleInquirySubmit, formData, submitStatus, teamMembers = [], fallbackTeam = [] }: any) {
   return (
     <>
       {/* HERO SECTION */}
@@ -1009,13 +1057,13 @@ function HomeView({ navigateTo, handleFormChange, handleInquirySubmit, formData,
               Specializing in spiritual, serene Umrah pilgrimages and premium, tailored World Tour packages. Connect with our Travel & Tourism Agency for trusted guidance, comfort, and premium arrangements.
             </p>
             <div className="flex flex-col sm:flex-row items-center gap-4">
-              <button 
+              <button
                 onClick={() => navigateTo('/portal')}
                 className="w-full sm:w-auto px-8 py-4 bg-[#c5a059] text-[#05080a] font-bold rounded hover:bg-[#b48e47] transition-all transform hover:-translate-y-1 shadow-lg shadow-[#c5a059]/20 flex items-center justify-center gap-2"
               >
                 Submit Inquiry <i className="fa-solid fa-arrow-right"></i>
               </button>
-              <button 
+              <button
                 onClick={() => navigateTo('/', 'services')}
                 className="w-full sm:w-auto px-8 py-4 bg-transparent text-white border border-gray-700 font-bold rounded hover:border-[#c5a059] hover:text-[#c5a059] transition-all"
               >
@@ -1233,7 +1281,7 @@ function HomeView({ navigateTo, handleFormChange, handleInquirySubmit, formData,
             <p className="text-gray-400 text-sm max-w-2xl mx-auto mb-8 leading-relaxed">
               Ready to answer the sacred call? We offer dynamic, clean Unicode packages mapped directly from respected departure cities across Pakistan. Choose room options and place bookings through our real-time checkout flow.
             </p>
-            <button 
+            <button
               onClick={() => navigateTo('/portal')}
               className="px-8 py-3.5 bg-[#c5a059] text-[#05080a] font-bold rounded-lg hover:bg-[#b48e47] transition-all transform hover:-translate-y-0.5 shadow-lg shadow-[#c5a059]/10"
             >
@@ -1248,56 +1296,40 @@ function HomeView({ navigateTo, handleFormChange, handleInquirySubmit, formData,
         <div className="container mx-auto px-6 max-w-7xl">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <h2 className="text-3xl font-serif text-white font-bold">Our Team</h2>
-            <p className="text-[#c5a059] text-sm mt-1">Leadership at Lahore Office</p>
+            {/* <p className="text-[#c5a059] text-sm mt-1">Leadership at Lahore Office</p> */}
             <div className="w-16 h-0.5 bg-[#c5a059] mx-auto mt-4"></div>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <div className="bg-[#0e1217] p-8 rounded border border-[#c5a059]/10 hover:border-[#c5a059]/30 transition-all flex flex-col">
-              <span className="self-start px-3 py-1 bg-[#c5a059]/10 text-[#c5a059] text-xs font-bold uppercase tracking-wider rounded border border-[#c5a059]/20 mb-4">
-                Team Head
-              </span>
-              <h3 className="text-2xl font-bold text-white mb-1">Mr. John Doe</h3>
-              <p className="text-sm text-[#c5a059] font-semibold mb-2 font-serif">CEO</p>
-              <p className="text-xs text-gray-400 mb-6"><i className="fa-solid fa-location-dot"></i> Lahore Office</p>
-              
-              <div className="flex flex-col gap-3 mt-auto pt-6 border-t border-gray-800">
-                <div className="flex items-center gap-3 text-sm text-gray-300">
-                  <span className="text-[#c5a059] w-5"><i className="fa-solid fa-envelope"></i></span>
-                  <div className="flex flex-col">
-                    <a href="mailto:ceo@agency.com" className="hover:text-[#c5a059] transition-colors">ceo@agency.com</a>
-                    <a href="mailto:support@agency.com" className="hover:text-[#c5a059] transition-colors">support@agency.com</a>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-gray-300">
-                  <span className="text-[#c5a059] w-5"><i className="fa-solid fa-phone"></i></span>
-                  <div className="flex flex-col">
-                    <a href="tel:+923000000000" className="hover:text-[#c5a059] transition-colors">+92 300-0000000</a>
-                    <a href="tel:+966500000000" className="hover:text-[#c5a059] transition-colors">+966 50-000-0000</a>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {(teamMembers.length > 0 ? teamMembers : fallbackTeam).map((member: any, idx: number) => (
+              <div key={idx} className="bg-[#0e1217] p-8 rounded border border-[#c5a059]/10 hover:border-[#c5a059]/30 transition-all flex flex-col">
+                <span className="self-start px-3 py-1 bg-[#c5a059]/10 text-[#c5a059] text-xs font-bold uppercase tracking-wider rounded border border-[#c5a059]/20 mb-4">
+                  {member.role}
+                </span>
+                <h3 className="text-2xl font-bold text-white mb-1">{member.name}</h3>
+                <p className="text-sm text-[#c5a059] font-semibold mb-2 font-serif">{member.designation}</p>
+                <p className="text-xs text-gray-400 mb-6"><i className="fa-solid fa-location-dot"></i> {member.office}</p>
 
-            <div className="bg-[#0e1217] p-8 rounded border border-[#c5a059]/10 hover:border-[#c5a059]/30 transition-all flex flex-col">
-              <span className="self-start px-3 py-1 bg-[#c5a059]/10 text-[#c5a059] text-xs font-bold uppercase tracking-wider rounded border border-[#c5a059]/20 mb-4">
-                Executive Director
-              </span>
-              <h3 className="text-2xl font-bold text-white mb-1">Jane Smith</h3>
-              <p className="text-sm text-[#c5a059] font-semibold mb-2 font-serif">Executive Director</p>
-              <p className="text-xs text-gray-400 mb-6"><i className="fa-solid fa-location-dot"></i> Lahore Office</p>
-              
-              <div className="flex flex-col gap-3 mt-auto pt-6 border-t border-gray-800">
-                <div className="flex items-center gap-3 text-sm text-gray-300">
-                  <span className="text-[#c5a059] w-5"><i className="fa-solid fa-envelope"></i></span>
-                  <a href="mailto:director@agency.com" className="hover:text-[#c5a059] transition-colors">director@agency.com</a>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-gray-300">
-                  <span className="text-[#c5a059] w-5"><i className="fa-solid fa-phone"></i></span>
-                  <a href="tel:+966500000000" className="hover:text-[#c5a059] transition-colors">+966 50-000-0000</a>
+                <div className="flex flex-col gap-3 mt-auto pt-6 border-t border-gray-800">
+                  <div className="flex items-center gap-3 text-sm text-gray-300">
+                    <span className="text-[#c5a059] w-5"><i className="fa-solid fa-envelope"></i></span>
+                    <div className="flex flex-col">
+                      {member.emails.map((email: string, eIdx: number) => (
+                        <a key={eIdx} href={`mailto:${email}`} className="hover:text-[#c5a059] transition-colors">{email}</a>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm text-gray-300">
+                    <span className="text-[#c5a059] w-5"><i className="fa-solid fa-phone"></i></span>
+                    <div className="flex flex-col">
+                      {member.phones.map((phone: string, pIdx: number) => (
+                        <a key={pIdx} href={`tel:${phone}`} className="hover:text-[#c5a059] transition-colors">{phone}</a>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
@@ -1310,11 +1342,11 @@ function HomeView({ navigateTo, handleFormChange, handleInquirySubmit, formData,
             <h3 className="text-[#c5a059] text-xs uppercase tracking-widest font-semibold mb-2">Chairman's Message</h3>
             <h4 className="text-2xl font-serif text-white mb-4 font-bold">A Sacred Commitment to Quality</h4>
             <p className="text-gray-400 text-sm leading-relaxed mb-6 italic max-w-2xl mx-auto">
-              "Our mission is rooted in trust, integrity, and absolute devotion. Having guided thousands of pilgrims, we pledge our signature standards of comfort and care as you answer the sacred call. Your spiritual satisfaction is our ultimate reward."
+              "Our mission at Insight Travel is rooted in trust, integrity, and absolute devotion. Having guided thousands of pilgrims from Pakistan and across the globe, we pledge our signature standards of comfort and care as you answer the sacred call. Your spiritual satisfaction is our ultimate reward."
             </p>
             <div>
-              <p className="text-white font-bold text-sm">Founder & Chairman</p>
-              <p className="text-[#c5a059] text-xs">Chairman, Travel & Tourism Agency</p>
+              <p className="text-white font-bold text-sm">Chauhdry Muhammad Aslam</p>
+              <p className="text-[#c5a059] text-xs">Chairman, Insight Travel & Tourism</p>
             </div>
           </div>
         </div>
@@ -1347,41 +1379,41 @@ function HomeView({ navigateTo, handleFormChange, handleInquirySubmit, formData,
           <div className="md:col-span-7 bg-[#0e1217] p-8 sm:p-10 rounded border border-[#c5a059]/10">
             <form onSubmit={handleInquirySubmit} className="flex flex-col gap-5">
               <div className="grid sm:grid-cols-2 gap-5">
-                <input 
-                  type="text" 
-                  name="name" 
+                <input
+                  type="text"
+                  name="name"
                   value={formData.name}
                   onChange={handleFormChange}
-                  placeholder="Full Name" 
-                  required 
+                  placeholder="Full Name"
+                  required
                   className="w-full bg-[#05080a]/60 border border-gray-800 focus:border-[#c5a059] text-white px-4 py-3 rounded outline-none text-sm transition-all"
                 />
-                <input 
-                  type="email" 
-                  name="email" 
+                <input
+                  type="email"
+                  name="email"
                   value={formData.email}
                   onChange={handleFormChange}
-                  placeholder="Email Address" 
-                  required 
+                  placeholder="Email Address"
+                  required
                   className="w-full bg-[#05080a]/60 border border-gray-800 focus:border-[#c5a059] text-white px-4 py-3 rounded outline-none text-sm transition-all"
                 />
               </div>
-              
+
               <div className="grid sm:grid-cols-2 gap-5">
-                <input 
-                  type="tel" 
-                  name="phone" 
+                <input
+                  type="tel"
+                  name="phone"
                   value={formData.phone}
                   onChange={handleFormChange}
-                  placeholder="Phone Number" 
-                  required 
+                  placeholder="Phone Number"
+                  required
                   className="w-full bg-[#05080a]/60 border border-gray-800 focus:border-[#c5a059] text-white px-4 py-3 rounded outline-none text-sm transition-all"
                 />
-                <select 
-                  name="service" 
+                <select
+                  name="service"
                   value={formData.service}
                   onChange={handleFormChange}
-                  required 
+                  required
                   className="w-full bg-[#05080a]/60 border border-gray-800 focus:border-[#c5a059] text-gray-300 px-4 py-3 rounded outline-none text-sm transition-all"
                 >
                   <option value="" disabled>Interested in...</option>
@@ -1392,28 +1424,27 @@ function HomeView({ navigateTo, handleFormChange, handleInquirySubmit, formData,
                 </select>
               </div>
 
-              <textarea 
-                name="message" 
+              <textarea
+                name="message"
                 value={formData.message}
                 onChange={handleFormChange}
-                rows={4} 
-                placeholder="Specific preferences or travel dates..." 
-                required 
+                rows={4}
+                placeholder="Specific preferences or travel dates..."
+                required
                 className="w-full bg-[#05080a]/60 border border-gray-800 focus:border-[#c5a059] text-white px-4 py-3 rounded outline-none text-sm transition-all"
               />
 
               {submitStatus.type && (
-                <div className={`p-4 rounded text-sm ${
-                  submitStatus.type === 'success' ? 'bg-green-500/10 text-green-400 border border-green-500/20' :
-                  submitStatus.type === 'error' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
-                  'bg-[#c5a059]/10 text-[#c5a059] border border-[#c5a059]/20'
-                }`}>
+                <div className={`p-4 rounded text-sm ${submitStatus.type === 'success' ? 'bg-green-500/10 text-green-400 border border-green-500/20' :
+                    submitStatus.type === 'error' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
+                      'bg-[#c5a059]/10 text-[#c5a059] border border-[#c5a059]/20'
+                  }`}>
                   {submitStatus.message}
                 </div>
               )}
 
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="w-full py-3.5 bg-[#c5a059] hover:bg-[#b48e47] text-[#05080a] font-bold rounded transition-colors"
               >
                 Submit Inquiry
@@ -1445,7 +1476,7 @@ function PortalView({ loading, packages, selectedCity, setSelectedCity, searchQu
               Categorized offerings from Islamabad, Karachi, Lahore, Sialkot, Peshawar, Multan, and Faisalabad.
             </p>
           </div>
-          <button 
+          <button
             onClick={() => navigate('/')}
             className="px-6 py-2.5 bg-transparent border border-gray-800 text-gray-300 rounded hover:border-[#c5a059] hover:text-[#c5a059] transition-all text-sm font-semibold flex items-center gap-2"
           >
@@ -1460,11 +1491,10 @@ function PortalView({ loading, packages, selectedCity, setSelectedCity, searchQu
               <button
                 key={city}
                 onClick={() => setSelectedCity(city)}
-                className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider border transition-all ${
-                  selectedCity === city 
-                    ? 'bg-[#c5a059] text-[#05080a] border-[#c5a059] shadow-lg shadow-[#c5a059]/15' 
+                className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider border transition-all ${selectedCity === city
+                    ? 'bg-[#c5a059] text-[#05080a] border-[#c5a059] shadow-lg shadow-[#c5a059]/15'
                     : 'bg-[#05080a] text-gray-400 border-gray-800 hover:border-gray-700 hover:text-white'
-                }`}
+                  }`}
               >
                 {city === 'All' ? 'All Cities' : `From ${city}`}
               </button>
@@ -1495,7 +1525,7 @@ function PortalView({ loading, packages, selectedCity, setSelectedCity, searchQu
           (() => {
             const filtered = packages.filter((pkg: any) => {
               const matchesCity = selectedCity === 'All' || pkg.city.toLowerCase() === selectedCity.toLowerCase();
-              const matchesSearch = searchQuery === '' || 
+              const matchesSearch = searchQuery === '' ||
                 pkg.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 pkg.hotels.makkah.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 pkg.hotels.madinah.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -1521,9 +1551,9 @@ function PortalView({ loading, packages, selectedCity, setSelectedCity, searchQu
                     <div key={pkg._id || index} className="bg-[#0e1217] rounded-xl overflow-hidden border border-[#c5a059]/10 hover:border-[#c5a059]/20 transition-all flex flex-col group shadow-lg">
                       <div className="relative h-64 w-full overflow-hidden">
                         {imageSrc ? (
-                          <img 
-                            src={imageSrc} 
-                            alt={pkg.title} 
+                          <img
+                            src={imageSrc}
+                            alt={pkg.title}
                             className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300"
                           />
                         ) : (
@@ -1541,7 +1571,7 @@ function PortalView({ loading, packages, selectedCity, setSelectedCity, searchQu
                           Starts {pkg.price}
                         </div>
                       </div>
-                      
+
                       <div className="p-8 flex flex-col flex-grow">
                         <div className="flex justify-between items-center gap-2 mb-2">
                           <h3 className="text-xl font-bold text-white">{pkg.title}</h3>
@@ -1550,7 +1580,7 @@ function PortalView({ loading, packages, selectedCity, setSelectedCity, searchQu
                           </span>
                         </div>
                         <p className="text-gray-400 text-sm leading-relaxed mb-6">{pkg.description}</p>
-                        
+
                         <div className="bg-[#05080a]/60 border border-gray-800/80 p-4 rounded-lg flex flex-col gap-2.5 mb-6">
                           <div className="flex items-center gap-3 text-xs text-gray-300">
                             <span className="text-[#c5a059]"><i className="fa-solid fa-kaaba"></i></span>
@@ -1593,14 +1623,14 @@ function PortalView({ loading, packages, selectedCity, setSelectedCity, searchQu
                             <div>Sharing</div>
                           </div>
                           <div className="grid grid-cols-4 py-2.5 px-3 text-center text-[#c5a059] font-bold">
-                            <div>{pkg.price_double ? `${(pkg.price_double/1000).toFixed(0)}k` : '305k'}</div>
-                            <div>{pkg.price_triple ? `${(pkg.price_triple/1000).toFixed(0)}k` : '290k'}</div>
-                            <div>{pkg.price_quad ? `${(pkg.price_quad/1000).toFixed(0)}k` : '283k'}</div>
-                            <div>{pkg.price_sharing ? `${(pkg.price_sharing/1000).toFixed(0)}k` : '274k'}</div>
+                            <div>{pkg.price_double ? `${(pkg.price_double / 1000).toFixed(0)}k` : '305k'}</div>
+                            <div>{pkg.price_triple ? `${(pkg.price_triple / 1000).toFixed(0)}k` : '290k'}</div>
+                            <div>{pkg.price_quad ? `${(pkg.price_quad / 1000).toFixed(0)}k` : '283k'}</div>
+                            <div>{pkg.price_sharing ? `${(pkg.price_sharing / 1000).toFixed(0)}k` : '274k'}</div>
                           </div>
                         </div>
 
-                        <button 
+                        <button
                           onClick={() => openBookingModal(pkg)}
                           className="mt-auto w-full py-3 bg-[#c5a059] text-[#05080a] font-bold rounded-lg hover:bg-[#b48e47] transition-all flex items-center justify-center gap-2 shadow shadow-[#c5a059]/10"
                         >
@@ -1672,7 +1702,7 @@ function PartnerRegisterView({ BACKEND_URL }: { BACKEND_URL: string }) {
 
         <div className="bg-[#0e1217] border border-[#c5a059]/15 p-8 rounded-2xl shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-[#c5a059] to-transparent"></div>
-          
+
           {regResult ? (
             <div className="text-center py-6 flex flex-col items-center gap-4">
               <span className="text-5xl text-green-500"><i className="fa-solid fa-circle-check"></i></span>
@@ -1693,14 +1723,14 @@ function PartnerRegisterView({ BACKEND_URL }: { BACKEND_URL: string }) {
           ) : (
             <form onSubmit={handleSubmit} className="flex flex-col gap-6">
               <h3 className="text-lg font-bold text-white border-b border-gray-800 pb-3 flex items-center gap-2"><i className="fa-solid fa-hotel text-[#c5a059]"></i> Agency Details Form</h3>
-              
+
               <div className="grid sm:grid-cols-2 gap-5">
                 <div className="flex flex-col gap-2">
                   <label className="text-[11px] font-bold uppercase text-[#c5a059] tracking-wider">Agency / Company Name</label>
-                  <input 
-                    type="text" 
-                    placeholder="Al-Basit Travel (Pvt) Ltd" 
-                    required 
+                  <input
+                    type="text"
+                    placeholder="Al-Basit Travel (Pvt) Ltd"
+                    required
                     value={form.agencyName}
                     onChange={(e) => setForm(prev => ({ ...prev, agencyName: e.target.value }))}
                     className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3.5 py-2.5 rounded text-xs outline-none"
@@ -1708,10 +1738,10 @@ function PartnerRegisterView({ BACKEND_URL }: { BACKEND_URL: string }) {
                 </div>
                 <div className="flex flex-col gap-2">
                   <label className="text-[11px] font-bold uppercase text-[#c5a059] tracking-wider">Primary Contact Person</label>
-                  <input 
-                    type="text" 
-                    placeholder="Muhammad Ali" 
-                    required 
+                  <input
+                    type="text"
+                    placeholder="Muhammad Ali"
+                    required
                     value={form.contactName}
                     onChange={(e) => setForm(prev => ({ ...prev, contactName: e.target.value }))}
                     className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3.5 py-2.5 rounded text-xs outline-none"
@@ -1722,10 +1752,10 @@ function PartnerRegisterView({ BACKEND_URL }: { BACKEND_URL: string }) {
               <div className="grid sm:grid-cols-2 gap-5">
                 <div className="flex flex-col gap-2">
                   <label className="text-[11px] font-bold uppercase text-[#c5a059] tracking-wider">Business Email Address</label>
-                  <input 
-                    type="email" 
-                    placeholder="contact@agency.com" 
-                    required 
+                  <input
+                    type="email"
+                    placeholder="contact@agency.com"
+                    required
                     value={form.email}
                     onChange={(e) => setForm(prev => ({ ...prev, email: e.target.value }))}
                     className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3.5 py-2.5 rounded text-xs outline-none"
@@ -1733,10 +1763,10 @@ function PartnerRegisterView({ BACKEND_URL }: { BACKEND_URL: string }) {
                 </div>
                 <div className="flex flex-col gap-2">
                   <label className="text-[11px] font-bold uppercase text-[#c5a059] tracking-wider">Phone / WhatsApp Number</label>
-                  <input 
-                    type="tel" 
-                    placeholder="+92 300 1234567" 
-                    required 
+                  <input
+                    type="tel"
+                    placeholder="+92 300 1234567"
+                    required
                     value={form.phone}
                     onChange={(e) => setForm(prev => ({ ...prev, phone: e.target.value }))}
                     className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3.5 py-2.5 rounded text-xs outline-none"
@@ -1747,9 +1777,9 @@ function PartnerRegisterView({ BACKEND_URL }: { BACKEND_URL: string }) {
               <div className="grid sm:grid-cols-2 gap-5">
                 <div className="flex flex-col gap-2">
                   <label className="text-[11px] font-bold uppercase text-[#c5a059] tracking-wider">Business License / Registration No (Optional)</label>
-                  <input 
-                    type="text" 
-                    placeholder="DTS-LHR-9481" 
+                  <input
+                    type="text"
+                    placeholder="DTS-LHR-9481"
                     value={form.licenseNo}
                     onChange={(e) => setForm(prev => ({ ...prev, licenseNo: e.target.value }))}
                     className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3.5 py-2.5 rounded text-xs outline-none"
@@ -1757,10 +1787,10 @@ function PartnerRegisterView({ BACKEND_URL }: { BACKEND_URL: string }) {
                 </div>
                 <div className="flex flex-col gap-2">
                   <label className="text-[11px] font-bold uppercase text-[#c5a059] tracking-wider">City & Country</label>
-                  <input 
-                    type="text" 
-                    placeholder="Lahore, Pakistan" 
-                    required 
+                  <input
+                    type="text"
+                    placeholder="Lahore, Pakistan"
+                    required
                     value={form.address}
                     onChange={(e) => setForm(prev => ({ ...prev, address: e.target.value }))}
                     className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3.5 py-2.5 rounded text-xs outline-none"
@@ -1770,7 +1800,7 @@ function PartnerRegisterView({ BACKEND_URL }: { BACKEND_URL: string }) {
 
               <div className="flex flex-col gap-2">
                 <label className="text-[11px] font-bold uppercase text-[#c5a059] tracking-wider">Years of Experience in Hajj & Umrah Tourism</label>
-                <select 
+                <select
                   value={form.experience}
                   onChange={(e) => setForm(prev => ({ ...prev, experience: parseInt(e.target.value) }))}
                   className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-gray-300 px-3.5 py-2.5 rounded text-xs outline-none"
@@ -1785,9 +1815,9 @@ function PartnerRegisterView({ BACKEND_URL }: { BACKEND_URL: string }) {
 
               <div className="flex flex-col gap-2">
                 <label className="text-[11px] font-bold uppercase text-[#c5a059] tracking-wider">Brief Agency Profile / Description</label>
-                <textarea 
-                  rows={4} 
-                  placeholder="Tell us about your agency, number of monthly pilgrims you handle..." 
+                <textarea
+                  rows={4}
+                  placeholder="Tell us about your agency, number of monthly pilgrims you handle..."
                   value={form.bio}
                   onChange={(e) => setForm(prev => ({ ...prev, bio: e.target.value }))}
                   className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3.5 py-2.5 rounded text-xs outline-none"
@@ -1795,20 +1825,20 @@ function PartnerRegisterView({ BACKEND_URL }: { BACKEND_URL: string }) {
               </div>
 
               <div className="flex items-start gap-3 bg-[#05080a] border border-[#c5a059]/10 p-4 rounded-lg">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   id="jvConsent"
-                  required 
+                  required
                   checked={form.jvConsent}
                   onChange={(e) => setForm(prev => ({ ...prev, jvConsent: e.target.checked }))}
                   className="mt-1 cursor-pointer accent-[#c5a059]"
                 />
                 <label htmlFor="jvConsent" className="text-xs text-gray-300 leading-relaxed cursor-pointer select-none">
                   I accept and agree to the terms of the{' '}
-                  <a 
+                  <a
                     href={`${BACKEND_URL}/uploaded-files/JV Partners/General JV Contract Template.pdf`}
-                    target="_blank" 
-                    rel="noopener noreferrer" 
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-[#c5a059] hover:underline font-bold inline-flex items-center gap-1"
                   >
                     Joint Venture Agreement <i className="fa-solid fa-file-pdf"></i>
@@ -1817,8 +1847,8 @@ function PartnerRegisterView({ BACKEND_URL }: { BACKEND_URL: string }) {
                 </label>
               </div>
 
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 disabled={loading}
                 className="w-full py-3.5 bg-[#c5a059] text-[#05080a] font-bold rounded hover:bg-[#b48e47] transition-all flex items-center justify-center gap-2"
               >
@@ -1910,20 +1940,20 @@ function PartnerDashboardView({ BACKEND_URL, exchangeRates }: { BACKEND_URL: str
 
           <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-2xl shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-[#c5a059] to-transparent"></div>
-            
+
             <form onSubmit={handleLogin} className="flex flex-col gap-4">
               {loginError && (
                 <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs p-3 rounded text-center font-semibold">
                   {loginError}
                 </div>
               )}
-              
+
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Agent Reference ID</label>
-                <input 
-                  type="text" 
-                  placeholder="AGT-2026-0001" 
-                  required 
+                <input
+                  type="text"
+                  placeholder="AGT-2026-0001"
+                  required
                   value={agentId}
                   onChange={(e) => setAgentId(e.target.value)}
                   className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3.5 py-2.5 rounded text-xs outline-none"
@@ -1932,18 +1962,18 @@ function PartnerDashboardView({ BACKEND_URL, exchangeRates }: { BACKEND_URL: str
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Registered Phone Number</label>
-                <input 
-                  type="tel" 
-                  placeholder="+92 300 1234567" 
-                  required 
+                <input
+                  type="tel"
+                  placeholder="+92 300 1234567"
+                  required
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3.5 py-2.5 rounded text-xs outline-none"
                 />
               </div>
 
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 disabled={loading}
                 className="w-full py-3 bg-[#c5a059] text-[#05080a] font-bold rounded hover:bg-[#b48e47] transition-all flex items-center justify-center gap-2 mt-2 text-xs uppercase tracking-wider font-semibold"
               >
@@ -1967,16 +1997,16 @@ function PartnerDashboardView({ BACKEND_URL, exchangeRates }: { BACKEND_URL: str
             <p className="text-gray-400 text-xs mt-1">Welcome back, {partner.contactName} &bull; ID: <strong className="text-[#c5a059] font-mono">{partner.name}</strong></p>
           </div>
           <div className="flex items-center gap-3">
-            <a 
+            <a
               href={`${BACKEND_URL}/uploaded-files/JV Partners/General JV Contract Template.pdf`}
-              target="_blank" 
+              target="_blank"
               rel="noopener noreferrer"
               className="px-4 py-2 bg-[#c5a059]/10 border border-[#c5a059]/25 text-[#c5a059] text-xs font-bold rounded hover:bg-[#c5a059] hover:text-[#05080a] transition-all flex items-center gap-2"
             >
               <i className="fa-solid fa-file-pdf"></i> Download JV Contract
             </a>
-            <button 
-              onClick={handleLogout} 
+            <button
+              onClick={handleLogout}
               className="px-4 py-2 border border-red-500/30 text-red-400 text-xs font-semibold rounded hover:bg-red-500/10 transition-all"
             >
               Log Out
@@ -2011,11 +2041,11 @@ function PartnerDashboardView({ BACKEND_URL, exchangeRates }: { BACKEND_URL: str
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Total B2B Sales Volume</span>
               <div className="text-2xl font-black text-white mt-2">
-                PKR {totalSalesPKR.toLocaleString(undefined, {maximumFractionDigits: 0})}
+                PKR {totalSalesPKR.toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </div>
               <div className="text-[11px] text-[#c5a059] font-mono mt-2 flex flex-col gap-0.5">
-                <span>SAR: {totalSalesSAR.toLocaleString(undefined, {maximumFractionDigits: 0})} SAR</span>
-                <span>USD: {totalSalesUSD.toLocaleString(undefined, {maximumFractionDigits: 0})} USD</span>
+                <span>SAR: {totalSalesSAR.toLocaleString(undefined, { maximumFractionDigits: 0 })} SAR</span>
+                <span>USD: {totalSalesUSD.toLocaleString(undefined, { maximumFractionDigits: 0 })} USD</span>
               </div>
             </div>
           </div>
@@ -2026,11 +2056,11 @@ function PartnerDashboardView({ BACKEND_URL, exchangeRates }: { BACKEND_URL: str
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Commissions Earned (5%)</span>
               <div className="text-2xl font-black text-green-400 mt-2">
-                PKR {commissionPKR.toLocaleString(undefined, {maximumFractionDigits: 0})}
+                PKR {commissionPKR.toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </div>
               <div className="text-[11px] text-gray-400 font-mono mt-2 flex flex-col gap-0.5">
-                <span>SAR: {commissionSAR.toLocaleString(undefined, {maximumFractionDigits: 0})} SAR</span>
-                <span>USD: {commissionUSD.toLocaleString(undefined, {maximumFractionDigits: 0})} USD</span>
+                <span>SAR: {commissionSAR.toLocaleString(undefined, { maximumFractionDigits: 0 })} SAR</span>
+                <span>USD: {commissionUSD.toLocaleString(undefined, { maximumFractionDigits: 0 })} USD</span>
               </div>
             </div>
           </div>
@@ -2098,7 +2128,7 @@ function PartnerDashboardView({ BACKEND_URL, exchangeRates }: { BACKEND_URL: str
                         <td className="py-4 px-4 text-right">
                           <div className="font-black text-white">PKR {pricePKR.toLocaleString()}</div>
                           <div className="text-[9px] text-gray-400 font-mono">
-                            {priceSAR.toLocaleString(undefined, {maximumFractionDigits:0})} SAR / {priceUSD.toLocaleString(undefined, {maximumFractionDigits:0})} USD
+                            {priceSAR.toLocaleString(undefined, { maximumFractionDigits: 0 })} SAR / {priceUSD.toLocaleString(undefined, { maximumFractionDigits: 0 })} USD
                           </div>
                         </td>
                         <td className="py-4 px-4 text-center">
@@ -2168,17 +2198,17 @@ function CustomerPortalView({ BACKEND_URL, exchangeRates }: { BACKEND_URL: strin
         <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-2xl mb-8">
           <form onSubmit={handleLookup} className="flex flex-col sm:flex-row gap-4">
             <div className="flex-grow flex flex-col gap-1.5">
-              <input 
-                type="text" 
-                placeholder="Enter Passport Number or Booking Reference ID" 
-                required 
+              <input
+                type="text"
+                placeholder="Enter Passport Number or Booking Reference ID"
+                required
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 className="w-full bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-4 py-3 rounded text-xs outline-none font-mono"
               />
             </div>
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={loading}
               className="py-3 px-8 bg-[#c5a059] text-[#05080a] font-bold rounded hover:bg-[#b48e47] transition-all flex items-center justify-center gap-2 text-xs uppercase tracking-wider font-semibold whitespace-nowrap"
             >
@@ -2192,7 +2222,7 @@ function CustomerPortalView({ BACKEND_URL, exchangeRates }: { BACKEND_URL: strin
         {booking && (
           <div className="bg-[#0e1217] border border-[#c5a059]/20 rounded-2xl shadow-2xl overflow-hidden relative font-sans">
             <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-[#c5a059] to-transparent"></div>
-            
+
             {/* Receipt Header */}
             <div className="bg-[#05080a] py-6 px-8 border-b border-gray-850 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
@@ -2280,11 +2310,11 @@ function CustomerPortalView({ BACKEND_URL, exchangeRates }: { BACKEND_URL: strin
                   </div>
                   <div className="border-t border-gray-850/60 pt-3 flex justify-between items-center text-xs">
                     <span className="text-gray-500">Saudi Riyal Equivalent</span>
-                    <span className="font-bold text-[#c5a059]">{(booking.totalPrice / EXCHANGE_RATE).toLocaleString(undefined, {maximumFractionDigits: 0})} SAR</span>
+                    <span className="font-bold text-[#c5a059]">{(booking.totalPrice / EXCHANGE_RATE).toLocaleString(undefined, { maximumFractionDigits: 0 })} SAR</span>
                   </div>
                   <div className="border-t border-gray-850/60 pt-3 flex justify-between items-center text-xs">
                     <span className="text-gray-500">US Dollar Equivalent</span>
-                    <span className="font-bold text-blue-400">{(booking.totalPrice / USD_RATE).toLocaleString(undefined, {maximumFractionDigits: 0})} USD</span>
+                    <span className="font-bold text-blue-400">{(booking.totalPrice / USD_RATE).toLocaleString(undefined, { maximumFractionDigits: 0 })} USD</span>
                   </div>
                 </div>
               </div>
@@ -2320,7 +2350,7 @@ function DashboardView({ dashboardStats, bookings, inquiries, exchangeRates, sub
 
   const partnerStats = React.useMemo(() => {
     const stats: { [agentId: string]: { name: string; agency: string; bookingsCount: number; revenue: number } } = {};
-    
+
     subagents.forEach((agent: any) => {
       stats[agent.name] = {
         name: agent.contactName,
@@ -2480,35 +2510,32 @@ function DashboardView({ dashboardStats, bookings, inquiries, exchangeRates, sub
             <h2 className="text-3xl font-serif text-white font-bold">Business Intelligence Display</h2>
             <p className="text-gray-400 text-sm mt-1">Real-time sales tracking, commission logs, booking distributions, and budget comparisons.</p>
           </div>
-          
+
           <div className="bg-[#05080a] p-1.5 rounded-lg border border-gray-800 flex flex-wrap gap-2 w-full md:w-auto text-xs text-center justify-center">
             <button
               onClick={() => setViewMode('overview')}
-              className={`px-5 py-2 rounded font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
-                viewMode === 'overview'
+              className={`px-5 py-2 rounded font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${viewMode === 'overview'
                   ? 'bg-[#c5a059] text-[#05080a]'
                   : 'text-gray-400 hover:text-white'
-              }`}
+                }`}
             >
               <i className="fa-solid fa-chart-line"></i> BI Overview
             </button>
             <button
               onClick={() => setViewMode('budget')}
-              className={`px-5 py-2 rounded font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
-                viewMode === 'budget'
+              className={`px-5 py-2 rounded font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${viewMode === 'budget'
                   ? 'bg-[#c5a059] text-[#05080a]'
                   : 'text-gray-400 hover:text-white'
-              }`}
+                }`}
             >
               <i className="fa-solid fa-compass"></i> Budget & Milestones
             </button>
             <button
               onClick={() => setViewMode('partners')}
-              className={`px-5 py-2 rounded font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
-                viewMode === 'partners'
+              className={`px-5 py-2 rounded font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${viewMode === 'partners'
                   ? 'bg-[#c5a059] text-[#05080a]'
                   : 'text-gray-400 hover:text-white'
-              }`}
+                }`}
             >
               <i className="fa-solid fa-user-group"></i> Partner & JV Analytics
             </button>
@@ -2518,568 +2545,625 @@ function DashboardView({ dashboardStats, bookings, inquiries, exchangeRates, sub
         {viewMode === 'overview' ? (
           <>
             {/* KPI Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
-          <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden group">
-            <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-coins"></i></div>
-            <div className="text-xs font-bold uppercase tracking-wider text-gray-400">Total Sales Value</div>
-            <div className="text-2xl font-black text-[#c5a059] mt-2">PKR {dashboardStats.totalSales.toLocaleString()}</div>
-          </div>
-          <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden group">
-            <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-percent"></i></div>
-            <div className="text-xs font-bold uppercase tracking-wider text-gray-400">Est. Commissions</div>
-            <div className="text-2xl font-black text-green-400 mt-2">PKR {dashboardStats.totalCommissions.toLocaleString()}</div>
-          </div>
-          <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden group">
-            <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-receipt"></i></div>
-            <div className="text-xs font-bold uppercase tracking-wider text-gray-400">Bookings Logged</div>
-            <div className="text-2xl font-black text-white mt-2">{dashboardStats.bookingsCount}</div>
-          </div>
-          <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden group">
-            <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-envelope-open-text"></i></div>
-            <div className="text-xs font-bold uppercase tracking-wider text-gray-400">Lead Inquiries</div>
-            <div className="text-2xl font-black text-blue-400 mt-2">{dashboardStats.inquiriesCount}</div>
-          </div>
-          <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden group">
-            <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-box-open"></i></div>
-            <div className="text-xs font-bold uppercase tracking-wider text-gray-400">Tour Offerings</div>
-            <div className="text-2xl font-black text-purple-400 mt-2">{dashboardStats.packagesCount}</div>
-          </div>
-        </div>
-
-        {/* Charts and Booking logs tables */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-          {/* Chart 1: Sales by Departure City */}
-          <div className="bg-[#0e1217] p-6 rounded-xl border border-gray-800">
-            <h3 className="text-base font-bold text-white mb-6 flex items-center gap-2">
-              <i className="fa-solid fa-chart-simple text-[#c5a059]"></i> Sales Volume by Departure City
-            </h3>
-            <div className="flex flex-col gap-4">
-              {(() => {
-                const cities = ['Lahore', 'Islamabad', 'Faisalabad', 'Peshawar', 'Multan', 'Sialkot'];
-                const citySales = bookings.reduce((acc: any, b: any) => {
-                  const cityName = b.packageName.includes('Lahore') ? 'Lahore' :
-                                   b.packageName.includes('Islamabad') ? 'Islamabad' :
-                                   b.packageName.includes('Faisalabad') ? 'Faisalabad' :
-                                   b.packageName.includes('Peshawar') ? 'Peshawar' :
-                                   b.packageName.includes('Multan') ? 'Multan' :
-                                   b.packageName.includes('Sialkot') ? 'Sialkot' : 'Other';
-                  acc[cityName] = (acc[cityName] || 0) + (b.totalPrice || 0);
-                  return acc;
-                }, {});
-
-                const maxSale = Math.max(...cities.map(c => citySales[c] || 0), 1);
-
-                return cities.map(city => {
-                  const value = citySales[city] || 0;
-                  const percentage = (value / maxSale) * 100;
-                  return (
-                    <div key={city} className="flex flex-col gap-1.5">
-                      <div className="flex justify-between text-xs">
-                        <span className="font-bold text-gray-300">{city}</span>
-                        <span className="text-[#c5a059] font-black">PKR {value.toLocaleString()}</span>
-                      </div>
-                      <div className="w-full bg-gray-900 rounded-full h-3 overflow-hidden border border-gray-800">
-                        <div 
-                          className="bg-gradient-to-r from-[#c5a059] to-[#e2c98a] h-full rounded-full transition-all duration-1000"
-                          style={{ width: `${percentage}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  );
-                });
-              })()}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
+              <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden group">
+                <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-coins"></i></div>
+                <div className="text-xs font-bold uppercase tracking-wider text-gray-400">Total Sales Value</div>
+                <div className="text-2xl font-black text-[#c5a059] mt-2">PKR {dashboardStats.totalSales.toLocaleString()}</div>
+              </div>
+              <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden group">
+                <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-percent"></i></div>
+                <div className="text-xs font-bold uppercase tracking-wider text-gray-400">Est. Commissions</div>
+                <div className="text-2xl font-black text-green-400 mt-2">PKR {dashboardStats.totalCommissions.toLocaleString()}</div>
+              </div>
+              <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden group">
+                <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-receipt"></i></div>
+                <div className="text-xs font-bold uppercase tracking-wider text-gray-400">Bookings Logged</div>
+                <div className="text-2xl font-black text-white mt-2">{dashboardStats.bookingsCount}</div>
+              </div>
+              <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden group">
+                <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-envelope-open-text"></i></div>
+                <div className="text-xs font-bold uppercase tracking-wider text-gray-400">Lead Inquiries</div>
+                <div className="text-2xl font-black text-blue-400 mt-2">{dashboardStats.inquiriesCount}</div>
+              </div>
+              <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden group">
+                <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-box-open"></i></div>
+                <div className="text-xs font-bold uppercase tracking-wider text-gray-400">Tour Offerings</div>
+                <div className="text-2xl font-black text-purple-400 mt-2">{dashboardStats.packagesCount}</div>
+              </div>
             </div>
-          </div>
 
-          {/* Chart 2: Rooming Preference */}
-          <div className="bg-[#0e1217] p-6 rounded-xl border border-gray-800 flex flex-col justify-between">
-            <div>
-              <h3 className="text-base font-bold text-white mb-6 flex items-center gap-2">
-                <i className="fa-solid fa-chart-pie text-[#c5a059]"></i> Rooming Option Preferences
-              </h3>
-              {(() => {
-                const dist = bookings.reduce((acc: any, b: any) => {
-                  const rt = b.roomingType || 'sharing';
-                  acc[rt] = (acc[rt] || 0) + 1;
-                  return acc;
-                }, { sharing: 0, quad: 0, triple: 0, double: 0 });
+            {/* Charts and Booking logs tables */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+              {/* Chart 1: Sales by Departure City */}
+              <div className="bg-[#0e1217] p-6 rounded-xl border border-gray-800">
+                <h3 className="text-base font-bold text-white mb-6 flex items-center gap-2">
+                  <i className="fa-solid fa-chart-simple text-[#c5a059]"></i> Sales Volume by Departure City
+                </h3>
+                <div className="flex flex-col gap-4">
+                  {(() => {
+                    const cities = ['Lahore', 'Islamabad', 'Faisalabad', 'Peshawar', 'Multan', 'Sialkot'];
+                    const citySales = bookings.reduce((acc: any, b: any) => {
+                      const cityName = b.packageName.includes('Lahore') ? 'Lahore' :
+                        b.packageName.includes('Islamabad') ? 'Islamabad' :
+                          b.packageName.includes('Faisalabad') ? 'Faisalabad' :
+                            b.packageName.includes('Peshawar') ? 'Peshawar' :
+                              b.packageName.includes('Multan') ? 'Multan' :
+                                b.packageName.includes('Sialkot') ? 'Sialkot' : 'Other';
+                      acc[cityName] = (acc[cityName] || 0) + (b.totalPrice || 0);
+                      return acc;
+                    }, {});
 
-                const totalCount = bookings.length || 1;
-                const items = [
-                  { type: 'sharing', label: 'Sharing', count: dist.sharing, color: '#c5a059' },
-                  { type: 'quad', label: 'Quad Room', count: dist.quad, color: '#38bdf8' },
-                  { type: 'triple', label: 'Triple Room', count: dist.triple, color: '#a855f7' },
-                  { type: 'double', label: 'Double Room', count: dist.double, color: '#f43f5e' }
-                ];
+                    const maxSale = Math.max(...cities.map(c => citySales[c] || 0), 1);
 
-                return (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
-                    {items.map(item => {
-                      const pct = ((item.count / totalCount) * 100).toFixed(0);
+                    return cities.map(city => {
+                      const value = citySales[city] || 0;
+                      const percentage = (value / maxSale) * 100;
                       return (
-                        <div key={item.type} className="bg-[#05080a] p-4 rounded-lg border border-gray-800 text-center flex flex-col items-center">
-                          <div className="w-3.5 h-3.5 rounded-full mb-2" style={{ backgroundColor: item.color }}></div>
-                          <span className="text-xs text-gray-400 font-semibold">{item.label}</span>
-                          <span className="text-xl font-bold mt-1 text-white">{item.count}</span>
-                          <span className="text-[10px] text-gray-500 font-bold">{pct}%</span>
+                        <div key={city} className="flex flex-col gap-1.5">
+                          <div className="flex justify-between text-xs">
+                            <span className="font-bold text-gray-300">{city}</span>
+                            <span className="text-[#c5a059] font-black">PKR {value.toLocaleString()}</span>
+                          </div>
+                          <div className="w-full bg-gray-900 rounded-full h-3 overflow-hidden border border-gray-800">
+                            <div
+                              className="bg-gradient-to-r from-[#c5a059] to-[#e2c98a] h-full rounded-full transition-all duration-1000"
+                              style={{ width: `${percentage}%` }}
+                            ></div>
+                          </div>
                         </div>
                       );
-                    })}
-                  </div>
-                );
-              })()}
-            </div>
-            <div className="text-center text-xs text-gray-500 border-t border-gray-800/60 pt-4 mt-6">
-              Based on active checkout database records.
-            </div>
-          </div>
-        </div>
-
-        {/* Live Sales Bookings Table */}
-        <div className="bg-[#0e1217] p-6 rounded-xl border border-gray-800 mb-12 overflow-hidden">
-          <h3 className="text-base font-bold text-white mb-6 flex items-center gap-2">
-            <i className="fa-solid fa-list text-[#c5a059]"></i> Live Sales Booking Logs
-          </h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-gray-800 text-gray-400 uppercase font-extrabold tracking-wider">
-                  <th className="py-3 px-4">Booking ID</th>
-                  <th className="py-3 px-4">Contact</th>
-                  <th className="py-3 px-4">Package</th>
-                  <th className="py-3 px-4">Rooming</th>
-                  <th className="py-3 px-4 text-center">Pilgrims</th>
-                  <th className="py-3 px-4 text-right">Total Price</th>
-                  <th className="py-3 px-4 text-center">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-800 text-gray-300">
-                {bookings.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-8 text-center text-gray-500">No active bookings registered yet.</td>
-                  </tr>
-                ) : (
-                  bookings.map((booking: any, bIdx: number) => (
-                    <tr key={booking._id || bIdx} className="hover:bg-gray-900/40">
-                      <td className="py-3.5 px-4 font-mono text-[#c5a059] font-bold">{booking._id ? booking._id.substring(18) : `B-${1000+bIdx}`}</td>
-                      <td className="py-3.5 px-4">
-                        <div className="font-bold text-white">{booking.contact.name}</div>
-                        <div className="text-[10px] text-gray-500">{booking.contact.phone}</div>
-                      </td>
-                      <td className="py-3.5 px-4 font-semibold">{booking.packageName}</td>
-                      <td className="py-3.5 px-4 capitalize">{booking.roomingType}</td>
-                      <td className="py-3.5 px-4 text-center font-bold text-white">{booking.pilgrimsCount}</td>
-                      <td className="py-3.5 px-4 text-right font-black text-[#c5a059]">PKR {booking.totalPrice.toLocaleString()}</td>
-                      <td className="py-3.5 px-4 text-center">
-                        <span className="px-2 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 font-bold uppercase tracking-wider text-[9px]">
-                          {booking.status || 'Pending Payment'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Inquiries table */}
-        <div className="bg-[#0e1217] p-6 rounded-xl border border-gray-800 overflow-hidden">
-          <h3 className="text-base font-bold text-white mb-6 flex items-center gap-2">
-            <i className="fa-solid fa-envelope-open-text text-[#c5a059]"></i> Live Inquiries Received
-          </h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-gray-800 text-gray-400 uppercase font-extrabold tracking-wider">
-                  <th className="py-3 px-4">Date</th>
-                  <th className="py-3 px-4">Inquirer Name</th>
-                  <th className="py-3 px-4">Contact</th>
-                  <th className="py-3 px-4">Service Interest</th>
-                  <th className="py-3 px-4">Message</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-800 text-gray-300">
-                {inquiries.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-gray-500">No customer inquiries logged yet.</td>
-                  </tr>
-                ) : (
-                  inquiries.map((inquiry: any, iIdx: number) => (
-                    <tr key={inquiry._id || iIdx} className="hover:bg-gray-900/40">
-                      <td className="py-3.5 px-4 text-gray-500 font-semibold">{inquiry.createdAt ? new Date(inquiry.createdAt).toLocaleDateString() : '06/04/2026'}</td>
-                      <td className="py-3.5 px-4 font-bold text-white">{inquiry.name}</td>
-                      <td className="py-3.5 px-4">
-                        <div>{inquiry.phone}</div>
-                        <div className="text-[10px] text-gray-500">{inquiry.email}</div>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span className="px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold uppercase tracking-wider text-[9px]">
-                          {inquiry.service}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-gray-400 max-w-xs truncate" title={inquiry.message}>{inquiry.message}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </>
-      ) : viewMode === 'budget' ? (
-        /* BUDGET & MILESTONES VIEW */
-        <div className="flex flex-col gap-8">
-          
-          {/* Exchange Rates Reference */}
-          <div className="bg-[#0e1217] border border-[#c5a059]/15 p-4 rounded-xl flex flex-wrap gap-6 items-center justify-between text-xs">
-            <div className="flex items-center gap-2">
-              <span className="text-[#c5a059] text-base"><i className="fa-solid fa-calculator"></i></span>
-              <div>
-                <span className="font-bold text-white uppercase">
-                  Currency Analytics Hub {exchangeRates?.isLive ? <span className="text-green-400 text-[9px] bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded ml-2 font-mono">Live Spot Rates Active</span> : <span className="text-yellow-400 text-[9px] bg-yellow-500/10 border border-yellow-500/20 px-2 py-0.5 rounded ml-2 font-mono">Budget Defaults</span>}
-                </span>
-                <p className="text-gray-500 text-[10px] mt-0.5">Automated conversion of booking actuals (PKR) and budget estimates (SAR).</p>
-              </div>
-            </div>
-            <div className="flex gap-4 font-mono text-gray-400">
-              <span className="bg-[#05080a] px-3 py-1.5 rounded border border-gray-800">
-                1 SAR = <strong className="text-[#c5a059]">{EXCHANGE_RATE.toFixed(2)} PKR</strong>
-              </span>
-              <span className="bg-[#05080a] px-3 py-1.5 rounded border border-gray-800">
-                1 USD = <strong className="text-blue-400">{USD_RATE.toFixed(2)} PKR</strong>
-              </span>
-              <span className="bg-[#05080a] px-3 py-1.5 rounded border border-gray-800">
-                1 USD = <strong className="text-green-400">{USD_TO_SAR.toFixed(2)} SAR</strong>
-              </span>
-            </div>
-          </div>
-
-          {/* Three-Currency Target Comparison Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            
-            {/* Revenue card */}
-            <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden flex flex-col justify-between">
-              <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-coins"></i></div>
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Revenue Goal (Budget vs Actual)</span>
-                <div className="text-2xl font-black text-[#c5a059] mt-2">
-                  PKR {actualSalesPKR.toLocaleString(undefined, {maximumFractionDigits: 0})}
-                </div>
-                <div className="text-[10px] text-gray-400 font-mono mt-1 flex flex-col gap-0.5">
-                  <span>SAR: {actualSalesSAR.toLocaleString(undefined, {maximumFractionDigits: 0})} / {BUDGET_TOTAL_REVENUE_SAR.toLocaleString()}</span>
-                  <span>USD: {(actualSalesPKR / USD_RATE).toLocaleString(undefined, {maximumFractionDigits: 0})} / {(BUDGET_TOTAL_REVENUE_PKR / USD_RATE).toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
+                    });
+                  })()}
                 </div>
               </div>
-              <div className="mt-4">
-                <div className="flex justify-between text-[10px] font-bold text-gray-400 mb-1">
-                  <span>Target Achievement</span>
-                  <span className="text-[#c5a059]">{((actualSalesSAR / BUDGET_TOTAL_REVENUE_SAR) * 100).toFixed(2)}%</span>
-                </div>
-                <div className="w-full bg-gray-900 rounded-full h-2 overflow-hidden border border-gray-800">
-                  <div 
-                    className="bg-gradient-to-r from-[#c5a059] to-[#e2c98a] h-full rounded-full transition-all duration-1000"
-                    style={{ width: `${Math.min((actualSalesSAR / BUDGET_TOTAL_REVENUE_SAR) * 100, 100)}%` }}
-                  ></div>
-                </div>
-              </div>
-            </div>
 
-            {/* Pilgrims Card */}
-            <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden flex flex-col justify-between">
-              <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-user-group"></i></div>
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Pilgrims Goal (Target vs Actual)</span>
-                <div className="text-2xl font-black text-white mt-2">
-                  {actualPilgrims.toLocaleString()}
-                </div>
-                <div className="text-[10px] text-gray-400 font-mono mt-1">
-                  Target: <strong className="text-white">{BUDGET_TARGET_PILGRIMS.toLocaleString()}</strong> pilgrims from Pakistan.
-                </div>
-              </div>
-              <div className="mt-4">
-                <div className="flex justify-between text-[10px] font-bold text-gray-400 mb-1">
-                  <span>Pilgrims Reached</span>
-                  <span className="text-white">{((actualPilgrims / BUDGET_TARGET_PILGRIMS) * 100).toFixed(2)}%</span>
-                </div>
-                <div className="w-full bg-gray-900 rounded-full h-2 overflow-hidden border border-gray-800">
-                  <div 
-                    className="bg-gradient-to-r from-blue-500 to-indigo-500 h-full rounded-full transition-all duration-1000"
-                    style={{ width: `${Math.min((actualPilgrims / BUDGET_TARGET_PILGRIMS) * 100, 100)}%` }}
-                  ></div>
-                </div>
-              </div>
-            </div>
+              {/* Chart 2: Rooming Preference */}
+              <div className="bg-[#0e1217] p-6 rounded-xl border border-gray-800 flex flex-col justify-between">
+                <div>
+                  <h3 className="text-base font-bold text-white mb-6 flex items-center gap-2">
+                    <i className="fa-solid fa-chart-pie text-[#c5a059]"></i> Rooming Option Preferences
+                  </h3>
+                  {(() => {
+                    const dist = bookings.reduce((acc: any, b: any) => {
+                      const rt = b.roomingType || 'sharing';
+                      acc[rt] = (acc[rt] || 0) + 1;
+                      return acc;
+                    }, { sharing: 0, quad: 0, triple: 0, double: 0 });
 
-            {/* Profit Card */}
-            <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden flex flex-col justify-between">
-              <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-chart-line"></i></div>
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Gross Profit (Budget vs Actual)</span>
-                <div className="text-2xl font-black text-green-400 mt-2">
-                  PKR {(actualSalesPKR * 0.0667).toLocaleString(undefined, {maximumFractionDigits: 0})}
-                </div>
-                <div className="text-[10px] text-gray-400 font-mono mt-1 flex flex-col gap-0.5">
-                  <span>SAR: {(actualSalesSAR * 0.0667).toLocaleString(undefined, {maximumFractionDigits: 0})} / {BUDGET_GROSS_PROFIT_SAR.toLocaleString()}</span>
-                  <span>USD: {((actualSalesPKR * 0.0667) / 278).toLocaleString(undefined, {maximumFractionDigits: 0})} / {((BUDGET_GROSS_PROFIT_SAR * EXCHANGE_RATE) / 278).toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
-                </div>
-                <div className="mt-2 text-[9px] text-gray-500 font-mono">
-                  Net Budget: PKR {BUDGET_NET_PROFIT_PKR.toLocaleString(undefined, {maximumFractionDigits: 0})} | SAR {BUDGET_NET_PROFIT_SAR.toLocaleString()} | USD {(BUDGET_NET_PROFIT_PKR / 278).toLocaleString(undefined, {maximumFractionDigits: 0})}
-                </div>
-              </div>
-              <div className="mt-4">
-                <div className="flex justify-between text-[10px] font-bold text-gray-400 mb-1">
-                  <span>GP Margin</span>
-                  <span className="text-green-400">6.67% (Pro-Rata)</span>
-                </div>
-                <div className="w-full bg-gray-900 rounded-full h-2 overflow-hidden border border-gray-800">
-                  <div 
-                    className="bg-gradient-to-r from-green-500 to-emerald-500 h-full rounded-full transition-all duration-1000"
-                    style={{ width: `${Math.min((actualSalesSAR / BUDGET_TOTAL_REVENUE_SAR) * 100, 100)}%` }}
-                  ></div>
-                </div>
-              </div>
-            </div>
+                    const totalCount = bookings.length || 1;
+                    const items = [
+                      { type: 'sharing', label: 'Sharing', count: dist.sharing, color: '#c5a059' },
+                      { type: 'quad', label: 'Quad Room', count: dist.quad, color: '#38bdf8' },
+                      { type: 'triple', label: 'Triple Room', count: dist.triple, color: '#a855f7' },
+                      { type: 'double', label: 'Double Room', count: dist.double, color: '#f43f5e' }
+                    ];
 
-            {/* Expenses & ZATCA Tax */}
-            <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden flex flex-col justify-between">
-              <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-file-invoice-dollar"></i></div>
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Admin Expenses (SAR, PKR, USD)</span>
-                <div className="text-sm font-bold text-white mt-3">
-                  Budget: SAR {BUDGET_EXPENSES_SAR.toLocaleString()}
-                </div>
-                <div className="text-[10px] text-gray-400 font-mono mt-1 flex flex-col gap-0.5">
-                  <span>PKR: {(BUDGET_EXPENSES_SAR * EXCHANGE_RATE).toLocaleString(undefined, {maximumFractionDigits: 0})} total services budget</span>
-                  <span>USD: {(BUDGET_EXPENSES_SAR * EXCHANGE_RATE / 278).toLocaleString(undefined, {maximumFractionDigits: 0})} operating overheads</span>
-                </div>
-              </div>
-              <div className="mt-4 text-[10px] text-[#c5a059] bg-[#c5a059]/5 border border-[#c5a059]/20 p-2 rounded">
-                Includes ZATCA Income Tax (20%): SAR 982.5k (PKR 73.2M | USD 263.3k)
-              </div>
-            </div>
-
-          </div>
-
-          {/* Milestone Progress Path */}
-          <div className="bg-[#0e1217] p-6 rounded-xl border border-gray-800">
-            <h3 className="text-base font-bold text-white mb-6 flex items-center gap-2">
-              <i className="fa-solid fa-flag-checkered text-[#c5a059]"></i> Hijri 1448 Season Milestones Roadmap
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6 relative">
-              {milestones.map((m) => (
-                <div key={m.id} className={`p-4 rounded-lg border relative flex flex-col justify-between transition-all ${
-                  m.isCompleted 
-                    ? 'bg-green-500/5 border-green-500/20 text-gray-300' 
-                    : m.current 
-                      ? 'bg-[#c5a059]/10 border-[#c5a059] text-white' 
-                      : 'bg-[#05080a] border-gray-800 text-gray-500'
-                }`}>
-                  <div>
-                    <div className="flex justify-between items-start">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{m.phase}</span>
-                      <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
-                        m.isCompleted 
-                          ? 'bg-green-500/10 text-green-400' 
-                          : m.current 
-                            ? 'bg-[#c5a059]/20 text-[#c5a059]' 
-                            : 'bg-gray-800 text-gray-600'
-                      }`}>
-                        {m.statusText}
-                      </span>
-                    </div>
-                    
-                    <h4 className="text-xs font-bold mt-2.5 text-white">{m.title}</h4>
-                    <p className="text-[10px] text-gray-400 mt-2 leading-relaxed">{m.goal}</p>
-                  </div>
-
-                  <div className="mt-4 border-t border-gray-800 pt-3 flex flex-col gap-1">
-                    <span className="text-[10px] text-[#c5a059] font-mono font-bold">Goal Target:</span>
-                    <span className="text-[11px] font-mono text-white font-extrabold">SAR {m.targetValSar.toLocaleString()}</span>
-                    <span className="text-[9px] text-gray-400 font-mono">
-                      PKR: PKR {(m.targetValSar * EXCHANGE_RATE).toLocaleString(undefined, {maximumFractionDigits: 0})}
-                    </span>
-                    <span className="text-[9px] text-gray-400 font-mono">
-                      USD: USD {(m.targetValSar * EXCHANGE_RATE / USD_RATE).toLocaleString(undefined, {maximumFractionDigits: 0})}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Monthly Comparison Breakdown */}
-          <div className="bg-[#0e1217] p-6 rounded-xl border border-gray-800 overflow-hidden">
-            <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
-              <i className="fa-solid fa-calendar-days text-[#c5a059]"></i> Monthly Target Analysis (USD, SAR, PKR)
-            </h3>
-            <p className="text-gray-400 text-xs mb-6">Compare budgeted sales volumes with current booking registers sorted by creation date.</p>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-gray-800 text-gray-400 uppercase font-bold tracking-wider">
-                    <th className="py-3 px-4">Fiscal Month</th>
-                    <th className="py-3 px-4 text-center">Budget Target (SAR / PKR / USD)</th>
-                    <th className="py-3 px-4 text-center">Actual Bookings (SAR / PKR / USD)</th>
-                    <th className="py-3 px-4">Completion Progress</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-800 text-gray-300">
-                  {monthlyBudgets.map((mb, idx) => {
-                    const actualPKR = actualSalesByMonthPKR[mb.label] || 0;
-                    const actualSAR = actualPKR / EXCHANGE_RATE;
-                    const actualUSD = actualPKR / USD_RATE;
-
-                    const percentage = mb.sar > 0 ? Math.min((actualSAR / mb.sar) * 100, 100) : 0;
-                    
                     return (
-                      <tr key={idx} className="hover:bg-gray-900/40">
-                        <td className="py-4 px-4">
-                          <div className="font-bold text-white">{mb.label}</div>
-                          <div className="text-[10px] text-gray-500">{mb.description}</div>
-                        </td>
-                        <td className="py-4 px-4 text-center">
-                          <div className="font-semibold text-white">SAR {mb.sar.toLocaleString()}</div>
-                          <div className="text-[10px] text-gray-400 font-mono mt-0.5">
-                            PKR {mb.pkr.toLocaleString()} | USD {(mb.pkr / USD_RATE).toLocaleString(undefined, {maximumFractionDigits: 0})}
-                          </div>
-                        </td>
-                        <td className="py-4 px-4 text-center">
-                          <div className="font-semibold text-[#c5a059]">SAR {actualSAR.toLocaleString(undefined, {maximumFractionDigits: 0})}</div>
-                          <div className="text-[10px] text-gray-400 font-mono mt-0.5">
-                            PKR {actualPKR.toLocaleString()} | USD {actualUSD.toLocaleString(undefined, {maximumFractionDigits: 0})}
-                          </div>
-                        </td>
-                        <td className="py-4 px-4">
-                          {mb.sar > 0 ? (
-                            <div className="flex items-center gap-3">
-                              <div className="w-full bg-gray-900 rounded-full h-2 overflow-hidden border border-gray-800">
-                                <div 
-                                  className="bg-gradient-to-r from-[#c5a059] to-[#e2c98a] h-full rounded-full transition-all duration-1000"
-                                  style={{ width: `${percentage}%` }}
-                                ></div>
-                              </div>
-                              <span className="font-bold font-mono text-[#c5a059] whitespace-nowrap">{percentage.toFixed(1)}%</span>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
+                        {items.map(item => {
+                          const pct = ((item.count / totalCount) * 100).toFixed(0);
+                          return (
+                            <div key={item.type} className="bg-[#05080a] p-4 rounded-lg border border-gray-800 text-center flex flex-col items-center">
+                              <div className="w-3.5 h-3.5 rounded-full mb-2" style={{ backgroundColor: item.color }}></div>
+                              <span className="text-xs text-gray-400 font-semibold">{item.label}</span>
+                              <span className="text-xl font-bold mt-1 text-white">{item.count}</span>
+                              <span className="text-[10px] text-gray-500 font-bold">{pct}%</span>
                             </div>
-                          ) : (
-                            <span className="text-gray-500 italic">No Target</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-        </div>
-      ) : (
-        /* PARTNERS & JV ANALYTICS VIEW */
-        <div className="flex flex-col gap-8 animate-fadeIn">
-          {/* Partner KPI Summary Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden group">
-              <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-users"></i></div>
-              <div className="text-xs font-bold uppercase tracking-wider text-gray-400">Registered Sub-Agents</div>
-              <div className="text-2xl font-black text-[#c5a059] mt-2">{subagents.length} Agents</div>
-              <div className="text-[10px] text-gray-500 mt-1">Pending and approved commission partners</div>
-            </div>
-
-            <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden group">
-              <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-file-contract"></i></div>
-              <div className="text-xs font-bold uppercase tracking-wider text-gray-400">JV Contracts Directory</div>
-              <div className="text-2xl font-black text-white mt-2">{partnerFiles.length} Agreements</div>
-              <div className="text-[10px] text-gray-500 mt-1">Scanned PDF contracts from partners folder</div>
-            </div>
-
-            <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden group">
-              <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-money-bill-trend-up"></i></div>
-              <div className="text-xs font-bold uppercase tracking-wider text-gray-400">Partner Sales Share</div>
-              <div className="text-2xl font-black text-green-400 mt-2">
-                PKR {partnerStats.reduce((sum: number, p: any) => sum + p.revenue, 0).toLocaleString()}
-              </div>
-              <div className="text-[10px] text-gray-550 mt-1 flex justify-between w-full">
-                <span>Bookings: {partnerStats.reduce((sum: number, p: any) => sum + p.bookingsCount, 0)}</span>
-                <span>Share: {((partnerStats.reduce((sum: number, p: any) => sum + p.revenue, 0) / (dashboardStats.totalSales || 1)) * 100).toFixed(1)}%</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            {/* Scanned JV Contracts Directory Section */}
-            <div className="bg-[#0e1217] p-6 rounded-xl border border-gray-800 lg:col-span-5 flex flex-col">
-              <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
-                <i className="fa-solid fa-file-pdf text-red-500"></i> Signed JV Contracts Directory
-              </h3>
-              <p className="text-gray-400 text-xs mb-6">These agreements are loaded dynamically from the `partners` folder. Click to view or download.</p>
-              
-              <div className="flex flex-col gap-3.5 max-h-[480px] overflow-y-auto pr-1">
-                {partnerFiles.length === 0 ? (
-                  <div className="text-center py-12 text-gray-500 border border-dashed border-gray-800 rounded-lg">
-                    <i className="fa-solid fa-folder-open text-4xl text-gray-700 block mb-2"></i>
-                    No signed contract PDFs detected.
-                  </div>
-                ) : (
-                  partnerFiles.map((file, idx) => (
-                    <div key={idx} className="bg-[#05080a] border border-gray-800 hover:border-[#c5a059]/30 rounded-lg p-3.5 flex items-center justify-between gap-4 transition-all">
-                      <div className="flex items-center gap-3 overflow-hidden">
-                        <span className="text-2xl text-red-450 flex-shrink-0"><i className="fa-solid fa-file-pdf"></i></span>
-                        <div className="overflow-hidden">
-                          <h4 className="text-xs font-bold text-white truncate" title={file.companyName}>{file.companyName}</h4>
-                          <span className="text-[10px] text-gray-500 block truncate mt-0.5">{file.filename}</span>
-                        </div>
+                          );
+                        })}
                       </div>
-                      <a 
-                        href={`${BACKEND_URL}${file.url}`} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="px-3 py-1.5 bg-[#c5a059]/10 hover:bg-[#c5a059] border border-[#c5a059]/30 hover:border-[#c5a059] text-[#c5a059] hover:text-[#05080a] text-[10px] font-bold rounded transition-all flex-shrink-0"
-                      >
-                        View Contract
-                      </a>
-                    </div>
-                  ))
-                )}
+                    );
+                  })()}
+                </div>
+                <div className="text-center text-xs text-gray-500 border-t border-gray-800/60 pt-4 mt-6">
+                  Based on active checkout database records.
+                </div>
               </div>
             </div>
 
-            {/* Sub-Agent Performance Leaderboard Section */}
-            <div className="bg-[#0e1217] p-6 rounded-xl border border-gray-800 lg:col-span-7">
-              <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
-                <i className="fa-solid fa-trophy text-yellow-500"></i> Partner & Sub-Agent Activity Tracking
+            {/* Live Sales Bookings Table */}
+            <div className="bg-[#0e1217] p-6 rounded-xl border border-gray-800 mb-12 overflow-hidden">
+              <h3 className="text-base font-bold text-white mb-6 flex items-center gap-2">
+                <i className="fa-solid fa-list text-[#c5a059]"></i> Live Sales Booking Logs
               </h3>
-              <p className="text-gray-400 text-xs mb-6">Real-time revenue attribution and commission logs generated per Sub-Agent ID.</p>
-              
               <div className="overflow-x-auto">
-                <table className="w-full text-xs text-left border-collapse">
+                <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="border-b border-gray-800 text-gray-400 uppercase font-extrabold tracking-wider">
-                      <th className="py-2.5 px-3">Agent ID / Name</th>
-                      <th className="py-2.5 px-3">Agency Name</th>
-                      <th className="py-2.5 px-3 text-center">Bookings</th>
-                      <th className="py-2.5 px-3 text-right">Attributed Sales</th>
-                      <th className="py-2.5 px-3 text-right">Commissions (5%)</th>
+                      <th className="py-3 px-4">Booking ID</th>
+                      <th className="py-3 px-4">Contact</th>
+                      <th className="py-3 px-4">Package</th>
+                      <th className="py-3 px-4">Rooming</th>
+                      <th className="py-3 px-4 text-center">Pilgrims</th>
+                      <th className="py-3 px-4 text-right">Total Price</th>
+                      <th className="py-3 px-4 text-center">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-800 text-gray-300">
-                    {partnerStats.length === 0 ? (
+                    {bookings.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="py-8 text-center text-gray-500">No partner activity recorded.</td>
+                        <td colSpan={7} className="py-8 text-center text-gray-500">No active bookings registered yet.</td>
                       </tr>
                     ) : (
-                      partnerStats.map((agent, aIdx) => (
-                        <tr key={aIdx} className="hover:bg-gray-900/40">
-                          <td className="py-3 px-3">
-                            <div className="font-bold text-white">{agent.id}</div>
-                            <div className="text-[10px] text-gray-500 mt-0.5">{agent.name}</div>
+                      bookings.map((booking: any, bIdx: number) => (
+                        <tr key={booking._id || bIdx} className="hover:bg-gray-900/40">
+                          <td className="py-3.5 px-4 font-mono text-[#c5a059] font-bold">{booking._id ? booking._id.substring(18) : `B-${1000 + bIdx}`}</td>
+                          <td className="py-3.5 px-4">
+                            <div className="font-bold text-white">{booking.contact.name}</div>
+                            <div className="text-[10px] text-gray-500">{booking.contact.phone}</div>
                           </td>
-                          <td className="py-3 px-3 font-semibold text-gray-300">{agent.agency}</td>
-                          <td className="py-3 px-3 text-center font-bold text-white">{agent.bookingsCount}</td>
-                          <td className="py-3 px-3 text-right font-black text-[#c5a059]">PKR {agent.revenue.toLocaleString()}</td>
-                          <td className="py-3 px-3 text-right font-bold text-green-400">PKR {(agent.revenue * 0.05).toLocaleString()}</td>
+                          <td className="py-3.5 px-4 font-semibold">{booking.packageName}</td>
+                          <td className="py-3.5 px-4 capitalize">{booking.roomingType}</td>
+                          <td className="py-3.5 px-4 text-center font-bold text-white">{booking.pilgrimsCount}</td>
+                          <td className="py-3.5 px-4 text-right font-black text-[#c5a059]">PKR {booking.totalPrice.toLocaleString()}</td>
+                          <td className="py-3.5 px-4 text-center">
+                            <span className="px-2 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 font-bold uppercase tracking-wider text-[9px]">
+                              {booking.status || 'Pending Payment'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Inquiries table */}
+            <div className="bg-[#0e1217] p-6 rounded-xl border border-gray-800 overflow-hidden">
+              <h3 className="text-base font-bold text-white mb-6 flex items-center gap-2">
+                <i className="fa-solid fa-envelope-open-text text-[#c5a059]"></i> Live Inquiries Received
+              </h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-gray-800 text-gray-400 uppercase font-extrabold tracking-wider">
+                      <th className="py-3 px-4">Date</th>
+                      <th className="py-3 px-4">Inquirer Name</th>
+                      <th className="py-3 px-4">Contact</th>
+                      <th className="py-3 px-4">Service Interest</th>
+                      <th className="py-3 px-4">Message</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-800 text-gray-300">
+                    {inquiries.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="py-8 text-center text-gray-500">No customer inquiries logged yet.</td>
+                      </tr>
+                    ) : (
+                      inquiries.map((inquiry: any, iIdx: number) => (
+                        <tr key={inquiry._id || iIdx} className="hover:bg-gray-900/40">
+                          <td className="py-3.5 px-4 text-gray-500 font-semibold">{inquiry.createdAt ? new Date(inquiry.createdAt).toLocaleDateString() : '06/04/2026'}</td>
+                          <td className="py-3.5 px-4 font-bold text-white">{inquiry.name}</td>
+                          <td className="py-3.5 px-4">
+                            <div>{inquiry.phone}</div>
+                            <div className="text-[10px] text-gray-500">{inquiry.email}</div>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className="px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold uppercase tracking-wider text-[9px]">
+                              {inquiry.service}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-gray-400 max-w-xs truncate" title={inquiry.message}>{inquiry.message}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        ) : viewMode === 'budget' ? (
+          /* BUDGET & MILESTONES VIEW */
+          <div className="flex flex-col gap-8">
+
+            {/* Exchange Rates Reference */}
+            <div className="bg-[#0e1217] border border-[#c5a059]/15 p-4 rounded-xl flex flex-wrap gap-6 items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <span className="text-[#c5a059] text-base"><i className="fa-solid fa-calculator"></i></span>
+                <div>
+                  <span className="font-bold text-white uppercase">
+                    Currency Analytics Hub {exchangeRates?.isLive ? <span className="text-green-400 text-[9px] bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded ml-2 font-mono">Live Spot Rates Active</span> : <span className="text-yellow-400 text-[9px] bg-yellow-500/10 border border-yellow-500/20 px-2 py-0.5 rounded ml-2 font-mono">Budget Defaults</span>}
+                  </span>
+                  <p className="text-gray-500 text-[10px] mt-0.5">Automated conversion of booking actuals (PKR) and budget estimates (SAR).</p>
+                </div>
+              </div>
+              <div className="flex gap-4 font-mono text-gray-400">
+                <span className="bg-[#05080a] px-3 py-1.5 rounded border border-gray-800">
+                  1 SAR = <strong className="text-[#c5a059]">{EXCHANGE_RATE.toFixed(2)} PKR</strong>
+                </span>
+                <span className="bg-[#05080a] px-3 py-1.5 rounded border border-gray-800">
+                  1 USD = <strong className="text-blue-400">{USD_RATE.toFixed(2)} PKR</strong>
+                </span>
+                <span className="bg-[#05080a] px-3 py-1.5 rounded border border-gray-800">
+                  1 USD = <strong className="text-green-400">{USD_TO_SAR.toFixed(2)} SAR</strong>
+                </span>
+              </div>
+            </div>
+
+            {/* Three-Currency Target Comparison Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+
+              {/* Revenue card */}
+              <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden flex flex-col justify-between">
+                <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-coins"></i></div>
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Revenue Goal (Budget vs Actual)</span>
+                  <div className="text-2xl font-black text-[#c5a059] mt-2">
+                    PKR {actualSalesPKR.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  </div>
+                  <div className="text-[10px] text-gray-400 font-mono mt-1 flex flex-col gap-0.5">
+                    <span>SAR: {actualSalesSAR.toLocaleString(undefined, { maximumFractionDigits: 0 })} / {BUDGET_TOTAL_REVENUE_SAR.toLocaleString()}</span>
+                    <span>USD: {(actualSalesPKR / USD_RATE).toLocaleString(undefined, { maximumFractionDigits: 0 })} / {(BUDGET_TOTAL_REVENUE_PKR / USD_RATE).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <div className="flex justify-between text-[10px] font-bold text-gray-400 mb-1">
+                    <span>Target Achievement</span>
+                    <span className="text-[#c5a059]">{((actualSalesSAR / BUDGET_TOTAL_REVENUE_SAR) * 100).toFixed(2)}%</span>
+                  </div>
+                  <div className="w-full bg-gray-900 rounded-full h-2 overflow-hidden border border-gray-800">
+                    <div
+                      className="bg-gradient-to-r from-[#c5a059] to-[#e2c98a] h-full rounded-full transition-all duration-1000"
+                      style={{ width: `${Math.min((actualSalesSAR / BUDGET_TOTAL_REVENUE_SAR) * 100, 100)}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pilgrims Card */}
+              <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden flex flex-col justify-between">
+                <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-user-group"></i></div>
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Pilgrims Goal (Target vs Actual)</span>
+                  <div className="text-2xl font-black text-white mt-2">
+                    {actualPilgrims.toLocaleString()}
+                  </div>
+                  <div className="text-[10px] text-gray-400 font-mono mt-1">
+                    Target: <strong className="text-white">{BUDGET_TARGET_PILGRIMS.toLocaleString()}</strong> pilgrims from Pakistan.
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <div className="flex justify-between text-[10px] font-bold text-gray-400 mb-1">
+                    <span>Pilgrims Reached</span>
+                    <span className="text-white">{((actualPilgrims / BUDGET_TARGET_PILGRIMS) * 100).toFixed(2)}%</span>
+                  </div>
+                  <div className="w-full bg-gray-900 rounded-full h-2 overflow-hidden border border-gray-800">
+                    <div
+                      className="bg-gradient-to-r from-blue-500 to-indigo-500 h-full rounded-full transition-all duration-1000"
+                      style={{ width: `${Math.min((actualPilgrims / BUDGET_TARGET_PILGRIMS) * 100, 100)}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Profit Card */}
+              <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden flex flex-col justify-between">
+                <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-chart-line"></i></div>
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Gross Profit (Budget vs Actual)</span>
+                  <div className="text-2xl font-black text-green-400 mt-2">
+                    PKR {(actualSalesPKR * 0.0667).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  </div>
+                  <div className="text-[10px] text-gray-400 font-mono mt-1 flex flex-col gap-0.5">
+                    <span>SAR: {(actualSalesSAR * 0.0667).toLocaleString(undefined, { maximumFractionDigits: 0 })} / {BUDGET_GROSS_PROFIT_SAR.toLocaleString()}</span>
+                    <span>USD: {((actualSalesPKR * 0.0667) / 278).toLocaleString(undefined, { maximumFractionDigits: 0 })} / {((BUDGET_GROSS_PROFIT_SAR * EXCHANGE_RATE) / 278).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                  </div>
+                  <div className="mt-2 text-[9px] text-gray-500 font-mono">
+                    Net Budget: PKR {BUDGET_NET_PROFIT_PKR.toLocaleString(undefined, { maximumFractionDigits: 0 })} | SAR {BUDGET_NET_PROFIT_SAR.toLocaleString()} | USD {(BUDGET_NET_PROFIT_PKR / 278).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <div className="flex justify-between text-[10px] font-bold text-gray-400 mb-1">
+                    <span>GP Margin</span>
+                    <span className="text-green-400">6.67% (Pro-Rata)</span>
+                  </div>
+                  <div className="w-full bg-gray-900 rounded-full h-2 overflow-hidden border border-gray-800">
+                    <div
+                      className="bg-gradient-to-r from-green-500 to-emerald-500 h-full rounded-full transition-all duration-1000"
+                      style={{ width: `${Math.min((actualSalesSAR / BUDGET_TOTAL_REVENUE_SAR) * 100, 100)}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Expenses & ZATCA Tax */}
+              <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden flex flex-col justify-between">
+                <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-file-invoice-dollar"></i></div>
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Admin Expenses (SAR, PKR, USD)</span>
+                  <div className="text-sm font-bold text-white mt-3">
+                    Budget: SAR {BUDGET_EXPENSES_SAR.toLocaleString()}
+                  </div>
+                  <div className="text-[10px] text-gray-400 font-mono mt-1 flex flex-col gap-0.5">
+                    <span>PKR: {(BUDGET_EXPENSES_SAR * EXCHANGE_RATE).toLocaleString(undefined, { maximumFractionDigits: 0 })} total services budget</span>
+                    <span>USD: {(BUDGET_EXPENSES_SAR * EXCHANGE_RATE / 278).toLocaleString(undefined, { maximumFractionDigits: 0 })} operating overheads</span>
+                  </div>
+                </div>
+                <div className="mt-4 text-[10px] text-[#c5a059] bg-[#c5a059]/5 border border-[#c5a059]/20 p-2 rounded">
+                  Includes ZATCA Income Tax (20%): SAR 982.5k (PKR 73.2M | USD 263.3k)
+                </div>
+              </div>
+
+            </div>
+
+            {/* Milestone Progress Path */}
+            <div className="bg-[#0e1217] p-6 rounded-xl border border-gray-800">
+              <h3 className="text-base font-bold text-white mb-6 flex items-center gap-2">
+                <i className="fa-solid fa-flag-checkered text-[#c5a059]"></i> Hijri 1448 Season Milestones Roadmap
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6 relative">
+                {milestones.map((m) => (
+                  <div key={m.id} className={`p-4 rounded-lg border relative flex flex-col justify-between transition-all ${m.isCompleted
+                      ? 'bg-green-500/5 border-green-500/20 text-gray-300'
+                      : m.current
+                        ? 'bg-[#c5a059]/10 border-[#c5a059] text-white'
+                        : 'bg-[#05080a] border-gray-800 text-gray-500'
+                    }`}>
+                    <div>
+                      <div className="flex justify-between items-start">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{m.phase}</span>
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${m.isCompleted
+                            ? 'bg-green-500/10 text-green-400'
+                            : m.current
+                              ? 'bg-[#c5a059]/20 text-[#c5a059]'
+                              : 'bg-gray-800 text-gray-600'
+                          }`}>
+                          {m.statusText}
+                        </span>
+                      </div>
+
+                      <h4 className="text-xs font-bold mt-2.5 text-white">{m.title}</h4>
+                      <p className="text-[10px] text-gray-400 mt-2 leading-relaxed">{m.goal}</p>
+                    </div>
+
+                    <div className="mt-4 border-t border-gray-800 pt-3 flex flex-col gap-1">
+                      <span className="text-[10px] text-[#c5a059] font-mono font-bold">Goal Target:</span>
+                      <span className="text-[11px] font-mono text-white font-extrabold">SAR {m.targetValSar.toLocaleString()}</span>
+                      <span className="text-[9px] text-gray-400 font-mono">
+                        PKR: PKR {(m.targetValSar * EXCHANGE_RATE).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                      </span>
+                      <span className="text-[9px] text-gray-400 font-mono">
+                        USD: USD {(m.targetValSar * EXCHANGE_RATE / USD_RATE).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Monthly Comparison Breakdown */}
+            <div className="bg-[#0e1217] p-6 rounded-xl border border-gray-800 overflow-hidden">
+              <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+                <i className="fa-solid fa-calendar-days text-[#c5a059]"></i> Monthly Target Analysis (USD, SAR, PKR)
+              </h3>
+              <p className="text-gray-400 text-xs mb-6">Compare budgeted sales volumes with current booking registers sorted by creation date.</p>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-gray-800 text-gray-400 uppercase font-bold tracking-wider">
+                      <th className="py-3 px-4">Fiscal Month</th>
+                      <th className="py-3 px-4 text-center">Budget Target (SAR / PKR / USD)</th>
+                      <th className="py-3 px-4 text-center">Actual Bookings (SAR / PKR / USD)</th>
+                      <th className="py-3 px-4">Completion Progress</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-800 text-gray-300">
+                    {monthlyBudgets.map((mb, idx) => {
+                      const actualPKR = actualSalesByMonthPKR[mb.label] || 0;
+                      const actualSAR = actualPKR / EXCHANGE_RATE;
+                      const actualUSD = actualPKR / USD_RATE;
+
+                      const percentage = mb.sar > 0 ? Math.min((actualSAR / mb.sar) * 100, 100) : 0;
+
+                      return (
+                        <tr key={idx} className="hover:bg-gray-900/40">
+                          <td className="py-4 px-4">
+                            <div className="font-bold text-white">{mb.label}</div>
+                            <div className="text-[10px] text-gray-500">{mb.description}</div>
+                          </td>
+                          <td className="py-4 px-4 text-center">
+                            <div className="font-semibold text-white">SAR {mb.sar.toLocaleString()}</div>
+                            <div className="text-[10px] text-gray-400 font-mono mt-0.5">
+                              PKR {mb.pkr.toLocaleString()} | USD {(mb.pkr / USD_RATE).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                            </div>
+                          </td>
+                          <td className="py-4 px-4 text-center">
+                            <div className="font-semibold text-[#c5a059]">SAR {actualSAR.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
+                            <div className="text-[10px] text-gray-400 font-mono mt-0.5">
+                              PKR {actualPKR.toLocaleString()} | USD {actualUSD.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                            </div>
+                          </td>
+                          <td className="py-4 px-4">
+                            {mb.sar > 0 ? (
+                              <div className="flex items-center gap-3">
+                                <div className="w-full bg-gray-900 rounded-full h-2 overflow-hidden border border-gray-800">
+                                  <div
+                                    className="bg-gradient-to-r from-[#c5a059] to-[#e2c98a] h-full rounded-full transition-all duration-1000"
+                                    style={{ width: `${percentage}%` }}
+                                  ></div>
+                                </div>
+                                <span className="font-bold font-mono text-[#c5a059] whitespace-nowrap">{percentage.toFixed(1)}%</span>
+                              </div>
+                            ) : (
+                              <span className="text-gray-500 italic">No Target</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        ) : (
+          /* PARTNERS & JV ANALYTICS VIEW */
+          <div className="flex flex-col gap-8 animate-fadeIn">
+            {/* Partner KPI Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden group">
+                <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-users"></i></div>
+                <div className="text-xs font-bold uppercase tracking-wider text-gray-400">Registered Sub-Agents</div>
+                <div className="text-2xl font-black text-[#c5a059] mt-2">{subagents.length} Agents</div>
+                <div className="text-[10px] text-gray-500 mt-1">Pending and approved commission partners</div>
+              </div>
+
+              <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden group">
+                <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-file-contract"></i></div>
+                <div className="text-xs font-bold uppercase tracking-wider text-gray-400">JV Contracts Directory</div>
+                <div className="text-2xl font-black text-white mt-2">{partnerFiles.length} Agreements</div>
+                <div className="text-[10px] text-gray-500 mt-1">Scanned PDF contracts from partners folder</div>
+              </div>
+
+              <div className="bg-[#0e1217] border border-[#c5a059]/15 p-6 rounded-xl shadow-lg relative overflow-hidden group">
+                <div className="absolute -right-3 -bottom-3 text-7xl text-[#c5a059]/5"><i className="fa-solid fa-money-bill-trend-up"></i></div>
+                <div className="text-xs font-bold uppercase tracking-wider text-gray-400">Partner Sales Share</div>
+                <div className="text-2xl font-black text-green-400 mt-2">
+                  PKR {partnerStats.reduce((sum: number, p: any) => sum + p.revenue, 0).toLocaleString()}
+                </div>
+                <div className="text-[10px] text-gray-550 mt-1 flex justify-between w-full">
+                  <span>Bookings: {partnerStats.reduce((sum: number, p: any) => sum + p.bookingsCount, 0)}</span>
+                  <span>Share: {((partnerStats.reduce((sum: number, p: any) => sum + p.revenue, 0) / (dashboardStats.totalSales || 1)) * 100).toFixed(1)}%</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              {/* Scanned JV Contracts Directory Section */}
+              <div className="bg-[#0e1217] p-6 rounded-xl border border-gray-800 lg:col-span-5 flex flex-col">
+                <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+                  <i className="fa-solid fa-file-pdf text-red-500"></i> Signed JV Contracts Directory
+                </h3>
+                <p className="text-gray-400 text-xs mb-6">These agreements are loaded dynamically from the `partners` folder. Click to view or download.</p>
+
+                <div className="flex flex-col gap-3.5 max-h-[480px] overflow-y-auto pr-1">
+                  {partnerFiles.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500 border border-dashed border-gray-800 rounded-lg">
+                      <i className="fa-solid fa-folder-open text-4xl text-gray-700 block mb-2"></i>
+                      No signed contract PDFs detected.
+                    </div>
+                  ) : (
+                    partnerFiles.map((file, idx) => (
+                      <div key={idx} className="bg-[#05080a] border border-gray-800 hover:border-[#c5a059]/30 rounded-lg p-3.5 flex items-center justify-between gap-4 transition-all">
+                        <div className="flex items-center gap-3 overflow-hidden">
+                          <span className="text-2xl text-red-450 flex-shrink-0"><i className="fa-solid fa-file-pdf"></i></span>
+                          <div className="overflow-hidden">
+                            <h4 className="text-xs font-bold text-white truncate" title={file.companyName}>{file.companyName}</h4>
+                            <span className="text-[10px] text-gray-500 block truncate mt-0.5">{file.filename}</span>
+                          </div>
+                        </div>
+                        <a
+                          href={`${BACKEND_URL}${file.url}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1.5 bg-[#c5a059]/10 hover:bg-[#c5a059] border border-[#c5a059]/30 hover:border-[#c5a059] text-[#c5a059] hover:text-[#05080a] text-[10px] font-bold rounded transition-all flex-shrink-0"
+                        >
+                          View Contract
+                        </a>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Sub-Agent Performance Leaderboard Section */}
+              <div className="bg-[#0e1217] p-6 rounded-xl border border-gray-800 lg:col-span-7">
+                <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+                  <i className="fa-solid fa-trophy text-yellow-500"></i> Partner & Sub-Agent Activity Tracking
+                </h3>
+                <p className="text-gray-400 text-xs mb-6">Real-time revenue attribution and commission logs generated per Sub-Agent ID.</p>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-gray-800 text-gray-400 uppercase font-extrabold tracking-wider">
+                        <th className="py-2.5 px-3">Agent ID / Name</th>
+                        <th className="py-2.5 px-3">Agency Name</th>
+                        <th className="py-2.5 px-3 text-center">Bookings</th>
+                        <th className="py-2.5 px-3 text-right">Attributed Sales</th>
+                        <th className="py-2.5 px-3 text-right">Commissions (5%)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-800 text-gray-300">
+                      {partnerStats.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="py-8 text-center text-gray-500">No partner activity recorded.</td>
+                        </tr>
+                      ) : (
+                        partnerStats.map((agent, aIdx) => (
+                          <tr key={aIdx} className="hover:bg-gray-900/40">
+                            <td className="py-3 px-3">
+                              <div className="font-bold text-white">{agent.id}</div>
+                              <div className="text-[10px] text-gray-500 mt-0.5">{agent.name}</div>
+                            </td>
+                            <td className="py-3 px-3 font-semibold text-gray-300">{agent.agency}</td>
+                            <td className="py-3 px-3 text-center font-bold text-white">{agent.bookingsCount}</td>
+                            <td className="py-3 px-3 text-right font-black text-[#c5a059]">PKR {agent.revenue.toLocaleString()}</td>
+                            <td className="py-3 px-3 text-right font-bold text-green-400">PKR {(agent.revenue * 0.05).toLocaleString()}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* Registered Sub-Agents General Directory */}
+            <div className="bg-[#0e1217] p-6 rounded-xl border border-gray-800 overflow-hidden">
+              <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+                <i className="fa-solid fa-address-book text-[#c5a059]"></i> Sub-Agent Partner General Directory
+              </h3>
+              <p className="text-gray-400 text-xs mb-6">Profiles of registered sub-agents and franchise partners registered via E-Portal.</p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-gray-800 text-gray-400 uppercase font-extrabold tracking-wider">
+                      <th className="py-2.5 px-3">Agent ID</th>
+                      <th className="py-2.5 px-3">Agency Details</th>
+                      <th className="py-2.5 px-3">Contact</th>
+                      <th className="py-2.5 px-3 text-center">Exp.</th>
+                      <th className="py-2.5 px-3 text-center">Consent</th>
+                      <th className="py-2.5 px-3 text-center">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-800 text-gray-300">
+                    {subagents.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-8 text-center text-gray-500">No sub-agents registered in database.</td>
+                      </tr>
+                    ) : (
+                      subagents.map((agent: any, sIdx: number) => (
+                        <tr key={sIdx} className="hover:bg-gray-900/40">
+                          <td className="py-3 px-3 font-mono text-[#c5a059] font-bold">{agent.name}</td>
+                          <td className="py-3 px-3">
+                            <div className="font-bold text-white">{agent.agencyName}</div>
+                            <div className="text-[10px] text-gray-500 mt-0.5">{agent.address}</div>
+                          </td>
+                          <td className="py-3 px-3">
+                            <div>{agent.contactName}</div>
+                            <div className="text-[10px] text-gray-500 mt-0.5">{agent.email} | {agent.phone}</div>
+                          </td>
+                          <td className="py-3 px-3 text-center font-bold text-white">{agent.experience} Yrs</td>
+                          <td className="py-3 px-3 text-center">
+                            <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${agent.jvConsent ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                              }`}>
+                              {agent.jvConsent ? 'JV Agreed' : 'No JV'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            <span className={`px-2 py-0.5 rounded-full font-bold uppercase tracking-wider text-[9px] ${agent.status === 'Approved' ? 'bg-green-500/10 border border-green-500/20 text-green-400' :
+                                agent.status === 'Suspended' ? 'bg-red-500/10 border border-red-500/20 text-red-400' :
+                                  'bg-yellow-500/10 border border-yellow-500/20 text-yellow-400'
+                              }`}>
+                              {agent.status}
+                            </span>
+                          </td>
                         </tr>
                       ))
                     )}
@@ -3088,80 +3172,120 @@ function DashboardView({ dashboardStats, bookings, inquiries, exchangeRates, sub
               </div>
             </div>
           </div>
-
-          {/* Registered Sub-Agents General Directory */}
-          <div className="bg-[#0e1217] p-6 rounded-xl border border-gray-800 overflow-hidden">
-            <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
-              <i className="fa-solid fa-address-book text-[#c5a059]"></i> Sub-Agent Partner General Directory
-            </h3>
-            <p className="text-gray-400 text-xs mb-6">Profiles of registered sub-agents and franchise partners registered via E-Portal.</p>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="border-b border-gray-800 text-gray-400 uppercase font-extrabold tracking-wider">
-                    <th className="py-2.5 px-3">Agent ID</th>
-                    <th className="py-2.5 px-3">Agency Details</th>
-                    <th className="py-2.5 px-3">Contact</th>
-                    <th className="py-2.5 px-3 text-center">Exp.</th>
-                    <th className="py-2.5 px-3 text-center">Consent</th>
-                    <th className="py-2.5 px-3 text-center">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-800 text-gray-300">
-                  {subagents.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="py-8 text-center text-gray-500">No sub-agents registered in database.</td>
-                    </tr>
-                  ) : (
-                    subagents.map((agent: any, sIdx: number) => (
-                      <tr key={sIdx} className="hover:bg-gray-900/40">
-                        <td className="py-3 px-3 font-mono text-[#c5a059] font-bold">{agent.name}</td>
-                        <td className="py-3 px-3">
-                          <div className="font-bold text-white">{agent.agencyName}</div>
-                          <div className="text-[10px] text-gray-500 mt-0.5">{agent.address}</div>
-                        </td>
-                        <td className="py-3 px-3">
-                          <div>{agent.contactName}</div>
-                          <div className="text-[10px] text-gray-500 mt-0.5">{agent.email} | {agent.phone}</div>
-                        </td>
-                        <td className="py-3 px-3 text-center font-bold text-white">{agent.experience} Yrs</td>
-                        <td className="py-3 px-3 text-center">
-                          <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
-                            agent.jvConsent ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
-                          }`}>
-                            {agent.jvConsent ? 'JV Agreed' : 'No JV'}
-                          </span>
-                        </td>
-                        <td className="py-3 px-3 text-center">
-                          <span className={`px-2 py-0.5 rounded-full font-bold uppercase tracking-wider text-[9px] ${
-                            agent.status === 'Approved' ? 'bg-green-500/10 border border-green-500/20 text-green-400' :
-                            agent.status === 'Suspended' ? 'bg-red-500/10 border border-red-500/20 text-red-400' :
-                            'bg-yellow-500/10 border border-yellow-500/20 text-yellow-400'
-                          }`}>
-                            {agent.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  </section>
-);
+        )}
+      </div>
+    </section>
+  );
 }
 
 /* SALES PORTAL VIEW Component (Migrated from manage_packages.php) */
-function SalesPortalView({ packages, subagents, bookings, BACKEND_URL, setSubagents, setPackages }: any) {
-  const [activeTab, setActiveTab] = useState<'rates' | 'agents' | 'sales'>('rates');
+function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACKEND_URL, setSubagents, setPackages, setTeamMembers }: any) {
+  const [activeTab, setActiveTab] = useState<'rates' | 'agents' | 'sales' | 'team'>('rates');
   const [searchTerm, setSearchTerm] = useState('');
   const [isReseeding, setIsReseeding] = useState(false);
   const [reseedStatus, setReseedStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
-  
+
+  // Team CRUD states
+  const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
+  const [isAddingMember, setIsAddingMember] = useState(false);
+  const [memberForm, setMemberForm] = useState({
+    name: '',
+    role: '',
+    designation: '',
+    office: '',
+    emails: '',
+    phones: ''
+  });
+
+  const openAddMemberModal = () => {
+    setIsAddingMember(true);
+    setEditingMember(null);
+    setMemberForm({
+      name: '',
+      role: '',
+      designation: '',
+      office: 'Lahore Office',
+      emails: '',
+      phones: ''
+    });
+  };
+
+  const openEditMemberModal = (member: TeamMember) => {
+    setEditingMember(member);
+    setIsAddingMember(false);
+    setMemberForm({
+      name: member.name,
+      role: member.role,
+      designation: member.designation,
+      office: member.office,
+      emails: member.emails.join(', '),
+      phones: member.phones.join(', ')
+    });
+  };
+
+  const handleMemberSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload = {
+      name: memberForm.name,
+      role: memberForm.role,
+      designation: memberForm.designation,
+      office: memberForm.office,
+      emails: memberForm.emails.split(',').map(s => s.trim()).filter(Boolean),
+      phones: memberForm.phones.split(',').map(s => s.trim()).filter(Boolean)
+    };
+
+    try {
+      if (editingMember?._id) {
+        // Edit existing
+        const res = await fetch(`${BACKEND_URL}/api/team/${editingMember._id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setTeamMembers((prev: TeamMember[]) => prev.map(m => m._id === editingMember._id ? data.member : m));
+          setEditingMember(null);
+        } else {
+          alert(data.error || 'Failed to update team member.');
+        }
+      } else {
+        // Add new
+        const res = await fetch(`${BACKEND_URL}/api/team`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setTeamMembers((prev: TeamMember[]) => [...prev, data.member]);
+          setIsAddingMember(false);
+        } else {
+          alert(data.error || 'Failed to create team member.');
+        }
+      }
+    } catch (err) {
+      alert('Error updating team database.');
+    }
+  };
+
+  const handleMemberDelete = async (memberId: string) => {
+    if (!confirm('Are you sure you want to delete this team member?')) return;
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/team/${memberId}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setTeamMembers((prev: TeamMember[]) => prev.filter(m => m._id !== memberId));
+      } else {
+        alert(data.error || 'Failed to delete team member.');
+      }
+    } catch (err) {
+      alert('Error deleting team member.');
+    }
+  };
+
   // Rate edit modal states
   const [editingPkg, setEditingPkg] = useState<UmrahPackage | null>(null);
   const [rateForm, setRateForm] = useState({
@@ -3269,29 +3393,33 @@ function SalesPortalView({ packages, subagents, bookings, BACKEND_URL, setSubage
 
         {/* Tabs Row */}
         <div className="flex gap-4 border-b border-gray-800 pb-3 mb-8">
-          <button 
+          <button
             onClick={() => { setActiveTab('rates'); setSearchTerm(''); }}
-            className={`px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded border transition-all ${
-              activeTab === 'rates' ? 'bg-[#c5a059] text-[#05080a]' : 'bg-transparent text-gray-400 border-transparent hover:text-white'
-            }`}
+            className={`px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded border transition-all ${activeTab === 'rates' ? 'bg-[#c5a059] text-[#05080a]' : 'bg-transparent text-gray-400 border-transparent hover:text-white'
+              }`}
           >
             <i className="fa-solid fa-tags mr-2"></i> Package Pricing
           </button>
-          <button 
+          <button
             onClick={() => { setActiveTab('agents'); setSearchTerm(''); }}
-            className={`px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded border transition-all ${
-              activeTab === 'agents' ? 'bg-[#c5a059] text-[#05080a]' : 'bg-transparent text-gray-400 border-transparent hover:text-white'
-            }`}
+            className={`px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded border transition-all ${activeTab === 'agents' ? 'bg-[#c5a059] text-[#05080a]' : 'bg-transparent text-gray-400 border-transparent hover:text-white'
+              }`}
           >
             <i className="fa-solid fa-users mr-2"></i> Sub-Agents List
           </button>
-          <button 
+          <button
             onClick={() => { setActiveTab('sales'); setSearchTerm(''); }}
-            className={`px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded border transition-all ${
-              activeTab === 'sales' ? 'bg-[#c5a059] text-[#05080a]' : 'bg-transparent text-gray-400 border-transparent hover:text-white'
-            }`}
+            className={`px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded border transition-all ${activeTab === 'sales' ? 'bg-[#c5a059] text-[#05080a]' : 'bg-transparent text-gray-400 border-transparent hover:text-white'
+              }`}
           >
             <i className="fa-solid fa-chart-line mr-2"></i> Sales & Commissions
+          </button>
+          <button
+            onClick={() => { setActiveTab('team'); setSearchTerm(''); }}
+            className={`px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded border transition-all ${activeTab === 'team' ? 'bg-[#c5a059] text-[#05080a]' : 'bg-transparent text-gray-400 border-transparent hover:text-white'
+              }`}
+          >
+            <i className="fa-solid fa-user-group mr-2"></i> Team Directory
           </button>
         </div>
 
@@ -3338,45 +3466,45 @@ function SalesPortalView({ packages, subagents, bookings, BACKEND_URL, setSubage
               </button>
             </div>
 
-          <div className="bg-[#0e1217] border border-gray-800 rounded-xl overflow-hidden shadow-lg">
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-[#05080a] border-b border-gray-800 text-gray-400 uppercase font-bold">
-                  <tr>
-                    <th className="py-3.5 px-4">Package Name</th>
-                    <th className="py-3.5 px-4">Sharing</th>
-                    <th className="py-3.5 px-4">Quad</th>
-                    <th className="py-3.5 px-4">Triple</th>
-                    <th className="py-3.5 px-4">Double</th>
-                    <th className="py-3.5 px-4">Single</th>
-                    <th className="py-3.5 px-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-800 text-gray-300">
-                  {packages
-                    .filter((p: any) => p.title.toLowerCase().includes(searchTerm.toLowerCase()))
-                    .map((pkg: any, idx: number) => (
-                      <tr key={pkg._id || idx} className="hover:bg-gray-900/40">
-                        <td className="py-4 px-4 font-bold text-white">{pkg.title}</td>
-                        <td className="py-4 px-4 font-semibold text-[#c5a059]">{pkg.price_sharing ? `PKR ${pkg.price_sharing.toLocaleString()}` : 'N/A'}</td>
-                        <td className="py-4 px-4">{pkg.price_quad ? `PKR ${pkg.price_quad.toLocaleString()}` : 'N/A'}</td>
-                        <td className="py-4 px-4">{pkg.price_triple ? `PKR ${pkg.price_triple.toLocaleString()}` : 'N/A'}</td>
-                        <td className="py-4 px-4">{pkg.price_double ? `PKR ${pkg.price_double.toLocaleString()}` : 'N/A'}</td>
-                        <td className="py-4 px-4">{pkg.price_single ? `PKR ${pkg.price_single.toLocaleString()}` : 'N/A'}</td>
-                        <td className="py-4 px-4 text-right">
-                          <button 
-                            onClick={() => openRateModal(pkg)}
-                            className="px-3 py-1.5 bg-[#c5a059]/10 border border-[#c5a059]/25 text-[#c5a059] rounded font-bold hover:bg-[#c5a059] hover:text-[#05080a] transition-all"
-                          >
-                            Edit Rates
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
+            <div className="bg-[#0e1217] border border-gray-800 rounded-xl overflow-hidden shadow-lg">
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-[#05080a] border-b border-gray-800 text-gray-400 uppercase font-bold">
+                    <tr>
+                      <th className="py-3.5 px-4">Package Name</th>
+                      <th className="py-3.5 px-4">Sharing</th>
+                      <th className="py-3.5 px-4">Quad</th>
+                      <th className="py-3.5 px-4">Triple</th>
+                      <th className="py-3.5 px-4">Double</th>
+                      <th className="py-3.5 px-4">Single</th>
+                      <th className="py-3.5 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-800 text-gray-300">
+                    {packages
+                      .filter((p: any) => p.title.toLowerCase().includes(searchTerm.toLowerCase()))
+                      .map((pkg: any, idx: number) => (
+                        <tr key={pkg._id || idx} className="hover:bg-gray-900/40">
+                          <td className="py-4 px-4 font-bold text-white">{pkg.title}</td>
+                          <td className="py-4 px-4 font-semibold text-[#c5a059]">{pkg.price_sharing ? `PKR ${pkg.price_sharing.toLocaleString()}` : 'N/A'}</td>
+                          <td className="py-4 px-4">{pkg.price_quad ? `PKR ${pkg.price_quad.toLocaleString()}` : 'N/A'}</td>
+                          <td className="py-4 px-4">{pkg.price_triple ? `PKR ${pkg.price_triple.toLocaleString()}` : 'N/A'}</td>
+                          <td className="py-4 px-4">{pkg.price_double ? `PKR ${pkg.price_double.toLocaleString()}` : 'N/A'}</td>
+                          <td className="py-4 px-4">{pkg.price_single ? `PKR ${pkg.price_single.toLocaleString()}` : 'N/A'}</td>
+                          <td className="py-4 px-4 text-right">
+                            <button
+                              onClick={() => openRateModal(pkg)}
+                              className="px-3 py-1.5 bg-[#c5a059]/10 border border-[#c5a059]/25 text-[#c5a059] rounded font-bold hover:bg-[#c5a059] hover:text-[#05080a] transition-all"
+                            >
+                              Edit Rates
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
           </div>
         )}
 
@@ -3414,9 +3542,9 @@ function SalesPortalView({ packages, subagents, bookings, BACKEND_URL, setSubage
                             <div className="text-[10px] text-gray-500 flex flex-wrap items-center gap-1.5 mt-0.5">
                               <span>{agent.email} &bull; {agent.phone}</span>
                               {agent.jvConsent && (
-                                <a 
+                                <a
                                   href={`${BACKEND_URL}/uploaded-files/JV Partners/General JV Contract Template.pdf`}
-                                  target="_blank" 
+                                  target="_blank"
                                   rel="noopener noreferrer"
                                   className="text-[#c5a059] hover:underline font-bold inline-flex items-center gap-0.5 ml-1"
                                   title="View/Download JV Contract"
@@ -3429,17 +3557,16 @@ function SalesPortalView({ packages, subagents, bookings, BACKEND_URL, setSubage
                           <td className="py-4 px-4">{agent.address}</td>
                           <td className="py-4 px-4 font-semibold">{agent.experience} Years</td>
                           <td className="py-4 px-4">
-                            <span className={`px-2 py-0.5 rounded-full font-bold text-[9px] uppercase border ${
-                              agent.status === 'Approved' ? 'bg-green-500/10 border-green-500/20 text-green-400' :
-                              agent.status === 'Suspended' ? 'bg-red-500/10 border-red-500/20 text-red-400' :
-                              'bg-yellow-500/10 border-yellow-500/20 text-yellow-400'
-                            }`}>
+                            <span className={`px-2 py-0.5 rounded-full font-bold text-[9px] uppercase border ${agent.status === 'Approved' ? 'bg-green-500/10 border-green-500/20 text-green-400' :
+                                agent.status === 'Suspended' ? 'bg-red-500/10 border-red-500/20 text-red-400' :
+                                  'bg-yellow-500/10 border-yellow-500/20 text-yellow-400'
+                              }`}>
                               {agent.status}
                             </span>
                           </td>
                           <td className="py-4 px-4 text-right flex gap-2 justify-end">
                             {agent.status !== 'Approved' && (
-                              <button 
+                              <button
                                 onClick={() => handleStatusUpdate(agent.name, 'Approved')}
                                 className="px-2.5 py-1 bg-green-500/10 border border-green-500/25 text-green-400 rounded hover:bg-green-500 hover:text-white transition-all font-semibold"
                               >
@@ -3447,7 +3574,7 @@ function SalesPortalView({ packages, subagents, bookings, BACKEND_URL, setSubage
                               </button>
                             )}
                             {agent.status !== 'Suspended' && (
-                              <button 
+                              <button
                                 onClick={() => handleStatusUpdate(agent.name, 'Suspended')}
                                 className="px-2.5 py-1 bg-red-500/10 border border-red-500/25 text-red-400 rounded hover:bg-red-500 hover:text-white transition-all font-semibold"
                               >
@@ -3539,6 +3666,108 @@ function SalesPortalView({ packages, subagents, bookings, BACKEND_URL, setSubage
             </div>
           </div>
         )}
+
+        {/* TAB 4: TEAM DIRECTORY */}
+        {activeTab === 'team' && (
+          <div className="flex flex-col gap-6 animate-fadeIn">
+            <div className="flex justify-between items-center bg-[#0e1217] border border-gray-800 rounded-xl p-4">
+              <div>
+                <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                  <i className="fa-solid fa-user-group text-[#c5a059]"></i>
+                  Team Member Administration
+                </h4>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  View, add, update, and manage the official team members displayed on the landing page directory.
+                </p>
+              </div>
+              <button
+                onClick={openAddMemberModal}
+                className="px-4 py-2 bg-[#c5a059] text-[#05080a] text-xs font-bold rounded hover:bg-[#a6823c] transition-all flex items-center gap-2"
+              >
+                <i className="fa-solid fa-plus"></i> Add Team Member
+              </button>
+            </div>
+
+            <div className="bg-[#0e1217] border border-gray-800 rounded-xl overflow-hidden shadow-lg">
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-[#05080a] border-b border-gray-800 text-gray-400 uppercase font-bold">
+                    <tr>
+                      <th className="py-3.5 px-4">Member Name</th>
+                      <th className="py-3.5 px-4">Role & Designation</th>
+                      <th className="py-3.5 px-4">Office</th>
+                      <th className="py-3.5 px-4">Contact Details</th>
+                      <th className="py-3.5 px-4 text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-800 text-gray-300">
+                    {(teamMembers.length > 0 ? teamMembers : fallbackTeam).length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="py-8 text-center text-gray-500">No team members loaded.</td>
+                      </tr>
+                    ) : (
+                      (teamMembers.length > 0 ? teamMembers : fallbackTeam)
+                        .filter((m: any) => m.name.toLowerCase().includes(searchTerm.toLowerCase()) || m.designation.toLowerCase().includes(searchTerm.toLowerCase()))
+                        .map((m: any, idx: number) => (
+                          <tr key={m._id || idx} className="hover:bg-gray-900/40">
+                            <td className="py-4 px-4 font-bold text-white text-sm">
+                              {m.name}
+                              <div className="text-[10px] text-gray-500 font-mono mt-0.5">{m._id || 'Static Fallback'}</div>
+                            </td>
+                            <td className="py-4 px-4">
+                              <span className="px-2 py-0.5 rounded bg-[#c5a059]/10 border border-[#c5a059]/20 text-[#c5a059] font-bold text-[9px] uppercase tracking-wide">
+                                {m.role}
+                              </span>
+                              <div className="text-[11px] font-semibold mt-1 text-gray-300">{m.designation}</div>
+                            </td>
+                            <td className="py-4 px-4 text-gray-400 font-medium">
+                              <i className="fa-solid fa-location-dot text-[#c5a059] mr-1"></i> {m.office}
+                            </td>
+                            <td className="py-4 px-4">
+                              <div className="flex flex-col gap-1">
+                                {m.emails && m.emails.map((email: string, eIdx: number) => (
+                                  <div key={eIdx} className="flex items-center gap-1.5 text-gray-400">
+                                    <i className="fa-solid fa-envelope text-[#c5a059]/70 text-[10px]"></i>
+                                    <span>{email}</span>
+                                  </div>
+                                ))}
+                                {m.phones && m.phones.map((phone: string, pIdx: number) => (
+                                  <div key={pIdx} className="flex items-center gap-1.5 text-gray-400 mt-0.5">
+                                    <i className="fa-solid fa-phone text-[#c5a059]/70 text-[10px]"></i>
+                                    <span>{phone}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="py-4 px-4 text-center">
+                              <div className="flex items-center justify-center gap-2">
+                                <button
+                                  onClick={() => openEditMemberModal(m)}
+                                  className="p-1.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white rounded transition-all"
+                                  title="Edit Member"
+                                >
+                                  <i className="fa-solid fa-pen text-xs"></i>
+                                </button>
+                                {m._id && (
+                                  <button
+                                    onClick={() => handleMemberDelete(m._id)}
+                                    className="p-1.5 bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white rounded transition-all"
+                                    title="Delete Member"
+                                  >
+                                    <i className="fa-solid fa-trash-can text-xs"></i>
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* RATE EDIT MODAL */}
@@ -3562,20 +3791,20 @@ function SalesPortalView({ packages, subagents, bookings, BACKEND_URL, setSubage
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Sharing Price</label>
-                  <input 
-                    type="number" 
-                    value={rateForm.price_sharing} 
+                  <input
+                    type="number"
+                    value={rateForm.price_sharing}
                     onChange={(e) => setRateForm(prev => ({ ...prev, price_sharing: parseInt(e.target.value) }))}
-                    className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none" 
+                    className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none"
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Quad Price</label>
-                  <input 
-                    type="number" 
-                    value={rateForm.price_quad} 
+                  <input
+                    type="number"
+                    value={rateForm.price_quad}
                     onChange={(e) => setRateForm(prev => ({ ...prev, price_quad: parseInt(e.target.value) }))}
-                    className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none" 
+                    className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none"
                   />
                 </div>
               </div>
@@ -3583,40 +3812,142 @@ function SalesPortalView({ packages, subagents, bookings, BACKEND_URL, setSubage
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Triple Price</label>
-                  <input 
-                    type="number" 
-                    value={rateForm.price_triple} 
+                  <input
+                    type="number"
+                    value={rateForm.price_triple}
                     onChange={(e) => setRateForm(prev => ({ ...prev, price_triple: parseInt(e.target.value) }))}
-                    className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none" 
+                    className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none"
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Double Price</label>
-                  <input 
-                    type="number" 
-                    value={rateForm.price_double} 
+                  <input
+                    type="number"
+                    value={rateForm.price_double}
                     onChange={(e) => setRateForm(prev => ({ ...prev, price_double: parseInt(e.target.value) }))}
-                    className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none" 
+                    className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none"
                   />
                 </div>
               </div>
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Single Price</label>
-                <input 
-                  type="number" 
-                  value={rateForm.price_single} 
+                <input
+                  type="number"
+                  value={rateForm.price_single}
                   onChange={(e) => setRateForm(prev => ({ ...prev, price_single: parseInt(e.target.value) }))}
-                  className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none" 
+                  className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none"
                 />
               </div>
 
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 disabled={isSyncing}
                 className="w-full py-3 bg-[#c5a059] text-[#05080a] font-bold rounded mt-4"
               >
                 {isSyncing ? 'Syncing...' : 'Save Real-time Sync'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* TEAM MEMBER ADD/EDIT MODAL */}
+      {(isAddingMember || editingMember) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fadeIn">
+          <div className="bg-[#0e1217] w-full max-w-md rounded-xl border border-[#c5a059]/25 shadow-2xl overflow-hidden">
+            <div className="bg-[#05080a] py-4 px-6 border-b border-[#c5a059]/20 flex justify-between items-center">
+              <div>
+                <span className="text-xs text-[#c5a059] font-bold uppercase tracking-widest">Team Management</span>
+                <h3 className="text-base font-bold text-white mt-0.5">
+                  {editingMember ? 'Update Team Member' : 'Add New Team Member'}
+                </h3>
+              </div>
+              <button 
+                onClick={() => { setIsAddingMember(false); setEditingMember(null); }} 
+                className="text-gray-400 hover:text-white text-xl"
+              >
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleMemberSubmit} className="p-6 flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Full Name</label>
+                <input
+                  type="text"
+                  required
+                  value={memberForm.name}
+                  onChange={(e) => setMemberForm(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="e.g. Chauhdry Muhammad Aslam"
+                  className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none transition-all"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Role Tag</label>
+                  <input
+                    type="text"
+                    required
+                    value={memberForm.role}
+                    onChange={(e) => setMemberForm(prev => ({ ...prev, role: e.target.value }))}
+                    placeholder="e.g. Team Head"
+                    className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none transition-all"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Designation</label>
+                  <input
+                    type="text"
+                    required
+                    value={memberForm.designation}
+                    onChange={(e) => setMemberForm(prev => ({ ...prev, designation: e.target.value }))}
+                    placeholder="e.g. CEO"
+                    className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Office Location</label>
+                <input
+                  type="text"
+                  required
+                  value={memberForm.office}
+                  onChange={(e) => setMemberForm(prev => ({ ...prev, office: e.target.value }))}
+                  placeholder="e.g. Lahore Office"
+                  className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none transition-all"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Emails (comma separated)</label>
+                <input
+                  type="text"
+                  value={memberForm.emails}
+                  onChange={(e) => setMemberForm(prev => ({ ...prev, emails: e.target.value }))}
+                  placeholder="ceo@itt.sa, support@itt.sa"
+                  className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none transition-all placeholder:text-gray-700"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Phones (comma separated)</label>
+                <input
+                  type="text"
+                  value={memberForm.phones}
+                  onChange={(e) => setMemberForm(prev => ({ ...prev, phones: e.target.value }))}
+                  placeholder="+92 300-0860633, +966 50-086-0633"
+                  className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none transition-all placeholder:text-gray-700"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 bg-[#c5a059] text-[#05080a] font-bold rounded mt-4 hover:bg-[#a6823c] transition-all text-xs uppercase tracking-wider"
+              >
+                {editingMember ? 'Update Member Info' : 'Add Team Member'}
               </button>
             </form>
           </div>
