@@ -263,20 +263,57 @@ export default function App() {
     sarToPkr: 74.5,
     usdToPkr: 278.0,
     usdToSar: 3.73,
+    aedToPkr: 75.7,
+    usdToAed: 3.67,
     isLive: false
   });
+
+  const [displayCurrency, setDisplayCurrency] = useState<'PKR' | 'USD' | 'SAR' | 'AED'>('PKR');
+
+  const formatConvertedPrice = (priceInPkr: number, currency: 'PKR' | 'USD' | 'SAR' | 'AED') => {
+    if (!priceInPkr) return 'N/A';
+    switch (currency) {
+      case 'USD':
+        return `USD ${(priceInPkr / exchangeRates.usdToPkr).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+      case 'SAR':
+        return `SAR ${(priceInPkr / exchangeRates.sarToPkr).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+      case 'AED':
+        return `AED ${(priceInPkr / exchangeRates.aedToPkr).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+      case 'PKR':
+      default:
+        return `PKR ${priceInPkr.toLocaleString()}`;
+    }
+  };
+
+  const formatShortPrice = (priceInPkr: number, currency: 'PKR' | 'USD' | 'SAR' | 'AED') => {
+    if (!priceInPkr) return 'N/A';
+    switch (currency) {
+      case 'USD':
+        return `$${(priceInPkr / exchangeRates.usdToPkr).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+      case 'SAR':
+        return `SR ${(priceInPkr / exchangeRates.sarToPkr).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+      case 'AED':
+        return `DH ${(priceInPkr / exchangeRates.aedToPkr).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+      case 'PKR':
+      default:
+        return `${(priceInPkr / 1000).toFixed(0)}k`;
+    }
+  };
 
   useEffect(() => {
     fetch('https://open.er-api.com/v6/latest/USD')
       .then(res => res.json())
       .then(data => {
-        if (data && data.rates && data.rates.PKR && data.rates.SAR) {
+        if (data && data.rates && data.rates.PKR && data.rates.SAR && data.rates.AED) {
           const pkr = data.rates.PKR;
           const sar = data.rates.SAR;
+          const aed = data.rates.AED;
           setExchangeRates({
             sarToPkr: pkr / sar,
             usdToPkr: pkr,
             usdToSar: sar,
+            aedToPkr: pkr / aed,
+            usdToAed: aed,
             isLive: true
           });
         }
@@ -312,6 +349,11 @@ export default function App() {
   const [pilgrims, setPilgrims] = useState<Pilgrim[]>([{ name: '', passportNumber: '' }]);
   const [partnerId, setPartnerId] = useState('');
   const [packageMode, setPackageMode] = useState<'complete' | 'customized'>('complete');
+  const [travelDate, setTravelDate] = useState<string>('');
+  const [currentCalDate, setCurrentCalDate] = useState<Date>(() => {
+    const today = new Date();
+    return new Date(today.getFullYear(), today.getMonth(), 1);
+  });
   const [customServices, setCustomServices] = useState({
     visa: true,
     tickets: true,
@@ -478,6 +520,8 @@ export default function App() {
     setPilgrims([{ name: '', passportNumber: '' }]);
     setPartnerId('');
     setPackageMode('complete');
+    setTravelDate('');
+    setCurrentCalDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
     setCustomServices({ visa: true, tickets: true, ground: true, catering: true, accommodation: true });
     setBookingStatus({ type: null, message: '' });
   };
@@ -528,6 +572,10 @@ export default function App() {
   const handleCheckoutSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedPkg) return;
+    if (!travelDate) {
+      setBookingStatus({ type: 'error', message: 'Please select a departure travel date from the dual calendars.' });
+      return;
+    }
 
     setBookingStatus({ type: 'info', message: 'Creating your reservation...' });
     const total = getPricePerPilgrim(selectedPkg) * pilgrimsCount;
@@ -542,6 +590,7 @@ export default function App() {
       pilgrims,
       partnerId: partnerId.trim() || undefined,
       isCustomized: packageMode === 'customized',
+      travelDate: travelDate || undefined,
       customServices: packageMode === 'customized' ? customServices : {
         visa: true,
         tickets: true,
@@ -669,7 +718,7 @@ export default function App() {
       {/* ROUTES CONFIGURATION */}
       <Routes>
         <Route path="/" element={<HomeView navigateTo={navigateTo} handleFormChange={handleFormChange} handleInquirySubmit={handleInquirySubmit} formData={formData} submitStatus={submitStatus} teamMembers={teamMembers} fallbackTeam={fallbackTeam} />} />
-        <Route path="/portal" element={<PortalView loading={loading} packages={packages} selectedCity={selectedCity} setSelectedCity={setSelectedCity} searchQuery={searchQuery} setSearchQuery={setSearchQuery} BACKEND_URL={BACKEND_URL} openBookingModal={openBookingModal} />} />
+        <Route path="/portal" element={<PortalView loading={loading} packages={packages} selectedCity={selectedCity} setSelectedCity={setSelectedCity} searchQuery={searchQuery} setSearchQuery={setSearchQuery} BACKEND_URL={BACKEND_URL} openBookingModal={openBookingModal} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} formatConvertedPrice={formatConvertedPrice} formatShortPrice={formatShortPrice} />} />
         <Route path="/partner" element={<PartnerRegisterView BACKEND_URL={BACKEND_URL} />} />
         <Route path="/partner/dashboard" element={<PartnerDashboardView BACKEND_URL={BACKEND_URL} exchangeRates={exchangeRates} />} />
         <Route path="/customer/portal" element={<CustomerPortalView BACKEND_URL={BACKEND_URL} exchangeRates={exchangeRates} />} />
@@ -835,6 +884,134 @@ export default function App() {
                   )}
                 </div>
 
+                {/* 3. Departure Travel Date (Gregorian & Hijri Calendars) */}
+                <div>
+                  <label className="block text-xs font-bold uppercase text-[#c5a059] tracking-wider mb-2">3. Select Departure Travel Date (Gregorian & Hijri)</label>
+                  
+                  <div className="bg-[#05080a] border border-gray-800 rounded-lg p-4 flex flex-col gap-4">
+                    <div className="flex justify-between items-center border-b border-gray-800 pb-2">
+                      <button
+                        type="button"
+                        onClick={() => setCurrentCalDate(new Date(currentCalDate.getFullYear(), currentCalDate.getMonth() - 1, 1))}
+                        className="px-2.5 py-1 hover:text-white text-gray-400 bg-gray-900 border border-gray-800 rounded text-[11px] transition-all flex items-center gap-1"
+                      >
+                        <i className="fa-solid fa-chevron-left text-[9px]"></i> Prev Month
+                      </button>
+                      <div className="text-center">
+                        <div className="text-xs font-bold text-white uppercase tracking-wider">
+                          {currentCalDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                        </div>
+                        <div className="text-[10px] text-[#c5a059] font-bold mt-0.5">
+                          {(() => {
+                            const midMonthDate = new Date(currentCalDate.getFullYear(), currentCalDate.getMonth(), 15);
+                            try {
+                              const parts = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', {
+                                month: 'long',
+                                year: 'numeric'
+                              }).formatToParts(midMonthDate);
+                              const hMonth = parts.find(p => p.type === 'month')?.value || '';
+                              const hYear = parts.find(p => p.type === 'year')?.value || '';
+                              return `${hMonth} ${hYear} AH`;
+                            } catch (e) {
+                              return '';
+                            }
+                          })()}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setCurrentCalDate(new Date(currentCalDate.getFullYear(), currentCalDate.getMonth() + 1, 1))}
+                        className="px-2.5 py-1 hover:text-white text-gray-400 bg-gray-900 border border-gray-800 rounded text-[11px] transition-all flex items-center gap-1"
+                      >
+                        Next Month <i className="fa-solid fa-chevron-right text-[9px]"></i>
+                      </button>
+                    </div>
+
+                    <div>
+                      {/* Week Headers */}
+                      <div className="grid grid-cols-7 text-center text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-2">
+                        {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => <div key={day}>{day}</div>)}
+                      </div>
+
+                      {/* Day Grid */}
+                      <div className="grid grid-cols-7 gap-1">
+                        {(() => {
+                          const year = currentCalDate.getFullYear();
+                          const month = currentCalDate.getMonth();
+                          const firstDayIndex = new Date(year, month, 1).getDay();
+                          const totalDays = new Date(year, month + 1, 0).getDate();
+                          
+                          const cells = [];
+                          
+                          // Offset days
+                          for (let i = 0; i < firstDayIndex; i++) {
+                            cells.push(<div key={`empty-${i}`} className="p-2"></div>);
+                          }
+                          
+                          // Days
+                          for (let d = 1; d <= totalDays; d++) {
+                            const cellDate = new Date(year, month, d);
+                            const cellDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                            const isSelected = travelDate === cellDateStr;
+                            
+                            // Convert to Hijri Day Number
+                            let hijriDay = '';
+                            try {
+                              const parts = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', { day: 'numeric' }).formatToParts(cellDate);
+                              hijriDay = parts.find(p => p.type === 'day')?.value || '';
+                            } catch (e) {
+                              hijriDay = '';
+                            }
+
+                            cells.push(
+                              <button
+                                key={`day-${d}`}
+                                type="button"
+                                onClick={() => setTravelDate(cellDateStr)}
+                                className={`p-1 rounded border flex flex-col items-center justify-between transition-all aspect-square min-h-[40px] ${
+                                  isSelected 
+                                    ? 'bg-[#c5a059] border-[#c5a059] text-[#05080a]' 
+                                    : 'bg-[#0e1217] border-gray-800/80 text-white hover:border-gray-700'
+                                }`}
+                              >
+                                <span className="text-[11px] font-bold leading-none">{d}</span>
+                                <span className={`text-[8px] leading-none mt-1 font-mono font-bold ${isSelected ? 'text-[#05080a]/85' : 'text-[#c5a059]'}`}>
+                                  {hijriDay}
+                                </span>
+                              </button>
+                            );
+                          }
+                          
+                          return cells;
+                        })()}
+                      </div>
+                    </div>
+
+                    {/* Feedback */}
+                    {travelDate ? (
+                      <div className="bg-[#c5a059]/10 border border-[#c5a059]/20 p-2.5 rounded text-[11px] text-[#c5a059] flex items-center gap-2">
+                        <i className="fa-solid fa-calendar-check"></i>
+                        <span>
+                          <strong>Selected Travel Date:</strong> {new Date(travelDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                          {' / '}
+                          {(() => {
+                            try {
+                              return new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(travelDate));
+                            } catch(e) {
+                              return '';
+                            }
+                          })()}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="bg-red-500/10 border border-red-500/20 p-2.5 rounded text-[11px] text-red-400 flex items-center gap-2">
+                        <i className="fa-solid fa-circle-info"></i>
+                        <span>Please select a departure travel date from the dual Gregorian/Hijri calendar above.</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 <div className="flex justify-between items-center bg-[#05080a] p-4 rounded border border-gray-800">
                   <div>
                     <div className="text-sm font-bold text-white">Number of Pilgrims</div>
@@ -860,7 +1037,7 @@ export default function App() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase text-[#c5a059] tracking-wider mb-2.5">3. Contact Details</label>
+                  <label className="block text-xs font-bold uppercase text-[#c5a059] tracking-wider mb-2.5">4. Contact Details</label>
                   <div className="grid sm:grid-cols-4 gap-4">
                     <input
                       type="text"
@@ -897,7 +1074,7 @@ export default function App() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase text-[#c5a059] tracking-wider mb-2.5">4. Pilgrim Information</label>
+                  <label className="block text-xs font-bold uppercase text-[#c5a059] tracking-wider mb-2.5">5. Pilgrim Information</label>
                   <div className="flex flex-col gap-3 max-h-40 overflow-y-auto pr-1">
                     {pilgrims.map((pilgrim, idx) => (
                       <div key={idx} className="grid grid-cols-12 gap-3 items-center bg-[#05080a]/40 p-2.5 rounded border border-gray-800/80">
@@ -1457,7 +1634,7 @@ function HomeView({ navigateTo, handleFormChange, handleInquirySubmit, formData,
   );
 }
 
-function PortalView({ loading, packages, selectedCity, setSelectedCity, searchQuery, setSearchQuery, BACKEND_URL, openBookingModal }: any) {
+function PortalView({ loading, packages, selectedCity, setSelectedCity, searchQuery, setSearchQuery, BACKEND_URL, openBookingModal, displayCurrency, setDisplayCurrency, formatConvertedPrice, formatShortPrice }: any) {
   const navigate = useNavigate();
 
   return (
@@ -1482,6 +1659,30 @@ function PortalView({ loading, packages, selectedCity, setSelectedCity, searchQu
           >
             <i className="fa-solid fa-arrow-left"></i> Back to Homepage
           </button>
+        </div>
+
+        {/* Currency Switcher */}
+        <div className="flex justify-between items-center bg-[#0e1217] border border-gray-800 rounded-xl p-4 mb-6">
+          <div className="flex items-center gap-2">
+            <span className="text-[#c5a059] text-xs"><i className="fa-solid fa-coins"></i></span>
+            <span className="text-xs font-bold text-white uppercase tracking-wider">Select Display Currency</span>
+            <span className="text-[10px] text-gray-500 font-mono">(Rates fetch live)</span>
+          </div>
+          <div className="flex gap-2">
+            {(['PKR', 'USD', 'SAR', 'AED'] as const).map(curr => (
+              <button
+                key={curr}
+                type="button"
+                onClick={() => setDisplayCurrency(curr)}
+                className={`px-4 py-1.5 rounded text-xs font-bold transition-all ${displayCurrency === curr
+                  ? 'bg-[#c5a059] text-[#05080a]'
+                  : 'bg-transparent text-gray-400 border border-gray-800 hover:border-gray-700 hover:text-white'
+                }`}
+              >
+                {curr}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Filters Row */}
@@ -1568,7 +1769,7 @@ function PortalView({ loading, packages, selectedCity, setSelectedCity, searchQu
                           {pkg.duration}
                         </div>
                         <div className="absolute bottom-4 right-4 px-4 py-1.5 bg-[#c5a059] text-[#05080a] text-sm font-extrabold rounded shadow">
-                          Starts {pkg.price}
+                          Starts {formatConvertedPrice(pkg.price_sharing || (pkg.price ? parseInt(pkg.price.replace(/[^0-9]/g, '')) : 0), displayCurrency)}
                         </div>
                       </div>
 
@@ -1623,10 +1824,10 @@ function PortalView({ loading, packages, selectedCity, setSelectedCity, searchQu
                             <div>Sharing</div>
                           </div>
                           <div className="grid grid-cols-4 py-2.5 px-3 text-center text-[#c5a059] font-bold">
-                            <div>{pkg.price_double ? `${(pkg.price_double / 1000).toFixed(0)}k` : '305k'}</div>
-                            <div>{pkg.price_triple ? `${(pkg.price_triple / 1000).toFixed(0)}k` : '290k'}</div>
-                            <div>{pkg.price_quad ? `${(pkg.price_quad / 1000).toFixed(0)}k` : '283k'}</div>
-                            <div>{pkg.price_sharing ? `${(pkg.price_sharing / 1000).toFixed(0)}k` : '274k'}</div>
+                            <div>{pkg.price_double ? formatShortPrice(pkg.price_double, displayCurrency) : 'N/A'}</div>
+                            <div>{pkg.price_triple ? formatShortPrice(pkg.price_triple, displayCurrency) : 'N/A'}</div>
+                            <div>{pkg.price_quad ? formatShortPrice(pkg.price_quad, displayCurrency) : 'N/A'}</div>
+                            <div>{pkg.price_sharing ? formatShortPrice(pkg.price_sharing, displayCurrency) : 'N/A'}</div>
                           </div>
                         </div>
 
@@ -3197,6 +3398,137 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
     phones: ''
   });
 
+  // Package CRUD states
+  const [editingFullPkg, setEditingFullPkg] = useState<UmrahPackage | null>(null);
+  const [isAddingPkg, setIsAddingPkg] = useState(false);
+  const [pkgForm, setPkgForm] = useState({
+    title: '',
+    city: '',
+    duration: '',
+    description: '',
+    makkahHotel: '',
+    madinahHotel: '',
+    features: '',
+    image: '',
+    price_sharing: 0,
+    price_quad: 0,
+    price_triple: 0,
+    price_double: 0,
+    price_single: 0
+  });
+
+  const openAddPkgModal = () => {
+    setIsAddingPkg(true);
+    setEditingFullPkg(null);
+    setPkgForm({
+      title: '',
+      city: 'Islamabad',
+      duration: '15 Days (7 Makkah - 8 Madinah)',
+      description: 'Premium Umrah package with excellent hotel services.',
+      makkahHotel: '',
+      madinahHotel: '',
+      features: 'Airline Flights Included, Umrah Visa & Insurance, Makkah & Madinah Hotels, Transport Included',
+      image: '',
+      price_sharing: 275000,
+      price_quad: 285000,
+      price_triple: 295000,
+      price_double: 310000,
+      price_single: 390000
+    });
+  };
+
+  const openEditPkgModal = (pkg: UmrahPackage) => {
+    setEditingFullPkg(pkg);
+    setIsAddingPkg(false);
+    setPkgForm({
+      title: pkg.title,
+      city: pkg.city,
+      duration: pkg.duration,
+      description: pkg.description || '',
+      makkahHotel: pkg.hotels.makkah,
+      madinahHotel: pkg.hotels.madinah,
+      features: pkg.features ? pkg.features.join(', ') : '',
+      image: pkg.image || '',
+      price_sharing: pkg.price_sharing || 0,
+      price_quad: pkg.price_quad || 0,
+      price_triple: pkg.price_triple || 0,
+      price_double: pkg.price_double || 0,
+      price_single: pkg.price_single || 0
+    });
+  };
+
+  const handlePkgSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload = {
+      title: pkgForm.title,
+      city: pkgForm.city,
+      duration: pkgForm.duration,
+      description: pkgForm.description,
+      hotels: {
+        makkah: pkgForm.makkahHotel,
+        madinah: pkgForm.madinahHotel
+      },
+      features: pkgForm.features.split(',').map(s => s.trim()).filter(Boolean),
+      image: pkgForm.image,
+      price_sharing: pkgForm.price_sharing,
+      price_quad: pkgForm.price_quad,
+      price_triple: pkgForm.price_triple,
+      price_double: pkgForm.price_double,
+      price_single: pkgForm.price_single
+    };
+
+    try {
+      if (editingFullPkg?._id) {
+        // Edit package
+        const res = await fetch(`${BACKEND_URL}/api/packages/${editingFullPkg._id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setPackages((prev: UmrahPackage[]) => prev.map(p => p._id === editingFullPkg._id ? data.package : p));
+          setEditingFullPkg(null);
+        } else {
+          alert(data.error || 'Failed to update package.');
+        }
+      } else {
+        // Create new package
+        const res = await fetch(`${BACKEND_URL}/api/packages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setPackages((prev: UmrahPackage[]) => [...prev, data.package]);
+          setIsAddingPkg(false);
+        } else {
+          alert(data.error || 'Failed to create package.');
+        }
+      }
+    } catch (err) {
+      alert('Error updating packages database.');
+    }
+  };
+
+  const handlePkgDelete = async (pkgId: string) => {
+    if (!confirm('Are you sure you want to delete this Umrah package?')) return;
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/packages/${pkgId}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setPackages((prev: UmrahPackage[]) => prev.filter(p => p._id !== pkgId));
+      } else {
+        alert(data.error || 'Failed to delete package.');
+      }
+    } catch (err) {
+      alert('Error deleting package.');
+    }
+  };
+
   const openAddMemberModal = () => {
     setIsAddingMember(true);
     setEditingMember(null);
@@ -3456,14 +3788,22 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
                   </p>
                 )}
               </div>
-              <button
-                onClick={handleReseed}
-                disabled={isReseeding}
-                className="px-4 py-2 bg-[#c5a059]/10 border border-[#c5a059]/30 text-[#c5a059] hover:bg-[#c5a059] hover:text-[#05080a] rounded font-bold text-xs transition-all flex items-center gap-2 whitespace-nowrap"
-              >
-                <i className={`fa-solid ${isReseeding ? 'fa-circle-notch animate-spin' : 'fa-arrows-rotate'}`}></i>
-                {isReseeding ? 'Reloading...' : 'Reload Packages from Files'}
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={openAddPkgModal}
+                  className="px-4 py-2 bg-green-600 border border-green-500 hover:bg-green-700 text-white rounded font-bold text-xs transition-all flex items-center gap-2 whitespace-nowrap"
+                >
+                  <i className="fa-solid fa-plus"></i> Add New Package
+                </button>
+                <button
+                  onClick={handleReseed}
+                  disabled={isReseeding}
+                  className="px-4 py-2 bg-[#c5a059]/10 border border-[#c5a059]/30 text-[#c5a059] hover:bg-[#c5a059] hover:text-[#05080a] rounded font-bold text-xs transition-all flex items-center gap-2 whitespace-nowrap"
+                >
+                  <i className={`fa-solid ${isReseeding ? 'fa-circle-notch animate-spin' : 'fa-arrows-rotate'}`}></i>
+                  {isReseeding ? 'Reloading...' : 'Reload Packages'}
+                </button>
+              </div>
             </div>
 
             <div className="bg-[#0e1217] border border-gray-800 rounded-xl overflow-hidden shadow-lg">
@@ -3477,7 +3817,7 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
                       <th className="py-3.5 px-4">Triple</th>
                       <th className="py-3.5 px-4">Double</th>
                       <th className="py-3.5 px-4">Single</th>
-                      <th className="py-3.5 px-4 text-right">Actions</th>
+                      <th className="py-3.5 px-4 text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-800 text-gray-300">
@@ -3485,19 +3825,41 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
                       .filter((p: any) => p.title.toLowerCase().includes(searchTerm.toLowerCase()))
                       .map((pkg: any, idx: number) => (
                         <tr key={pkg._id || idx} className="hover:bg-gray-900/40">
-                          <td className="py-4 px-4 font-bold text-white">{pkg.title}</td>
+                          <td className="py-4 px-4 font-bold text-white">
+                            {pkg.title}
+                            <div className="text-[10px] text-gray-500 font-mono mt-0.5">{pkg.city} | {pkg.duration}</div>
+                          </td>
                           <td className="py-4 px-4 font-semibold text-[#c5a059]">{pkg.price_sharing ? `PKR ${pkg.price_sharing.toLocaleString()}` : 'N/A'}</td>
                           <td className="py-4 px-4">{pkg.price_quad ? `PKR ${pkg.price_quad.toLocaleString()}` : 'N/A'}</td>
                           <td className="py-4 px-4">{pkg.price_triple ? `PKR ${pkg.price_triple.toLocaleString()}` : 'N/A'}</td>
                           <td className="py-4 px-4">{pkg.price_double ? `PKR ${pkg.price_double.toLocaleString()}` : 'N/A'}</td>
                           <td className="py-4 px-4">{pkg.price_single ? `PKR ${pkg.price_single.toLocaleString()}` : 'N/A'}</td>
-                          <td className="py-4 px-4 text-right">
-                            <button
-                              onClick={() => openRateModal(pkg)}
-                              className="px-3 py-1.5 bg-[#c5a059]/10 border border-[#c5a059]/25 text-[#c5a059] rounded font-bold hover:bg-[#c5a059] hover:text-[#05080a] transition-all"
-                            >
-                              Edit Rates
-                            </button>
+                          <td className="py-4 px-4 text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                onClick={() => openRateModal(pkg)}
+                                className="px-2.5 py-1 bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 rounded font-bold hover:bg-yellow-500 hover:text-[#05080a] transition-all"
+                                title="Edit Rates Only"
+                              >
+                                Rates
+                              </button>
+                              <button
+                                onClick={() => openEditPkgModal(pkg)}
+                                className="p-1.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white rounded transition-all"
+                                title="Edit Package Details"
+                              >
+                                <i className="fa-solid fa-pen text-xs"></i>
+                              </button>
+                              {pkg._id && (
+                                <button
+                                  onClick={() => handlePkgDelete(pkg._id)}
+                                  className="p-1.5 bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white rounded transition-all"
+                                  title="Delete Package"
+                                >
+                                  <i className="fa-solid fa-trash-can text-xs"></i>
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -3948,6 +4310,192 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
                 className="w-full py-3 bg-[#c5a059] text-[#05080a] font-bold rounded mt-4 hover:bg-[#a6823c] transition-all text-xs uppercase tracking-wider"
               >
                 {editingMember ? 'Update Member Info' : 'Add Team Member'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* PACKAGE ADD/EDIT MODAL */}
+      {(isAddingPkg || editingFullPkg) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto animate-fadeIn">
+          <div className="bg-[#0e1217] w-full max-w-lg rounded-xl border border-[#c5a059]/25 shadow-2xl overflow-hidden my-8">
+            <div className="bg-[#05080a] py-4 px-6 border-b border-[#c5a059]/20 flex justify-between items-center">
+              <div>
+                <span className="text-xs text-[#c5a059] font-bold uppercase tracking-widest">Package Console</span>
+                <h3 className="text-base font-bold text-white mt-0.5">
+                  {editingFullPkg ? 'Update Package Details' : 'Create New Umrah Package'}
+                </h3>
+              </div>
+              <button 
+                onClick={() => { setIsAddingPkg(false); setEditingFullPkg(null); }} 
+                className="text-gray-400 hover:text-white text-xl"
+              >
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handlePkgSubmit} className="p-6 flex flex-col gap-4 max-h-[75vh] overflow-y-auto">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Package Title</label>
+                <input
+                  type="text"
+                  required
+                  value={pkgForm.title}
+                  onChange={(e) => setPkgForm(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="e.g. 15 Days Star Umrah Package"
+                  className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none transition-all"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Departure City</label>
+                  <select
+                    value={pkgForm.city}
+                    onChange={(e) => setPkgForm(prev => ({ ...prev, city: e.target.value }))}
+                    className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none transition-all cursor-pointer"
+                  >
+                    {['Islamabad', 'Karachi', 'Lahore', 'Sialkot', 'Peshawar', 'Multan', 'Faisalabad'].map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Duration Description</label>
+                  <input
+                    type="text"
+                    required
+                    value={pkgForm.duration}
+                    onChange={(e) => setPkgForm(prev => ({ ...prev, duration: e.target.value }))}
+                    placeholder="e.g. 15 Days (7 Makkah - 8 Madinah)"
+                    className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Makkah Hotel</label>
+                  <input
+                    type="text"
+                    required
+                    value={pkgForm.makkahHotel}
+                    onChange={(e) => setPkgForm(prev => ({ ...prev, makkahHotel: e.target.value }))}
+                    placeholder="e.g. Swissôtel Makkah"
+                    className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none transition-all"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Madinah Hotel</label>
+                  <input
+                    type="text"
+                    required
+                    value={pkgForm.madinahHotel}
+                    onChange={(e) => setPkgForm(prev => ({ ...prev, madinahHotel: e.target.value }))}
+                    placeholder="e.g. Pullman Zamzam Madinah"
+                    className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Package Inclusions (comma-separated)</label>
+                <textarea
+                  value={pkgForm.features}
+                  onChange={(e) => setPkgForm(prev => ({ ...prev, features: e.target.value }))}
+                  placeholder="Airline Flights Included, Umrah Visa & Insurance, Makkah & Madinah Hotels"
+                  rows={2}
+                  className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none transition-all placeholder:text-gray-700"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Description</label>
+                <textarea
+                  value={pkgForm.description}
+                  onChange={(e) => setPkgForm(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Details about flights, proximity, features, etc..."
+                  rows={2}
+                  className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none transition-all placeholder:text-gray-700"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Package Image URL (Optional)</label>
+                <input
+                  type="text"
+                  value={pkgForm.image}
+                  onChange={(e) => setPkgForm(prev => ({ ...prev, image: e.target.value }))}
+                  placeholder="https://example.com/image.jpg"
+                  className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none transition-all placeholder:text-gray-700"
+                />
+              </div>
+
+              {/* Prices Section */}
+              <div className="border-t border-gray-800 pt-3">
+                <span className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider block mb-3">Rooming Pricing (PKR Base)</span>
+                <div className="grid grid-cols-3 gap-3 mb-3">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[9px] font-bold uppercase text-gray-400">Sharing Price</label>
+                    <input
+                      type="number"
+                      required
+                      value={pkgForm.price_sharing}
+                      onChange={(e) => setPkgForm(prev => ({ ...prev, price_sharing: parseInt(e.target.value) || 0 }))}
+                      className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-2 py-1.5 rounded text-xs outline-none"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[9px] font-bold uppercase text-gray-400">Quad Price</label>
+                    <input
+                      type="number"
+                      required
+                      value={pkgForm.price_quad}
+                      onChange={(e) => setPkgForm(prev => ({ ...prev, price_quad: parseInt(e.target.value) || 0 }))}
+                      className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-2 py-1.5 rounded text-xs outline-none"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[9px] font-bold uppercase text-gray-400">Triple Price</label>
+                    <input
+                      type="number"
+                      required
+                      value={pkgForm.price_triple}
+                      onChange={(e) => setPkgForm(prev => ({ ...prev, price_triple: parseInt(e.target.value) || 0 }))}
+                      className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-2 py-1.5 rounded text-xs outline-none"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[9px] font-bold uppercase text-gray-400">Double Price</label>
+                    <input
+                      type="number"
+                      required
+                      value={pkgForm.price_double}
+                      onChange={(e) => setPkgForm(prev => ({ ...prev, price_double: parseInt(e.target.value) || 0 }))}
+                      className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-1.5 rounded text-xs outline-none"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[9px] font-bold uppercase text-gray-400">Single Price</label>
+                    <input
+                      type="number"
+                      required
+                      value={pkgForm.price_single}
+                      onChange={(e) => setPkgForm(prev => ({ ...prev, price_single: parseInt(e.target.value) || 0 }))}
+                      className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-1.5 rounded text-xs outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 bg-[#c5a059] text-[#05080a] font-bold rounded mt-4 hover:bg-[#a6823c] transition-all text-xs uppercase tracking-wider"
+              >
+                {editingFullPkg ? 'Update Package Details' : 'Create Package'}
               </button>
             </form>
           </div>

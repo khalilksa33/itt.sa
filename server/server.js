@@ -83,6 +83,7 @@ const BookingSchema = new mongoose.Schema({
     passportNumber: { type: String, required: true }
   }],
   status: { type: String, default: 'Confirmed - Pending Payment' },
+  travelDate: { type: String },
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -561,6 +562,73 @@ app.put('/api/packages/:code/rates', async (req, res) => {
     res.json({ success: true, package: pkg });
   } catch (error) {
     res.status(500).json({ error: 'Failed to update rates: ' + error.message });
+  }
+});
+
+// 11b. Create new package
+app.post('/api/packages', async (req, res) => {
+  try {
+    const { title, city, price, duration, description, hotels, features, image, price_sharing, price_quad, price_triple, price_double, price_single } = req.body;
+    if (!title || !city || !duration || !hotels || !hotels.makkah || !hotels.madinah) {
+      return res.status(400).json({ error: 'Title, departure city, duration, Makkah hotel, and Madinah hotel are required.' });
+    }
+    const newPkg = new UmrahPackage({
+      title,
+      city,
+      price: price || (price_sharing ? `PKR ${price_sharing.toLocaleString()}` : 'PKR 0'),
+      duration,
+      description: description || '',
+      hotels,
+      features: features || [],
+      image: image || '',
+      price_sharing: price_sharing || 0,
+      price_quad: price_quad || 0,
+      price_triple: price_triple || 0,
+      price_double: price_double || 0,
+      price_single: price_single || 0
+    });
+    await newPkg.save();
+    res.status(201).json({ success: true, package: newPkg });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create package: ' + error.message });
+  }
+});
+
+// 11c. Update full package details
+app.put('/api/packages/:id', async (req, res) => {
+  try {
+    const { title, city, price, duration, description, hotels, features, image, price_sharing, price_quad, price_triple, price_double, price_single } = req.body;
+    const updateData = {
+      title,
+      city,
+      price: price || (price_sharing ? `PKR ${price_sharing.toLocaleString()}` : 'PKR 0'),
+      duration,
+      description,
+      hotels,
+      features,
+      image,
+      price_sharing,
+      price_quad,
+      price_triple,
+      price_double,
+      price_single
+    };
+    const updatedPkg = await UmrahPackage.findByIdAndUpdate(req.params.id, updateData, { new: true });
+    if (!updatedPkg) return res.status(404).json({ error: 'Package not found.' });
+    res.json({ success: true, package: updatedPkg });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update package: ' + error.message });
+  }
+});
+
+// 11d. Delete package
+app.delete('/api/packages/:id', async (req, res) => {
+  try {
+    const deletedPkg = await UmrahPackage.findByIdAndDelete(req.params.id);
+    if (!deletedPkg) return res.status(404).json({ error: 'Package not found.' });
+    res.json({ success: true, message: 'Package deleted successfully.' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete package: ' + error.message });
   }
 });
 
