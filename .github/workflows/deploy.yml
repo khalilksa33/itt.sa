@@ -55,9 +55,11 @@ jobs:
           sudo dpkg -i cloudflared.deb
 
       - name: Set up SSH Key and Cloudflare Tunnel Configuration
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
+          echo "$SSH_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           
           cat <<EOF >> ~/.ssh/config
