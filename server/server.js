@@ -154,6 +154,22 @@ mongoose.connect(process.env.MONGODB_URI)
             office: "Lahore Office",
             emails: ["director@itt.sa"],
             phones: ["+966 50-086-1820"]
+          },
+          {
+            name: "Mr. Muhammad Atif Zafar",
+            role: "Operations",
+            designation: "Manager Operations",
+            office: "Madinah Al-Munawarah Head Office",
+            emails: ["operations@itt.sa"],
+            phones: ["+966 54 426 6932"]
+          },
+          {
+            name: "Syed Suleman Haider",
+            role: "Human Resources",
+            designation: "HR Manager",
+            office: "Head Office",
+            emails: ["hr@itt.sa"],
+            phones: ["+966 50 685 8795"]
           }
         ]);
       }
