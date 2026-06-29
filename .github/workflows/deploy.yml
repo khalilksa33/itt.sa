@@ -56,6 +56,21 @@ jobs:
           curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
           sudo dpkg -i cloudflared.deb
 
+      - name: Secrets Diagnostic
+        env:
+          CF_CLIENT_ID: ${{ secrets.CF_CLIENT_ID }}
+          CF_CLIENT_SECRET: ${{ secrets.CF_CLIENT_SECRET }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
+        run: |
+          echo "=== Secrets Diagnostic ==="
+          if [ -z "$CF_CLIENT_ID" ]; then echo "CF_CLIENT_ID is EMPTY"; else echo "CF_CLIENT_ID is set (length: ${#CF_CLIENT_ID})"; fi
+          if [ -z "$CF_CLIENT_SECRET" ]; then echo "CF_CLIENT_SECRET is EMPTY"; else echo "CF_CLIENT_SECRET is set (length: ${#CF_CLIENT_SECRET})"; fi
+          if [ -z "$SSH_KEY" ]; then echo "SSH_KEY is EMPTY"; else echo "SSH_KEY is set (length: ${#SSH_KEY})"; fi
+          if [ -z "$SSH_USERNAME" ]; then echo "SSH_USERNAME is EMPTY"; else echo "SSH_USERNAME is set (length: ${#SSH_USERNAME})"; fi
+          echo "========================="
+
+
       - name: Set up SSH Key and Cloudflare Tunnel Configuration
         env:
           SSH_KEY: ${{ secrets.SSH_KEY }}
