@@ -662,7 +662,7 @@ export default function App() {
                 </button>
               </>
             ) : (
-              null
+              <a href="/sales" onClick={(e) => { e.preventDefault(); navigateTo('/sales'); }} className={`text-xs font-semibold hover:text-[#c5a059] transition-colors ${location.pathname === '/sales' ? 'text-[#c5a059] font-bold' : 'text-gray-400'}`}>Staff Login</a>
             )}
 
             <a href="#contact" onClick={(e) => { e.preventDefault(); navigateTo('/', 'contact'); }} className="px-4 py-1.5 bg-[#c5a059] text-[#05080a] text-xs font-bold rounded hover:bg-[#b48e47] transition-all">
@@ -705,7 +705,7 @@ export default function App() {
                 </button>
               </>
             ) : (
-              null
+              <a href="/sales" onClick={(e) => { e.preventDefault(); navigateTo('/sales'); }} className="text-base hover:text-[#c5a059] transition-colors">Staff Login</a>
             )}
 
             <a href="#contact" onClick={(e) => { e.preventDefault(); navigateTo('/', 'contact'); }} className="py-2.5 text-center bg-[#c5a059] text-[#05080a] font-bold rounded">
