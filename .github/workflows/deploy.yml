@@ -66,20 +66,29 @@ jobs:
           
           cat <<EOF >> ~/.ssh/config
           Host ${{ env.SSH_HOST }}
-              ProxyCommand cloudflared access ssh --hostname %h --id ${{ secrets.CF_CLIENT_ID }} --secret ${{ secrets.CF_CLIENT_SECRET }}
+              ProxyCommand cloudflared access ssh --hostname %h
               StrictHostKeyChecking no
               UserKnownHostsFile /dev/null
           EOF
 
       - name: Prepare Host Directory
+        env:
+          TUNNEL_SERVICE_TOKEN_ID: ${{ secrets.CF_CLIENT_ID }}
+          TUNNEL_SERVICE_TOKEN_SECRET: ${{ secrets.CF_CLIENT_SECRET }}
         run: |
           ssh -i ~/.ssh/id_rsa -p ${{ secrets.SSH_PORT || '22' }} ${{ secrets.SSH_USERNAME }}@${{ env.SSH_HOST }} "mkdir -p ~/itt.sa-dev"
 
       - name: Sync Code to Host A
+        env:
+          TUNNEL_SERVICE_TOKEN_ID: ${{ secrets.CF_CLIENT_ID }}
+          TUNNEL_SERVICE_TOKEN_SECRET: ${{ secrets.CF_CLIENT_SECRET }}
         run: |
           rsync -avz -e "ssh -i ~/.ssh/id_rsa -p ${{ secrets.SSH_PORT || '22' }}" --exclude='.git' --exclude='node_modules' ./ ${{ secrets.SSH_USERNAME }}@${{ env.SSH_HOST }}:~/itt.sa-dev/
 
       - name: Run Remote Deployment Command
+        env:
+          TUNNEL_SERVICE_TOKEN_ID: ${{ secrets.CF_CLIENT_ID }}
+          TUNNEL_SERVICE_TOKEN_SECRET: ${{ secrets.CF_CLIENT_SECRET }}
         run: |
           ssh -i ~/.ssh/id_rsa -p ${{ secrets.SSH_PORT || '22' }} ${{ secrets.SSH_USERNAME }}@${{ env.SSH_HOST }} "
             cd ~/itt.sa-dev
