@@ -20,6 +20,7 @@ interface UmrahPackage {
   price_triple?: number;
   price_double?: number;
   price_single?: number;
+  isActive?: boolean;
 }
 
 interface Pilgrim {
@@ -50,6 +51,7 @@ interface TeamMember {
   office: string;
   emails: string[];
   phones: string[];
+  isActive?: boolean;
   createdAt?: string;
 }
 
@@ -60,7 +62,8 @@ const fallbackTeam: TeamMember[] = [
     designation: "CEO",
     office: "Lahore Office",
     emails: ["ceo@itt.sa", "support@itt.sa"],
-    phones: ["+92 300-0860633", "+966 50-086-0633"]
+    phones: ["+92 300-0860633", "+966 50-086-0633"],
+    isActive: true
   },
   {
     name: "Ahmad Hasan Marjan",
@@ -68,7 +71,8 @@ const fallbackTeam: TeamMember[] = [
     designation: "Executive Director",
     office: "Lahore Office",
     emails: ["director@itt.sa"],
-    phones: ["+966 50-086-1820"]
+    phones: ["+966 50-086-1820"],
+    isActive: true
   },
   {
     name: "Mr. Muhammad Atif Zafar",
@@ -76,7 +80,8 @@ const fallbackTeam: TeamMember[] = [
     designation: "Manager Operations",
     office: "Madinah Al-Munawarah Head Office",
     emails: ["operations@itt.sa"],
-    phones: ["+966 54 426 6932"]
+    phones: ["+966 54 426 6932"],
+    isActive: true
   },
   {
     name: "Syed Suleman Haider",
@@ -84,7 +89,8 @@ const fallbackTeam: TeamMember[] = [
     designation: "HR Manager",
     office: "Head Office",
     emails: ["hr@itt.sa"],
-    phones: ["+966 50 685 8795"]
+    phones: ["+966 50 685 8795"],
+    isActive: true
   }
 ];
 
@@ -256,6 +262,11 @@ const fallbackPackages: UmrahPackage[] = [
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const [theme, setTheme] = useState<'gold' | 'emerald' | 'sapphire' | 'purple'>(
+    (localStorage.getItem('theme') as any) || 'gold'
+  );
+  const [themeMenuOpen, setThemeMenuOpen] = useState(false);
 
   const [packages, setPackages] = useState<UmrahPackage[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -640,9 +651,124 @@ export default function App() {
         });
       });
   };
+  const themesObj = {
+    gold: {
+      accent: '#c5a059',
+      accentHover: '#b48e47',
+      primary: '#05080a',
+      cardDark: '#0e1217',
+      rgbAccent: '197, 160, 89',
+      rgbPrimary: '5, 8, 10'
+    },
+    emerald: {
+      accent: '#10b981',
+      accentHover: '#059669',
+      primary: '#040806',
+      cardDark: '#08120d',
+      rgbAccent: '16, 185, 129',
+      rgbPrimary: '4, 8, 6'
+    },
+    sapphire: {
+      accent: '#3b82f6',
+      accentHover: '#2563eb',
+      primary: '#030712',
+      cardDark: '#0b1329',
+      rgbAccent: '59, 130, 246',
+      rgbPrimary: '3, 7, 18'
+    },
+    purple: {
+      accent: '#a855f7',
+      accentHover: '#7e22ce',
+      primary: '#0b0712',
+      cardDark: '#160e24',
+      rgbAccent: '168, 85, 247',
+      rgbPrimary: '11, 7, 18'
+    }
+  };
+
+  const activeTheme = themesObj[theme] || themesObj.gold;
 
   return (
     <div className="min-h-screen bg-[#05080a] text-gray-100 flex flex-col font-sans selection:bg-[#c5a059] selection:text-[#05080a]">
+      <style>{`
+        :root {
+          --primary: ${activeTheme.primary};
+          --card-dark: ${activeTheme.cardDark};
+          --accent: ${activeTheme.accent};
+          --accent-hover: ${activeTheme.accentHover};
+          --border-color: rgba(${activeTheme.rgbAccent}, 0.15);
+        }
+        
+        body {
+          background-color: ${activeTheme.primary} !important;
+        }
+        
+        ::selection {
+          background-color: ${activeTheme.accent} !important;
+          color: ${activeTheme.primary} !important;
+        }
+        
+        .text-\\[\\#c5a059\\] {
+          color: ${activeTheme.accent} !important;
+        }
+        .text-\\[\\#b48e47\\] {
+          color: ${activeTheme.accentHover} !important;
+        }
+        .bg-\\[\\#c5a059\\] {
+          background-color: ${activeTheme.accent} !important;
+        }
+        .bg-\\[\\#c5a059\\]\\/10 {
+          background-color: rgba(${activeTheme.rgbAccent}, 0.10) !important;
+        }
+        .bg-\\[\\#c5a059\\]\\/20 {
+          background-color: rgba(${activeTheme.rgbAccent}, 0.20) !important;
+        }
+        .border-\\[\\#c5a059\\] {
+          border-color: ${activeTheme.accent} !important;
+        }
+        .border-\\[\\#c5a059\\]\\/10 {
+          border-color: rgba(${activeTheme.rgbAccent}, 0.10) !important;
+        }
+        .border-\\[\\#c5a059\\]\\/15 {
+          border-color: rgba(${activeTheme.rgbAccent}, 0.15) !important;
+        }
+        .border-\\[\\#c5a059\\]\\/20 {
+          border-color: rgba(${activeTheme.rgbAccent}, 0.20) !important;
+        }
+        .border-\\[\\#c5a059\\]\\/30 {
+          border-color: rgba(${activeTheme.rgbAccent}, 0.30) !important;
+        }
+        .hover\\:bg-\\[\\#b48e47\\]:hover {
+          background-color: ${activeTheme.accentHover} !important;
+        }
+        .hover\\:text-\\[\\#c5a059\\]:hover {
+          color: ${activeTheme.accent} !important;
+        }
+        .bg-black\\/80 {
+          background-color: rgba(${activeTheme.rgbPrimary}, 0.8) !important;
+        }
+        .bg-\\[\\#0e1217\\] {
+          background-color: ${activeTheme.cardDark} !important;
+        }
+        .bg-\\[\\#05080a\\] {
+          background-color: ${activeTheme.primary} !important;
+        }
+        .bg-\\[\\#030507\\] {
+          background-color: ${activeTheme.primary} !important;
+        }
+        .border-gray-900 {
+          border-color: rgba(${activeTheme.rgbAccent}, 0.1) !important;
+        }
+        .from-\\[\\#0e1217\\] {
+          --tw-gradient-from: ${activeTheme.cardDark} var(--tw-gradient-from-position) !important;
+        }
+        .to-\\[\\#05080a\\] {
+          --tw-gradient-to: ${activeTheme.primary} var(--tw-gradient-to-position) !important;
+        }
+        .shadow-\\[\\#c5a059\\]\\/5 {
+          --tw-shadow-color: rgba(${activeTheme.rgbAccent}, 0.05) !important;
+        }
+      `}</style>
       {/* HEADER & NAVBAR */}
       <header className="sticky top-0 z-50 bg-[#05080a]/95 backdrop-blur-md border-b border-[#c5a059]/15">
         <div className="container mx-auto px-6 py-4 flex justify-between items-center max-w-7xl">
@@ -733,8 +859,8 @@ export default function App() {
 
       {/* ROUTES CONFIGURATION */}
       <Routes>
-        <Route path="/" element={<HomeView navigateTo={navigateTo} handleFormChange={handleFormChange} handleInquirySubmit={handleInquirySubmit} formData={formData} submitStatus={submitStatus} teamMembers={teamMembers} fallbackTeam={fallbackTeam} />} />
-        <Route path="/portal" element={<PortalView loading={loading} packages={packages} selectedCity={selectedCity} setSelectedCity={setSelectedCity} searchQuery={searchQuery} setSearchQuery={setSearchQuery} openBookingModal={openBookingModal} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} formatConvertedPrice={formatConvertedPrice} formatShortPrice={formatShortPrice} />} />
+        <Route path="/" element={<HomeView navigateTo={navigateTo} handleFormChange={handleFormChange} handleInquirySubmit={handleInquirySubmit} formData={formData} submitStatus={submitStatus} teamMembers={teamMembers.filter(m => m.isActive !== false)} fallbackTeam={fallbackTeam.filter(m => m.isActive !== false)} />} />
+        <Route path="/portal" element={<PortalView loading={loading} packages={packages.filter(p => p.isActive === true)} selectedCity={selectedCity} setSelectedCity={setSelectedCity} searchQuery={searchQuery} setSearchQuery={setSearchQuery} openBookingModal={openBookingModal} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} formatConvertedPrice={formatConvertedPrice} formatShortPrice={formatShortPrice} />} />
         <Route path="/partner" element={<PartnerRegisterView BACKEND_URL={BACKEND_URL} />} />
         <Route path="/partner/dashboard" element={<PartnerDashboardView BACKEND_URL={BACKEND_URL} exchangeRates={exchangeRates} />} />
         <Route path="/customer/portal" element={<CustomerPortalView BACKEND_URL={BACKEND_URL} exchangeRates={exchangeRates} />} />
@@ -775,6 +901,52 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {/* FLOATING THEME SELECTOR */}
+      <div className="fixed bottom-6 right-6 z-40">
+        <button
+          onClick={() => setThemeMenuOpen(!themeMenuOpen)}
+          className="w-12 h-12 bg-[#0e1217]/90 hover:bg-[#c5a059] hover:text-[#05080a] text-[#c5a059] rounded-full border border-[#c5a059]/30 shadow-xl backdrop-blur-md flex items-center justify-center transition-all duration-300 transform hover:scale-105"
+          title="Change Theme"
+        >
+          <i className="fa-solid fa-palette text-lg"></i>
+        </button>
+        
+        {themeMenuOpen && (
+          <div className="absolute bottom-16 right-0 w-52 bg-[#0e1217]/95 border border-[#c5a059]/20 rounded-xl shadow-2xl backdrop-blur-md p-4 animate-fadeIn flex flex-col gap-3">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-[#c5a059] border-b border-[#c5a059]/10 pb-2">Select Theme</h4>
+            <div className="flex flex-col gap-1.5 text-left">
+              {[
+                { id: 'gold', name: 'Gold Luxury', color: '#c5a059' },
+                { id: 'emerald', name: 'Emerald Green', color: '#10b981' },
+                { id: 'sapphire', name: 'Sapphire Blue', color: '#3b82f6' },
+                { id: 'purple', name: 'Royal Purple', color: '#a855f7' }
+              ].map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => {
+                    setTheme(t.id as any);
+                    localStorage.setItem('theme', t.id);
+                    setThemeMenuOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs transition-all hover:bg-[#c5a059]/10 ${
+                    theme === t.id ? 'bg-[#c5a059]/20 text-white font-bold' : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  <span
+                    className="w-3.5 h-3.5 rounded-full border border-white/10"
+                    style={{ backgroundColor: t.color }}
+                  ></span>
+                  <span>{t.name}</span>
+                  {theme === t.id && (
+                    <i className="fa-solid fa-check text-[10px] ml-auto text-[#c5a059]"></i>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* E-COMMERCE CHECKOUT MODAL */}
       {selectedPkg && (
@@ -3397,7 +3569,8 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
     designation: '',
     office: '',
     emails: '',
-    phones: ''
+    phones: '',
+    isActive: true
   });
 
   // Package CRUD states
@@ -3416,7 +3589,8 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
     price_quad: 0,
     price_triple: 0,
     price_double: 0,
-    price_single: 0
+    price_single: 0,
+    isActive: false
   });
 
   const openAddPkgModal = () => {
@@ -3435,7 +3609,8 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
       price_quad: 285000,
       price_triple: 295000,
       price_double: 310000,
-      price_single: 390000
+      price_single: 390000,
+      isActive: false
     });
   };
 
@@ -3455,7 +3630,8 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
       price_quad: pkg.price_quad || 0,
       price_triple: pkg.price_triple || 0,
       price_double: pkg.price_double || 0,
-      price_single: pkg.price_single || 0
+      price_single: pkg.price_single || 0,
+      isActive: pkg.isActive || false
     });
   };
 
@@ -3476,7 +3652,8 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
       price_quad: pkgForm.price_quad,
       price_triple: pkgForm.price_triple,
       price_double: pkgForm.price_double,
-      price_single: pkgForm.price_single
+      price_single: pkgForm.price_single,
+      isActive: pkgForm.isActive
     };
 
     try {
@@ -3521,14 +3698,31 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
         method: 'DELETE'
       });
       const data = await res.json();
-      if (res.ok && data.success) {
-        setPackages((prev: UmrahPackage[]) => prev.filter(p => p._id !== pkgId));
-      } else {
-        alert(data.error || 'Failed to delete package.');
+        if (res.ok && data.success) {
+          setPackages((prev: UmrahPackage[]) => prev.filter(p => p._id !== pkgId));
+        } else {
+          alert(data.error || 'Failed to delete package.');
+        }
+      } catch (err) {
+        alert('Error deleting package.');
       }
-    } catch (err) {
-      alert('Error deleting package.');
-    }
+    };
+
+  const handlePkgToggleActive = (pkg: UmrahPackage) => {
+    if (!pkg._id) return;
+    const newStatus = !pkg.isActive;
+    fetch(`${BACKEND_URL}/api/packages/${pkg._id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isActive: newStatus })
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setPackages((prev: UmrahPackage[]) => prev.map(p => p._id === pkg._id ? { ...p, isActive: newStatus } : p));
+        }
+      })
+      .catch(err => console.error('Failed to toggle package status:', err));
   };
 
   const openAddMemberModal = () => {
@@ -3540,7 +3734,8 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
       designation: '',
       office: 'Lahore Office',
       emails: '',
-      phones: ''
+      phones: '',
+      isActive: true
     });
   };
 
@@ -3553,7 +3748,8 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
       designation: member.designation,
       office: member.office,
       emails: member.emails.join(', '),
-      phones: member.phones.join(', ')
+      phones: member.phones.join(', '),
+      isActive: member.isActive !== false
     });
   };
 
@@ -3565,7 +3761,8 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
       designation: memberForm.designation,
       office: memberForm.office,
       emails: memberForm.emails.split(',').map(s => s.trim()).filter(Boolean),
-      phones: memberForm.phones.split(',').map(s => s.trim()).filter(Boolean)
+      phones: memberForm.phones.split(',').map(s => s.trim()).filter(Boolean),
+      isActive: memberForm.isActive
     };
 
     try {
@@ -3618,6 +3815,23 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
     } catch (err) {
       alert('Error deleting team member.');
     }
+  };
+
+  const handleMemberToggleActive = (member: TeamMember) => {
+    if (!member._id) return;
+    const newStatus = member.isActive === false ? true : false;
+    fetch(`${BACKEND_URL}/api/team/${member._id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isActive: newStatus })
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setTeamMembers((prev: TeamMember[]) => prev.map((m: any) => m._id === member._id ? { ...m, isActive: newStatus } : m));
+        }
+      })
+      .catch(err => console.error('Failed to toggle team member status:', err));
   };
 
   // Rate edit modal states
@@ -3819,6 +4033,7 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
                       <th className="py-3.5 px-4">Triple</th>
                       <th className="py-3.5 px-4">Double</th>
                       <th className="py-3.5 px-4">Single</th>
+                      <th className="py-3.5 px-4 text-center">Status</th>
                       <th className="py-3.5 px-4 text-center">Actions</th>
                     </tr>
                   </thead>
@@ -3836,6 +4051,18 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
                           <td className="py-4 px-4">{pkg.price_triple ? `PKR ${pkg.price_triple.toLocaleString()}` : 'N/A'}</td>
                           <td className="py-4 px-4">{pkg.price_double ? `PKR ${pkg.price_double.toLocaleString()}` : 'N/A'}</td>
                           <td className="py-4 px-4">{pkg.price_single ? `PKR ${pkg.price_single.toLocaleString()}` : 'N/A'}</td>
+                          <td className="py-4 px-4 text-center">
+                            <button
+                              onClick={() => handlePkgToggleActive(pkg)}
+                              className={`px-2 py-0.5 rounded text-[10px] font-bold border transition-all ${
+                                pkg.isActive
+                                  ? 'bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/20'
+                                  : 'bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20'
+                              }`}
+                            >
+                              {pkg.isActive ? 'Active' : 'Inactive'}
+                            </button>
+                          </td>
                           <td className="py-4 px-4 text-center">
                             <div className="flex items-center justify-center gap-2">
                               <button
@@ -4061,13 +4288,14 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
                       <th className="py-3.5 px-4">Role & Designation</th>
                       <th className="py-3.5 px-4">Office</th>
                       <th className="py-3.5 px-4">Contact Details</th>
+                      <th className="py-3.5 px-4 text-center">Status</th>
                       <th className="py-3.5 px-4 text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-800 text-gray-300">
                     {(teamMembers.length > 0 ? teamMembers : fallbackTeam).length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="py-8 text-center text-gray-500">No team members loaded.</td>
+                        <td colSpan={6} className="py-8 text-center text-gray-500">No team members loaded.</td>
                       </tr>
                     ) : (
                       (teamMembers.length > 0 ? teamMembers : fallbackTeam)
@@ -4102,6 +4330,19 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
                                   </div>
                                 ))}
                               </div>
+                            </td>
+                            <td className="py-4 px-4 text-center">
+                              <button
+                                onClick={() => handleMemberToggleActive(m)}
+                                disabled={!m._id}
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold border transition-all ${
+                                  m.isActive !== false
+                                    ? 'bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/20'
+                                    : 'bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20'
+                                } ${!m._id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              >
+                                {m.isActive !== false ? 'Active' : 'Inactive'}
+                              </button>
                             </td>
                             <td className="py-4 px-4 text-center">
                               <div className="flex items-center justify-center gap-2">
@@ -4307,6 +4548,19 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
                 />
               </div>
 
+              <div className="flex items-center gap-2 mt-2">
+                <input
+                  type="checkbox"
+                  id="member-active-checkbox"
+                  checked={memberForm.isActive}
+                  onChange={(e) => setMemberForm(prev => ({ ...prev, isActive: e.target.checked }))}
+                  className="rounded border-gray-800 bg-[#05080a] text-[#c5a059] focus:ring-0 w-4 h-4 cursor-pointer"
+                />
+                <label htmlFor="member-active-checkbox" className="text-xs font-bold text-gray-300 cursor-pointer">
+                  Show on Public Homepage (Active Status)
+                </label>
+              </div>
+
               <button
                 type="submit"
                 className="w-full py-3 bg-[#c5a059] text-[#05080a] font-bold rounded mt-4 hover:bg-[#a6823c] transition-all text-xs uppercase tracking-wider"
@@ -4491,6 +4745,19 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
                     />
                   </div>
                 </div>
+              </div>
+
+              <div className="flex items-center gap-2 mt-4 pt-3 border-t border-gray-800">
+                <input
+                  type="checkbox"
+                  id="pkg-active-checkbox"
+                  checked={pkgForm.isActive}
+                  onChange={(e) => setPkgForm(prev => ({ ...prev, isActive: e.target.checked }))}
+                  className="rounded border-gray-800 bg-[#05080a] text-[#c5a059] focus:ring-0 w-4 h-4 cursor-pointer"
+                />
+                <label htmlFor="pkg-active-checkbox" className="text-xs font-bold text-gray-300 cursor-pointer">
+                  Activate Package (Show on Public Portal)
+                </label>
               </div>
 
               <button
