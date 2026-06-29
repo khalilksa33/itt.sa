@@ -42,73 +42,22 @@ jobs:
           cache-to: type=gha,mode=max
 
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: build-and-push
-    env:
-      SSH_HOST: ssh-erp.iicc.sa
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Install cloudflared
+      - name: Sync Code to Local Dev Directory
         run: |
-          curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
-          sudo dpkg -i cloudflared.deb
+          mkdir -p ~/itt.sa-dev
+          rsync -av --delete --exclude='.git' --exclude='node_modules' ./ ~/itt.sa-dev/
 
-      - name: Secrets Diagnostic
-        env:
-          CF_CLIENT_ID: ${{ secrets.CF_CLIENT_ID }}
-          CF_CLIENT_SECRET: ${{ secrets.CF_CLIENT_SECRET }}
-          SSH_KEY: ${{ secrets.SSH_KEY }}
-          SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
+      - name: Restart Docker Compose Services
         run: |
-          echo "=== Secrets Diagnostic ==="
-          if [ -z "$CF_CLIENT_ID" ]; then echo "CF_CLIENT_ID is EMPTY"; else echo "CF_CLIENT_ID is set (length: ${#CF_CLIENT_ID})"; fi
-          if [ -z "$CF_CLIENT_SECRET" ]; then echo "CF_CLIENT_SECRET is EMPTY"; else echo "CF_CLIENT_SECRET is set (length: ${#CF_CLIENT_SECRET})"; fi
-          if [ -z "$SSH_KEY" ]; then echo "SSH_KEY is EMPTY"; else echo "SSH_KEY is set (length: ${#SSH_KEY})"; fi
-          if [ -z "$SSH_USERNAME" ]; then echo "SSH_USERNAME is EMPTY"; else echo "SSH_USERNAME is set (length: ${#SSH_USERNAME})"; fi
-          echo "========================="
-
-
-      - name: Set up SSH Key and Cloudflare Tunnel Configuration
-        env:
-          SSH_KEY: ${{ secrets.SSH_KEY }}
-        run: |
-          mkdir -p ~/.ssh
-          echo "$SSH_KEY" | tr -d '\r' > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          
-          cat <<EOF >> ~/.ssh/config
-          Host ${{ env.SSH_HOST }}
-              ProxyCommand cloudflared access ssh --hostname %h
-              StrictHostKeyChecking no
-              UserKnownHostsFile /dev/null
-          EOF
-
-      - name: Prepare Host Directory
-        env:
-          TUNNEL_SERVICE_TOKEN_ID: ${{ secrets.CF_CLIENT_ID }}
-          TUNNEL_SERVICE_TOKEN_SECRET: ${{ secrets.CF_CLIENT_SECRET }}
-        run: |
-          ssh -i ~/.ssh/id_rsa -p ${{ secrets.SSH_PORT || '22' }} ${{ secrets.SSH_USERNAME }}@${{ env.SSH_HOST }} "mkdir -p ~/itt.sa-dev"
-
-      - name: Sync Code to Host A
-        env:
-          TUNNEL_SERVICE_TOKEN_ID: ${{ secrets.CF_CLIENT_ID }}
-          TUNNEL_SERVICE_TOKEN_SECRET: ${{ secrets.CF_CLIENT_SECRET }}
-        run: |
-          rsync -avz -e "ssh -i ~/.ssh/id_rsa -p ${{ secrets.SSH_PORT || '22' }}" --exclude='.git' --exclude='node_modules' ./ ${{ secrets.SSH_USERNAME }}@${{ env.SSH_HOST }}:~/itt.sa-dev/
-
-      - name: Run Remote Deployment Command
-        env:
-          TUNNEL_SERVICE_TOKEN_ID: ${{ secrets.CF_CLIENT_ID }}
-          TUNNEL_SERVICE_TOKEN_SECRET: ${{ secrets.CF_CLIENT_SECRET }}
-        run: |
-          ssh -i ~/.ssh/id_rsa -p ${{ secrets.SSH_PORT || '22' }} ${{ secrets.SSH_USERNAME }}@${{ env.SSH_HOST }} "
-            cd ~/itt.sa-dev
-            echo \"${{ secrets.GITHUB_TOKEN }}\" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            docker compose down || true
-            docker compose pull
-            docker compose up -d --remove-orphans
-          "
+          cd ~/itt.sa-dev
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          docker compose down || true
+          docker compose pull
+          docker compose up -d --remove-orphans
