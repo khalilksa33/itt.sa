@@ -718,7 +718,7 @@ export default function App() {
       {/* ROUTES CONFIGURATION */}
       <Routes>
         <Route path="/" element={<HomeView navigateTo={navigateTo} handleFormChange={handleFormChange} handleInquirySubmit={handleInquirySubmit} formData={formData} submitStatus={submitStatus} teamMembers={teamMembers} fallbackTeam={fallbackTeam} />} />
-        <Route path="/portal" element={<PortalView loading={loading} packages={packages} selectedCity={selectedCity} setSelectedCity={setSelectedCity} searchQuery={searchQuery} setSearchQuery={setSearchQuery} BACKEND_URL={BACKEND_URL} openBookingModal={openBookingModal} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} formatConvertedPrice={formatConvertedPrice} formatShortPrice={formatShortPrice} />} />
+        <Route path="/portal" element={<PortalView loading={loading} packages={packages} selectedCity={selectedCity} setSelectedCity={setSelectedCity} searchQuery={searchQuery} setSearchQuery={setSearchQuery} openBookingModal={openBookingModal} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} formatConvertedPrice={formatConvertedPrice} formatShortPrice={formatShortPrice} />} />
         <Route path="/partner" element={<PartnerRegisterView BACKEND_URL={BACKEND_URL} />} />
         <Route path="/partner/dashboard" element={<PartnerDashboardView BACKEND_URL={BACKEND_URL} exchangeRates={exchangeRates} />} />
         <Route path="/customer/portal" element={<CustomerPortalView BACKEND_URL={BACKEND_URL} exchangeRates={exchangeRates} />} />
@@ -1634,7 +1634,7 @@ function HomeView({ navigateTo, handleFormChange, handleInquirySubmit, formData,
   );
 }
 
-function PortalView({ loading, packages, selectedCity, setSelectedCity, searchQuery, setSearchQuery, BACKEND_URL, openBookingModal, displayCurrency, setDisplayCurrency, formatConvertedPrice, formatShortPrice }: any) {
+function PortalView({ loading, packages, selectedCity, setSelectedCity, searchQuery, setSearchQuery, openBookingModal, displayCurrency, setDisplayCurrency, formatConvertedPrice, formatShortPrice }: any) {
   const navigate = useNavigate();
 
   return (
@@ -1745,85 +1745,71 @@ function PortalView({ loading, packages, selectedCity, setSelectedCity, searchQu
             }
 
             return (
-              <div className="grid md:grid-cols-2 gap-8 animate-fadeIn">
+              <div className="grid md:grid-cols-3 gap-6 animate-fadeIn">
                 {filtered.map((pkg: any, index: number) => {
-                  const imageSrc = pkg.image ? (pkg.image.startsWith('http') ? pkg.image : BACKEND_URL + pkg.image) : '';
                   return (
                     <div key={pkg._id || index} className="bg-[#0e1217] rounded-xl overflow-hidden border border-[#c5a059]/10 hover:border-[#c5a059]/20 transition-all flex flex-col group shadow-lg">
-                      <div className="relative h-64 w-full overflow-hidden">
-                        {imageSrc ? (
-                          <img
-                            src={imageSrc}
-                            alt={pkg.title}
-                            className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-[#0e1217] via-[#05080a] to-[#0e1217] flex flex-col items-center justify-center border-b border-[#c5a059]/10 relative">
-                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(197,160,89,0.05)_0%,transparent_70%)]"></div>
-                            <span className="text-[#c5a059]/30 text-5xl mb-3"><i className="fa-solid fa-kaaba"></i></span>
-                            <span className="text-[10px] text-gray-500 uppercase tracking-widest font-mono">Premium Sacred Package</span>
-                          </div>
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#0e1217] via-transparent to-transparent"></div>
-                        <div className="absolute top-4 left-4 px-3 py-1 bg-[#05080a]/95 border border-[#c5a059]/30 text-[#c5a059] text-xs font-bold rounded uppercase tracking-wider">
-                          {pkg.duration}
-                        </div>
-                        <div className="absolute bottom-4 right-4 px-4 py-1.5 bg-[#c5a059] text-[#05080a] text-sm font-extrabold rounded shadow">
-                          Starts {formatConvertedPrice(pkg.price_sharing || (pkg.price ? parseInt(pkg.price.replace(/[^0-9]/g, '')) : 0), displayCurrency)}
-                        </div>
-                      </div>
-
-                      <div className="p-8 flex flex-col flex-grow">
-                        <div className="flex justify-between items-center gap-2 mb-2">
-                          <h3 className="text-xl font-bold text-white">{pkg.title}</h3>
-                          <span className="px-2.5 py-1 bg-[#c5a059]/10 border border-[#c5a059]/20 text-[#c5a059] rounded text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
-                            <i className="fa-solid fa-plane-departure mr-1.5"></i> From {pkg.city}
+                      <div className="p-6 flex flex-col flex-grow">
+                        <div className="flex justify-between items-start gap-2 mb-3">
+                          <span className="px-2 py-0.5 bg-[#c5a059]/10 border border-[#c5a059]/20 text-[#c5a059] rounded text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
+                            {pkg.duration}
+                          </span>
+                          <span className="px-2 py-0.5 bg-gray-800/80 text-gray-300 rounded text-[10px] font-semibold tracking-wide whitespace-nowrap">
+                            <i className="fa-solid fa-plane-departure mr-1"></i> {pkg.city}
                           </span>
                         </div>
-                        <p className="text-gray-400 text-sm leading-relaxed mb-6">{pkg.description}</p>
 
-                        <div className="bg-[#05080a]/60 border border-gray-800/80 p-4 rounded-lg flex flex-col gap-2.5 mb-6">
-                          <div className="flex items-center gap-3 text-xs text-gray-300">
-                            <span className="text-[#c5a059]"><i className="fa-solid fa-kaaba"></i></span>
-                            <span>Makkah Accommodation: <strong>{pkg.hotels.makkah}</strong></span>
-                          </div>
-                          <div className="flex items-center gap-3 text-xs text-gray-300">
-                            <span className="text-[#c5a059]"><i className="fa-solid fa-mosque"></i></span>
-                            <span>Madinah Accommodation: <strong>{pkg.hotels.madinah}</strong></span>
+                        <div className="mb-3">
+                          <h3 className="text-lg font-extrabold text-white group-hover:text-[#c5a059] transition-colors leading-tight mb-1">{pkg.title}</h3>
+                          <div className="text-xs text-gray-500 font-semibold uppercase tracking-wider">
+                            Starts <span className="text-[#c5a059] font-extrabold text-sm">{formatConvertedPrice(pkg.price_sharing || (pkg.price ? parseInt(pkg.price.replace(/[^0-9]/g, '')) : 0), displayCurrency)}</span>
                           </div>
                         </div>
 
-                        <div className="mb-6">
-                          <h4 className="text-xs font-bold uppercase text-[#c5a059] tracking-wider mb-2.5">Package Inclusions</h4>
-                          <div className="grid grid-cols-2 gap-2 text-[11px] text-gray-400">
-                            {pkg.features ? pkg.features.slice(0, 6).map((feat: string, fIdx: number) => (
-                              <div key={fIdx} className="flex items-center gap-2">
-                                <span className="text-green-500"><i className="fa-solid fa-circle-check text-[9px]"></i></span>
+                        <p className="text-gray-400 text-xs leading-relaxed mb-4 line-clamp-2 h-8">{pkg.description}</p>
+
+                        <div className="bg-[#05080a]/60 border border-gray-800/80 p-3 rounded-lg flex flex-col gap-2 mb-4">
+                          <div className="flex items-center gap-2.5 text-[11px] text-gray-300">
+                            <span className="text-[#c5a059]"><i className="fa-solid fa-kaaba"></i></span>
+                            <span className="truncate">Makkah: <strong>{pkg.hotels.makkah}</strong></span>
+                          </div>
+                          <div className="flex items-center gap-2.5 text-[11px] text-gray-300">
+                            <span className="text-[#c5a059]"><i className="fa-solid fa-mosque"></i></span>
+                            <span className="truncate">Madinah: <strong>{pkg.hotels.madinah}</strong></span>
+                          </div>
+                        </div>
+
+                        <div className="mb-4">
+                          <h4 className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider mb-2">Package Inclusions</h4>
+                          <div className="grid grid-cols-2 gap-1.5 text-[10px] text-gray-400">
+                            {pkg.features ? pkg.features.slice(0, 4).map((feat: string, fIdx: number) => (
+                              <div key={fIdx} className="flex items-center gap-1.5">
+                                <span className="text-green-500"><i className="fa-solid fa-circle-check text-[8px]"></i></span>
                                 <span className="truncate">{feat}</span>
                               </div>
                             )) : (
                               <>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-green-500"><i className="fa-solid fa-circle-check text-[9px]"></i></span>
-                                  <span>Airline Flights Included</span>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-green-500"><i className="fa-solid fa-circle-check text-[8px]"></i></span>
+                                  <span>Flights Included</span>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-green-500"><i className="fa-solid fa-circle-check text-[9px]"></i></span>
-                                  <span>Umrah Visa & Insurance</span>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-green-500"><i className="fa-solid fa-circle-check text-[8px]"></i></span>
+                                  <span>Visa & Insurance</span>
                                 </div>
                               </>
                             )}
                           </div>
                         </div>
 
-                        <div className="border border-gray-800 rounded-lg overflow-hidden mb-6 text-xs bg-[#05080a]/30">
-                          <div className="bg-gray-900/40 grid grid-cols-4 py-2 px-3 text-gray-400 font-bold border-b border-gray-800 text-center">
-                            <div>Double</div>
-                            <div>Triple</div>
-                            <div>Quad</div>
-                            <div>Sharing</div>
+                        <div className="border border-gray-800 rounded-lg overflow-hidden mb-5 text-[11px] bg-[#05080a]/30">
+                          <div className="bg-gray-900/40 grid grid-cols-4 py-1.5 px-2 text-gray-400 font-bold border-b border-gray-800 text-center">
+                            <div>Db</div>
+                            <div>Tr</div>
+                            <div>Qd</div>
+                            <div>Sh</div>
                           </div>
-                          <div className="grid grid-cols-4 py-2.5 px-3 text-center text-[#c5a059] font-bold">
+                          <div className="grid grid-cols-4 py-1.5 px-2 text-center text-[#c5a059] font-bold">
                             <div>{pkg.price_double ? formatShortPrice(pkg.price_double, displayCurrency) : 'N/A'}</div>
                             <div>{pkg.price_triple ? formatShortPrice(pkg.price_triple, displayCurrency) : 'N/A'}</div>
                             <div>{pkg.price_quad ? formatShortPrice(pkg.price_quad, displayCurrency) : 'N/A'}</div>
@@ -1833,9 +1819,9 @@ function PortalView({ loading, packages, selectedCity, setSelectedCity, searchQu
 
                         <button
                           onClick={() => openBookingModal(pkg)}
-                          className="mt-auto w-full py-3 bg-[#c5a059] text-[#05080a] font-bold rounded-lg hover:bg-[#b48e47] transition-all flex items-center justify-center gap-2 shadow shadow-[#c5a059]/10"
+                          className="mt-auto w-full py-2.5 bg-[#c5a059] text-[#05080a] font-bold rounded-lg hover:bg-[#b48e47] transition-all flex items-center justify-center gap-2 shadow shadow-[#c5a059]/10 text-xs"
                         >
-                          Book & Checkout Online <i className="fa-solid fa-cart-shopping"></i>
+                          Book Online <i className="fa-solid fa-cart-shopping"></i>
                         </button>
                       </div>
                     </div>
