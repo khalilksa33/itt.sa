@@ -45,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-and-push
     env:
-      SSH_HOST: ssh-erp.26i.uk
+      SSH_HOST: ssh-erp.iicc.sa
 
     steps:
       - name: Checkout Code
