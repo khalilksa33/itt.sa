@@ -53,7 +53,8 @@ const UmrahPackageSchema = new mongoose.Schema({
   price_quad: { type: Number },
   price_triple: { type: Number },
   price_double: { type: Number },
-  price_single: { type: Number }
+  price_single: { type: Number },
+  isActive: { type: Boolean, default: false }
 });
 
 const UmrahPackage = mongoose.model('UmrahPackage', UmrahPackageSchema);
@@ -113,6 +114,7 @@ const TeamMemberSchema = new mongoose.Schema({
   office: { type: String, required: true },
   emails: [{ type: String }],
   phones: [{ type: String }],
+  isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -145,7 +147,8 @@ mongoose.connect(process.env.MONGODB_URI)
             designation: "CEO",
             office: "Lahore Office",
             emails: ["ceo@itt.sa", "support@itt.sa"],
-            phones: ["+92 300-0860633", "+966 50-086-0633"]
+            phones: ["+92 300-0860633", "+966 50-086-0633"],
+            isActive: true
           },
           {
             name: "Ahmad Hasan Marjan",
@@ -153,7 +156,8 @@ mongoose.connect(process.env.MONGODB_URI)
             designation: "Executive Director",
             office: "Lahore Office",
             emails: ["director@itt.sa"],
-            phones: ["+966 50-086-1820"]
+            phones: ["+966 50-086-1820"],
+            isActive: true
           },
           {
             name: "Mr. Muhammad Atif Zafar",
@@ -161,7 +165,8 @@ mongoose.connect(process.env.MONGODB_URI)
             designation: "Manager Operations",
             office: "Madinah Al-Munawarah Head Office",
             emails: ["operations@itt.sa"],
-            phones: ["+966 54 426 6932"]
+            phones: ["+966 54 426 6932"],
+            isActive: true
           },
           {
             name: "Syed Suleman Haider",
@@ -169,9 +174,13 @@ mongoose.connect(process.env.MONGODB_URI)
             designation: "HR Manager",
             office: "Head Office",
             emails: ["hr@itt.sa"],
-            phones: ["+966 50 685 8795"]
+            phones: ["+966 50 685 8795"],
+            isActive: true
           }
         ]);
+      } else {
+        // Ensure existing members have active property
+        await TeamMember.updateMany({ isActive: { $exists: false } }, { isActive: true });
       }
     } catch (err) {
       console.error('Could not seed team members on startup:', err.message);
@@ -193,11 +202,19 @@ app.get('/api/team', async (req, res) => {
 
 app.post('/api/team', async (req, res) => {
   try {
-    const { name, role, designation, office, emails, phones } = req.body;
+    const { name, role, designation, office, emails, phones, isActive } = req.body;
     if (!name || !role || !designation || !office) {
       return res.status(400).json({ error: 'Name, role, designation, and office are required.' });
     }
-    const newMember = new TeamMember({ name, role, designation, office, emails, phones });
+    const newMember = new TeamMember({
+      name,
+      role,
+      designation,
+      office,
+      emails,
+      phones,
+      isActive: isActive === undefined ? true : isActive
+    });
     await newMember.save();
     res.status(201).json({ success: true, member: newMember });
   } catch (error) {
@@ -207,10 +224,14 @@ app.post('/api/team', async (req, res) => {
 
 app.put('/api/team/:id', async (req, res) => {
   try {
-    const { name, role, designation, office, emails, phones } = req.body;
+    const { name, role, designation, office, emails, phones, isActive } = req.body;
+    const updateData = { name, role, designation, office, emails, phones };
+    if (isActive !== undefined) {
+      updateData.isActive = isActive;
+    }
     const updatedMember = await TeamMember.findByIdAndUpdate(
       req.params.id,
-      { name, role, designation, office, emails, phones },
+      updateData,
       { new: true }
     );
     if (!updatedMember) return res.status(404).json({ error: 'Team member not found.' });
@@ -584,7 +605,7 @@ app.put('/api/packages/:code/rates', async (req, res) => {
 // 11b. Create new package
 app.post('/api/packages', async (req, res) => {
   try {
-    const { title, city, price, duration, description, hotels, features, image, price_sharing, price_quad, price_triple, price_double, price_single } = req.body;
+    const { title, city, price, duration, description, hotels, features, image, price_sharing, price_quad, price_triple, price_double, price_single, isActive } = req.body;
     if (!title || !city || !duration || !hotels || !hotels.makkah || !hotels.madinah) {
       return res.status(400).json({ error: 'Title, departure city, duration, Makkah hotel, and Madinah hotel are required.' });
     }
@@ -601,7 +622,8 @@ app.post('/api/packages', async (req, res) => {
       price_quad: price_quad || 0,
       price_triple: price_triple || 0,
       price_double: price_double || 0,
-      price_single: price_single || 0
+      price_single: price_single || 0,
+      isActive: isActive === undefined ? false : isActive
     });
     await newPkg.save();
     res.status(201).json({ success: true, package: newPkg });
@@ -613,7 +635,7 @@ app.post('/api/packages', async (req, res) => {
 // 11c. Update full package details
 app.put('/api/packages/:id', async (req, res) => {
   try {
-    const { title, city, price, duration, description, hotels, features, image, price_sharing, price_quad, price_triple, price_double, price_single } = req.body;
+    const { title, city, price, duration, description, hotels, features, image, price_sharing, price_quad, price_triple, price_double, price_single, isActive } = req.body;
     const updateData = {
       title,
       city,
@@ -629,6 +651,9 @@ app.put('/api/packages/:id', async (req, res) => {
       price_double,
       price_single
     };
+    if (isActive !== undefined) {
+      updateData.isActive = isActive;
+    }
     const updatedPkg = await UmrahPackage.findByIdAndUpdate(req.params.id, updateData, { new: true });
     if (!updatedPkg) return res.status(404).json({ error: 'Package not found.' });
     res.json({ success: true, package: updatedPkg });

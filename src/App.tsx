@@ -70,7 +70,7 @@ const fallbackTeam: TeamMember[] = [
     role: "Executive Director",
     designation: "Executive Director",
     office: "Lahore Office",
-    emails: ["director@itt.sa"],
+    emails: ["m@iicc.sa"],
     phones: ["+966 50-086-1820"],
     isActive: true
   },
@@ -79,7 +79,7 @@ const fallbackTeam: TeamMember[] = [
     role: "Operations",
     designation: "Manager Operations",
     office: "Madinah Al-Munawarah Head Office",
-    emails: ["operations@itt.sa"],
+    emails: ["z@itt.sa"],
     phones: ["+966 54 426 6932"],
     isActive: true
   },
@@ -88,7 +88,7 @@ const fallbackTeam: TeamMember[] = [
     role: "Human Resources",
     designation: "HR Manager",
     office: "Head Office",
-    emails: ["hr@itt.sa"],
+    emails: ["hr@iicc.sa"],
     phones: ["+966 50 685 8795"],
     isActive: true
   }
@@ -775,7 +775,7 @@ export default function App() {
           <a href="/" onClick={(e) => { e.preventDefault(); navigateTo('/'); }} className="flex items-center gap-3">
             <span className="text-[#c5a059] text-2.5xl animate-spin-slow inline-block"><i className="fa-solid fa-compass"></i></span>
             <span className="text-xl font-bold tracking-wide text-white uppercase">
-              Travel & <span className="text-[#c5a059] font-serif capitalize">Tourism Agency</span>
+              Insight Travel & <span className="text-[#c5a059] font-serif capitalize">Tourism</span>
             </span>
           </a>
 
@@ -888,7 +888,7 @@ export default function App() {
             </span>
           </div>
           <p className="text-center">
-            &copy; 2026 Travel & Tourism Agency. All Rights Reserved.
+            &copy; 2026 Insight Travel & Tourism. All Rights Reserved.
           </p>
           <div className="flex gap-4">
             <a href="/partner" onClick={(e) => { e.preventDefault(); navigateTo('/partner'); }} className="hover:text-[#c5a059]">Partner Registration</a>
@@ -911,7 +911,7 @@ export default function App() {
         >
           <i className="fa-solid fa-palette text-lg"></i>
         </button>
-        
+
         {themeMenuOpen && (
           <div className="absolute bottom-16 right-0 w-52 bg-[#0e1217]/95 border border-[#c5a059]/20 rounded-xl shadow-2xl backdrop-blur-md p-4 animate-fadeIn flex flex-col gap-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-[#c5a059] border-b border-[#c5a059]/10 pb-2">Select Theme</h4>
@@ -929,9 +929,8 @@ export default function App() {
                     localStorage.setItem('theme', t.id);
                     setThemeMenuOpen(false);
                   }}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs transition-all hover:bg-[#c5a059]/10 ${
-                    theme === t.id ? 'bg-[#c5a059]/20 text-white font-bold' : 'text-gray-400 hover:text-white'
-                  }`}
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs transition-all hover:bg-[#c5a059]/10 ${theme === t.id ? 'bg-[#c5a059]/20 text-white font-bold' : 'text-gray-400 hover:text-white'
+                    }`}
                 >
                   <span
                     className="w-3.5 h-3.5 rounded-full border border-white/10"
@@ -1001,8 +1000,8 @@ export default function App() {
                         type="button"
                         onClick={() => setRoomingType(room.type as any)}
                         className={`py-3 px-1.5 rounded border text-center transition-all ${roomingType === room.type
-                            ? 'border-[#c5a059] bg-[#c5a059]/10 text-white font-bold'
-                            : 'border-gray-800 bg-[#05080a]/60 text-gray-400 hover:border-gray-700'
+                          ? 'border-[#c5a059] bg-[#c5a059]/10 text-white font-bold'
+                          : 'border-gray-800 bg-[#05080a]/60 text-gray-400 hover:border-gray-700'
                           }`}
                       >
                         <div className="text-xs">{room.label}</div>
@@ -1026,8 +1025,8 @@ export default function App() {
                         type="button"
                         onClick={() => setPackageMode(opt.mode as any)}
                         className={`py-3 px-3 rounded-lg border text-left transition-all ${packageMode === opt.mode
-                            ? 'border-[#c5a059] bg-[#c5a059]/10 text-white font-bold'
-                            : 'border-gray-800 bg-[#05080a]/60 text-gray-400 hover:border-gray-700'
+                          ? 'border-[#c5a059] bg-[#c5a059]/10 text-white font-bold'
+                          : 'border-gray-800 bg-[#05080a]/60 text-gray-400 hover:border-gray-700'
                           }`}
                       >
                         <div className="text-xs font-bold text-white">{opt.label}</div>
@@ -1075,7 +1074,7 @@ export default function App() {
                 {/* 3. Departure Travel Date (Gregorian & Hijri Calendars) */}
                 <div>
                   <label className="block text-xs font-bold uppercase text-[#c5a059] tracking-wider mb-2">3. Select Departure Travel Date (Gregorian & Hijri)</label>
-                  
+
                   <div className="bg-[#05080a] border border-gray-800 rounded-lg p-4 flex flex-col gap-4">
                     <div className="flex justify-between items-center border-b border-gray-800 pb-2">
                       <button
@@ -1128,20 +1127,20 @@ export default function App() {
                           const month = currentCalDate.getMonth();
                           const firstDayIndex = new Date(year, month, 1).getDay();
                           const totalDays = new Date(year, month + 1, 0).getDate();
-                          
+
                           const cells = [];
-                          
+
                           // Offset days
                           for (let i = 0; i < firstDayIndex; i++) {
                             cells.push(<div key={`empty-${i}`} className="p-2"></div>);
                           }
-                          
+
                           // Days
                           for (let d = 1; d <= totalDays; d++) {
                             const cellDate = new Date(year, month, d);
                             const cellDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                             const isSelected = travelDate === cellDateStr;
-                            
+
                             // Convert to Hijri Day Number
                             let hijriDay = '';
                             try {
@@ -1156,11 +1155,10 @@ export default function App() {
                                 key={`day-${d}`}
                                 type="button"
                                 onClick={() => setTravelDate(cellDateStr)}
-                                className={`p-1 rounded border flex flex-col items-center justify-between transition-all aspect-square min-h-[40px] ${
-                                  isSelected 
-                                    ? 'bg-[#c5a059] border-[#c5a059] text-[#05080a]' 
-                                    : 'bg-[#0e1217] border-gray-800/80 text-white hover:border-gray-700'
-                                }`}
+                                className={`p-1 rounded border flex flex-col items-center justify-between transition-all aspect-square min-h-[40px] ${isSelected
+                                  ? 'bg-[#c5a059] border-[#c5a059] text-[#05080a]'
+                                  : 'bg-[#0e1217] border-gray-800/80 text-white hover:border-gray-700'
+                                  }`}
                               >
                                 <span className="text-[11px] font-bold leading-none">{d}</span>
                                 <span className={`text-[8px] leading-none mt-1 font-mono font-bold ${isSelected ? 'text-[#05080a]/85' : 'text-[#c5a059]'}`}>
@@ -1169,7 +1167,7 @@ export default function App() {
                               </button>
                             );
                           }
-                          
+
                           return cells;
                         })()}
                       </div>
@@ -1185,7 +1183,7 @@ export default function App() {
                           {(() => {
                             try {
                               return new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(travelDate));
-                            } catch(e) {
+                            } catch (e) {
                               return '';
                             }
                           })()}
@@ -1656,6 +1654,42 @@ function HomeView({ navigateTo, handleFormChange, handleInquirySubmit, formData,
         </div>
       </section>
 
+      {/* HAJJ & UMRAH POLICY SECTION */}
+      <section id="policy" className="py-24 bg-[#0e1217]">
+        <div className="container mx-auto px-6 max-w-5xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-serif text-white font-bold mb-4">Hajj & Umrah Policy</h2>
+            <div className="w-16 h-0.5 bg-[#c5a059] mx-auto mb-6"></div>
+            <p className="text-gray-400 text-sm max-w-2xl mx-auto">
+              Please review our comprehensive Hajj and Umrah policy below. You can also download the document for your convenience.
+            </p>
+          </div>
+          
+          <div className="bg-[#05080a] border border-[#c5a059]/20 rounded-xl p-4 sm:p-8 shadow-2xl relative">
+            <div className="w-full h-[600px] rounded border border-gray-800 overflow-hidden mb-8">
+              <iframe 
+                src={`${BACKEND_URL}/uploaded-files/umrah%20policy/UMRAH%20POLICY.pdf`} 
+                className="w-full h-full"
+                title="Hajj and Umrah Policy"
+              ></iframe>
+            </div>
+            
+            <div className="text-center">
+              <a 
+                href={`${BACKEND_URL}/uploaded-files/umrah%20policy/UMRAH%20POLICY.pdf`}
+                download
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-3 px-8 py-4 bg-[#c5a059] text-[#05080a] font-bold rounded hover:bg-[#b48e47] transition-all"
+              >
+                <i className="fa-solid fa-download"></i>
+                Download Policy PDF
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* TEAM SECTION */}
       <section id="team" className="py-24 bg-[#05080a]">
         <div className="container mx-auto px-6 max-w-7xl">
@@ -1712,6 +1746,7 @@ function HomeView({ navigateTo, handleFormChange, handleInquirySubmit, formData,
             <div>
               <p className="text-white font-bold text-sm">Chauhdry Muhammad Aslam</p>
               <p className="text-[#c5a059] text-xs">Chairman, Insight Travel & Tourism</p>
+              <p className="text-[#c5a059] text-xs">+966 50 086 1820, a@iicc.sa</p>
             </div>
           </div>
         </div>
@@ -1732,11 +1767,11 @@ function HomeView({ navigateTo, handleFormChange, handleInquirySubmit, formData,
               </div>
               <div className="flex items-center gap-4 text-sm text-gray-300">
                 <span className="text-[#c5a059] text-xl"><i className="fa-solid fa-envelope"></i></span>
-                <span>info@agency.com</span>
+                <span>info@itt.sa</span>
               </div>
               <div className="flex items-center gap-4 text-sm text-gray-300">
                 <span className="text-[#c5a059] text-xl"><i className="fa-solid fa-phone"></i></span>
-                <span>+966 50 000 0000</span>
+                <span>+966 50 086 1820</span>
               </div>
             </div>
           </div>
@@ -1801,8 +1836,8 @@ function HomeView({ navigateTo, handleFormChange, handleInquirySubmit, formData,
 
               {submitStatus.type && (
                 <div className={`p-4 rounded text-sm ${submitStatus.type === 'success' ? 'bg-green-500/10 text-green-400 border border-green-500/20' :
-                    submitStatus.type === 'error' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
-                      'bg-[#c5a059]/10 text-[#c5a059] border border-[#c5a059]/20'
+                  submitStatus.type === 'error' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
+                    'bg-[#c5a059]/10 text-[#c5a059] border border-[#c5a059]/20'
                   }`}>
                   {submitStatus.message}
                 </div>
@@ -1865,7 +1900,7 @@ function PortalView({ loading, packages, selectedCity, setSelectedCity, searchQu
                 className={`px-4 py-1.5 rounded text-xs font-bold transition-all ${displayCurrency === curr
                   ? 'bg-[#c5a059] text-[#05080a]'
                   : 'bg-transparent text-gray-400 border border-gray-800 hover:border-gray-700 hover:text-white'
-                }`}
+                  }`}
               >
                 {curr}
               </button>
@@ -1881,8 +1916,8 @@ function PortalView({ loading, packages, selectedCity, setSelectedCity, searchQu
                 key={city}
                 onClick={() => setSelectedCity(city)}
                 className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider border transition-all ${selectedCity === city
-                    ? 'bg-[#c5a059] text-[#05080a] border-[#c5a059] shadow-lg shadow-[#c5a059]/15'
-                    : 'bg-[#05080a] text-gray-400 border-gray-800 hover:border-gray-700 hover:text-white'
+                  ? 'bg-[#c5a059] text-[#05080a] border-[#c5a059] shadow-lg shadow-[#c5a059]/15'
+                  : 'bg-[#05080a] text-gray-400 border-gray-800 hover:border-gray-700 hover:text-white'
                   }`}
               >
                 {city === 'All' ? 'All Cities' : `From ${city}`}
@@ -2890,8 +2925,8 @@ function DashboardView({ dashboardStats, bookings, inquiries, exchangeRates, sub
             <button
               onClick={() => setViewMode('overview')}
               className={`px-5 py-2 rounded font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${viewMode === 'overview'
-                  ? 'bg-[#c5a059] text-[#05080a]'
-                  : 'text-gray-400 hover:text-white'
+                ? 'bg-[#c5a059] text-[#05080a]'
+                : 'text-gray-400 hover:text-white'
                 }`}
             >
               <i className="fa-solid fa-chart-line"></i> BI Overview
@@ -2899,8 +2934,8 @@ function DashboardView({ dashboardStats, bookings, inquiries, exchangeRates, sub
             <button
               onClick={() => setViewMode('budget')}
               className={`px-5 py-2 rounded font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${viewMode === 'budget'
-                  ? 'bg-[#c5a059] text-[#05080a]'
-                  : 'text-gray-400 hover:text-white'
+                ? 'bg-[#c5a059] text-[#05080a]'
+                : 'text-gray-400 hover:text-white'
                 }`}
             >
               <i className="fa-solid fa-compass"></i> Budget & Milestones
@@ -2908,8 +2943,8 @@ function DashboardView({ dashboardStats, bookings, inquiries, exchangeRates, sub
             <button
               onClick={() => setViewMode('partners')}
               className={`px-5 py-2 rounded font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${viewMode === 'partners'
-                  ? 'bg-[#c5a059] text-[#05080a]'
-                  : 'text-gray-400 hover:text-white'
+                ? 'bg-[#c5a059] text-[#05080a]'
+                : 'text-gray-400 hover:text-white'
                 }`}
             >
               <i className="fa-solid fa-user-group"></i> Partner & JV Analytics
@@ -3272,19 +3307,19 @@ function DashboardView({ dashboardStats, bookings, inquiries, exchangeRates, sub
               <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6 relative">
                 {milestones.map((m) => (
                   <div key={m.id} className={`p-4 rounded-lg border relative flex flex-col justify-between transition-all ${m.isCompleted
-                      ? 'bg-green-500/5 border-green-500/20 text-gray-300'
-                      : m.current
-                        ? 'bg-[#c5a059]/10 border-[#c5a059] text-white'
-                        : 'bg-[#05080a] border-gray-800 text-gray-500'
+                    ? 'bg-green-500/5 border-green-500/20 text-gray-300'
+                    : m.current
+                      ? 'bg-[#c5a059]/10 border-[#c5a059] text-white'
+                      : 'bg-[#05080a] border-gray-800 text-gray-500'
                     }`}>
                     <div>
                       <div className="flex justify-between items-start">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{m.phase}</span>
                         <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${m.isCompleted
-                            ? 'bg-green-500/10 text-green-400'
-                            : m.current
-                              ? 'bg-[#c5a059]/20 text-[#c5a059]'
-                              : 'bg-gray-800 text-gray-600'
+                          ? 'bg-green-500/10 text-green-400'
+                          : m.current
+                            ? 'bg-[#c5a059]/20 text-[#c5a059]'
+                            : 'bg-gray-800 text-gray-600'
                           }`}>
                           {m.statusText}
                         </span>
@@ -3533,8 +3568,8 @@ function DashboardView({ dashboardStats, bookings, inquiries, exchangeRates, sub
                           </td>
                           <td className="py-3 px-3 text-center">
                             <span className={`px-2 py-0.5 rounded-full font-bold uppercase tracking-wider text-[9px] ${agent.status === 'Approved' ? 'bg-green-500/10 border border-green-500/20 text-green-400' :
-                                agent.status === 'Suspended' ? 'bg-red-500/10 border border-red-500/20 text-red-400' :
-                                  'bg-yellow-500/10 border border-yellow-500/20 text-yellow-400'
+                              agent.status === 'Suspended' ? 'bg-red-500/10 border border-red-500/20 text-red-400' :
+                                'bg-yellow-500/10 border border-yellow-500/20 text-yellow-400'
                               }`}>
                               {agent.status}
                             </span>
@@ -3698,15 +3733,15 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
         method: 'DELETE'
       });
       const data = await res.json();
-        if (res.ok && data.success) {
-          setPackages((prev: UmrahPackage[]) => prev.filter(p => p._id !== pkgId));
-        } else {
-          alert(data.error || 'Failed to delete package.');
-        }
-      } catch (err) {
-        alert('Error deleting package.');
+      if (res.ok && data.success) {
+        setPackages((prev: UmrahPackage[]) => prev.filter(p => p._id !== pkgId));
+      } else {
+        alert(data.error || 'Failed to delete package.');
       }
-    };
+    } catch (err) {
+      alert('Error deleting package.');
+    }
+  };
 
   const handlePkgToggleActive = (pkg: UmrahPackage) => {
     if (!pkg._id) return;
@@ -4054,11 +4089,10 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
                           <td className="py-4 px-4 text-center">
                             <button
                               onClick={() => handlePkgToggleActive(pkg)}
-                              className={`px-2 py-0.5 rounded text-[10px] font-bold border transition-all ${
-                                pkg.isActive
-                                  ? 'bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/20'
-                                  : 'bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20'
-                              }`}
+                              className={`px-2 py-0.5 rounded text-[10px] font-bold border transition-all ${pkg.isActive
+                                ? 'bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/20'
+                                : 'bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20'
+                                }`}
                             >
                               {pkg.isActive ? 'Active' : 'Inactive'}
                             </button>
@@ -4149,8 +4183,8 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
                           <td className="py-4 px-4 font-semibold">{agent.experience} Years</td>
                           <td className="py-4 px-4">
                             <span className={`px-2 py-0.5 rounded-full font-bold text-[9px] uppercase border ${agent.status === 'Approved' ? 'bg-green-500/10 border-green-500/20 text-green-400' :
-                                agent.status === 'Suspended' ? 'bg-red-500/10 border-red-500/20 text-red-400' :
-                                  'bg-yellow-500/10 border-yellow-500/20 text-yellow-400'
+                              agent.status === 'Suspended' ? 'bg-red-500/10 border-red-500/20 text-red-400' :
+                                'bg-yellow-500/10 border-yellow-500/20 text-yellow-400'
                               }`}>
                               {agent.status}
                             </span>
@@ -4335,11 +4369,10 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
                               <button
                                 onClick={() => handleMemberToggleActive(m)}
                                 disabled={!m._id}
-                                className={`px-2 py-0.5 rounded text-[10px] font-bold border transition-all ${
-                                  m.isActive !== false
-                                    ? 'bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/20'
-                                    : 'bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20'
-                                } ${!m._id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold border transition-all ${m.isActive !== false
+                                  ? 'bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/20'
+                                  : 'bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20'
+                                  } ${!m._id ? 'opacity-50 cursor-not-allowed' : ''}`}
                               >
                                 {m.isActive !== false ? 'Active' : 'Inactive'}
                               </button>
@@ -4468,8 +4501,8 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
                   {editingMember ? 'Update Team Member' : 'Add New Team Member'}
                 </h3>
               </div>
-              <button 
-                onClick={() => { setIsAddingMember(false); setEditingMember(null); }} 
+              <button
+                onClick={() => { setIsAddingMember(false); setEditingMember(null); }}
                 className="text-gray-400 hover:text-white text-xl"
               >
                 &times;
@@ -4532,7 +4565,7 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
                   type="text"
                   value={memberForm.emails}
                   onChange={(e) => setMemberForm(prev => ({ ...prev, emails: e.target.value }))}
-                  placeholder="ceo@itt.sa, support@itt.sa"
+                  placeholder=" hlaique@yahoo.com/hijartulharamtravels@gmail.com, support@itt.sa"
                   className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none transition-all placeholder:text-gray-700"
                 />
               </div>
@@ -4583,8 +4616,8 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
                   {editingFullPkg ? 'Update Package Details' : 'Create New Umrah Package'}
                 </h3>
               </div>
-              <button 
-                onClick={() => { setIsAddingPkg(false); setEditingFullPkg(null); }} 
+              <button
+                onClick={() => { setIsAddingPkg(false); setEditingFullPkg(null); }}
                 className="text-gray-400 hover:text-white text-xl"
               >
                 &times;
