@@ -773,10 +773,11 @@ export default function App() {
       <header className="sticky top-0 z-50 bg-[#05080a]/95 backdrop-blur-md border-b border-[#c5a059]/15">
         <div className="w-full mx-auto px-4 lg:px-8 py-4 flex justify-between items-center">
           <a href="/" onClick={(e) => { e.preventDefault(); navigateTo('/'); }} className="flex items-center gap-3">
-            <span className="text-[#c5a059] text-2.5xl animate-spin-slow inline-block"><i className="fa-solid fa-compass"></i></span>
-            <span className="text-xl font-bold tracking-wide text-white uppercase">
-              Insight Travel and Tourism <span className="text-[#c5a059] font-serif capitalize">Company</span>
-            </span>
+            <img 
+              src={`${BACKEND_URL}/uploaded-files/itt-logo-4k-13-05-2026.png`} 
+              alt="Insight Travel and Tourism Company" 
+              className="h-12 w-auto object-contain" 
+            />
           </a>
 
           {/* Desktop Nav */}
