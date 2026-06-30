@@ -859,7 +859,7 @@ export default function App() {
 
       {/* ROUTES CONFIGURATION */}
       <Routes>
-        <Route path="/" element={<HomeView navigateTo={navigateTo} handleFormChange={handleFormChange} handleInquirySubmit={handleInquirySubmit} formData={formData} submitStatus={submitStatus} teamMembers={teamMembers.filter(m => m.isActive !== false)} fallbackTeam={fallbackTeam.filter(m => m.isActive !== false)} />} />
+        <Route path="/" element={<HomeView navigateTo={navigateTo} handleFormChange={handleFormChange} handleInquirySubmit={handleInquirySubmit} formData={formData} submitStatus={submitStatus} teamMembers={teamMembers.filter(m => m.isActive !== false)} fallbackTeam={fallbackTeam.filter(m => m.isActive !== false)} BACKEND_URL={BACKEND_URL} />} />
         <Route path="/portal" element={<PortalView loading={loading} packages={packages.filter(p => p.isActive === true)} selectedCity={selectedCity} setSelectedCity={setSelectedCity} searchQuery={searchQuery} setSearchQuery={setSearchQuery} openBookingModal={openBookingModal} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} formatConvertedPrice={formatConvertedPrice} formatShortPrice={formatShortPrice} />} />
         <Route path="/partner" element={<PartnerRegisterView BACKEND_URL={BACKEND_URL} />} />
         <Route path="/partner/dashboard" element={<PartnerDashboardView BACKEND_URL={BACKEND_URL} exchangeRates={exchangeRates} />} />
@@ -1400,7 +1400,7 @@ function ProtectedRoute({ isAuthenticated, setIsAuthenticated, BACKEND_URL, chil
 }
 
 /* HOME VIEW COMPONENT */
-function HomeView({ navigateTo, handleFormChange, handleInquirySubmit, formData, submitStatus, teamMembers = [], fallbackTeam = [] }: any) {
+function HomeView({ navigateTo, handleFormChange, handleInquirySubmit, formData, submitStatus, teamMembers = [], fallbackTeam = [], BACKEND_URL }: any) {
   return (
     <>
       {/* HERO SECTION */}
