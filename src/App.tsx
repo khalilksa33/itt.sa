@@ -772,7 +772,7 @@ export default function App() {
         <div className="w-full mx-auto px-4 lg:px-8 py-4 flex justify-between items-center">
           <a href="/" onClick={(e) => { e.preventDefault(); navigateTo('/'); }} className="flex items-center gap-3">
             <img 
-              src={`${BACKEND_URL}/uploaded-files/itt-logo-4k-13-05-2026.png`} 
+              src={`${BACKEND_URL}/uploaded-files/itt-logo-4k-13-05-2026.png?v=2`} 
               alt="Insight Travel and Tourism Company" 
               className="h-12 w-auto object-contain" 
             />
@@ -872,7 +872,7 @@ export default function App() {
         } />
         <Route path="/sales" element={
           <ProtectedRoute isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} BACKEND_URL={BACKEND_URL}>
-            <SalesPortalView packages={packages} subagents={subagents} bookings={bookings} teamMembers={teamMembers} BACKEND_URL={BACKEND_URL} setSubagents={setSubagents} setPackages={setPackages} setTeamMembers={setTeamMembers} />
+            <SalesPortalView packages={packages} subagents={subagents} bookings={bookings} teamMembers={teamMembers} BACKEND_URL={BACKEND_URL} setSubagents={setSubagents} setPackages={setPackages} setTeamMembers={setTeamMembers} setBookings={setBookings} />
           </ProtectedRoute>
         } />
       </Routes>
@@ -3588,7 +3588,7 @@ function DashboardView({ dashboardStats, bookings, inquiries, exchangeRates, sub
 }
 
 /* SALES PORTAL VIEW Component (Migrated from manage_packages.php) */
-function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACKEND_URL, setSubagents, setPackages, setTeamMembers }: any) {
+function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACKEND_URL, setSubagents, setPackages, setTeamMembers, setBookings }: any) {
   const [activeTab, setActiveTab] = useState<'rates' | 'agents' | 'sales' | 'team'>('rates');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -3624,6 +3624,71 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
     price_single: 0,
     isActive: false
   });
+
+  // Offline Sale states
+  const [isAddingOfflineSale, setIsAddingOfflineSale] = useState(false);
+  const [offlineSaleForm, setOfflineSaleForm] = useState({
+    packageName: '',
+    roomingType: 'sharing',
+    pilgrimsCount: 1,
+    totalPrice: 0,
+    contactName: '',
+    contactPhone: ''
+  });
+
+  const handleOfflineSaleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload = {
+      packageId: 'MANUAL',
+      packageName: offlineSaleForm.packageName,
+      roomingType: offlineSaleForm.roomingType,
+      pilgrimsCount: Number(offlineSaleForm.pilgrimsCount),
+      totalPrice: Number(offlineSaleForm.totalPrice),
+      contact: {
+        name: offlineSaleForm.contactName,
+        email: 'offline@itt.sa',
+        phone: offlineSaleForm.contactPhone
+      },
+      pilgrims: [],
+      partnerId: 'OFFLINE'
+    };
+
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/bookings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setIsAddingOfflineSale(false);
+        setOfflineSaleForm({
+          packageName: '',
+          roomingType: 'sharing',
+          pilgrimsCount: 1,
+          totalPrice: 0,
+          contactName: '',
+          contactPhone: ''
+        });
+        if (setBookings) {
+          setBookings((prev: any[]) => [
+            {
+              ...payload,
+              _id: data.bookingId,
+              createdAt: new Date().toISOString(),
+              status: 'Confirmed - Pending Payment'
+            },
+            ...prev
+          ]);
+        }
+        alert('Offline sale recorded successfully!');
+      } else {
+        alert(data.error || 'Failed to record sale.');
+      }
+    } catch (err) {
+      alert('Error recording sale.');
+    }
+  };
 
   const openAddPkgModal = () => {
     setIsAddingPkg(true);
@@ -4223,6 +4288,16 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
         {/* TAB 3: SALES & COMMISSIONS */}
         {activeTab === 'sales' && (
           <div className="flex flex-col gap-8">
+            <div className="flex justify-between items-end">
+              <h3 className="text-xl font-bold text-white">Sales & Billings</h3>
+              <button
+                onClick={() => setIsAddingOfflineSale(true)}
+                className="px-4 py-2 bg-[#c5a059] text-[#05080a] font-bold rounded hover:bg-[#d6b06a] transition-all flex items-center gap-2 text-sm"
+              >
+                <i className="fa-solid fa-plus"></i>
+                Record Offline Sale
+              </button>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
               <div className="bg-[#0e1217] border border-gray-800 p-6 rounded-xl text-center">
                 <div className="text-xs text-gray-400 uppercase font-bold tracking-wider">Active Partners</div>
@@ -4814,6 +4889,114 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
           </div>
         </div>
       )}
+      {/* MODAL: Offline Sale */}
+      {isAddingOfflineSale && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-[#0e1217] border border-gray-800 rounded-xl w-full max-w-lg p-6 shadow-2xl my-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <i className="fa-solid fa-file-invoice text-[#c5a059]"></i>
+                Record Offline Sale
+              </h3>
+              <button 
+                onClick={() => setIsAddingOfflineSale(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <i className="fa-solid fa-xmark text-xl"></i>
+              </button>
+            </div>
+            
+            <form onSubmit={handleOfflineSaleSubmit} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Package Name / Custom Title</label>
+                <input
+                  type="text"
+                  required
+                  value={offlineSaleForm.packageName}
+                  onChange={(e) => setOfflineSaleForm(prev => ({ ...prev, packageName: e.target.value }))}
+                  placeholder="e.g. 15 Days Custom Package"
+                  className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none transition-all"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Rooming Type</label>
+                  <select
+                    value={offlineSaleForm.roomingType}
+                    onChange={(e) => setOfflineSaleForm(prev => ({ ...prev, roomingType: e.target.value }))}
+                    className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none transition-all"
+                  >
+                    <option value="sharing">Sharing</option>
+                    <option value="quad">Quad</option>
+                    <option value="triple">Triple</option>
+                    <option value="double">Double</option>
+                    <option value="single">Single</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">No. of Pilgrims</label>
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    value={offlineSaleForm.pilgrimsCount}
+                    onChange={(e) => setOfflineSaleForm(prev => ({ ...prev, pilgrimsCount: parseInt(e.target.value) || 1 }))}
+                    className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Total Revenue (PKR)</label>
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  value={offlineSaleForm.totalPrice}
+                  onChange={(e) => setOfflineSaleForm(prev => ({ ...prev, totalPrice: parseInt(e.target.value) || 0 }))}
+                  placeholder="Total amount charged"
+                  className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none transition-all font-mono"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 border-t border-gray-800 pt-4 mt-2">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Primary Contact Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={offlineSaleForm.contactName}
+                    onChange={(e) => setOfflineSaleForm(prev => ({ ...prev, contactName: e.target.value }))}
+                    placeholder="John Doe"
+                    className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none transition-all"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold uppercase text-[#c5a059] tracking-wider">Contact Phone</label>
+                  <input
+                    type="text"
+                    required
+                    value={offlineSaleForm.contactPhone}
+                    onChange={(e) => setOfflineSaleForm(prev => ({ ...prev, contactPhone: e.target.value }))}
+                    placeholder="+92 300 0000000"
+                    className="bg-[#05080a] border border-gray-800 focus:border-[#c5a059] text-white px-3 py-2 rounded text-xs outline-none transition-all"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 bg-[#c5a059] text-[#05080a] font-bold rounded mt-4 hover:bg-[#a6823c] transition-all text-xs uppercase tracking-wider"
+              >
+                Save Record
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
     </section>
   );
 }

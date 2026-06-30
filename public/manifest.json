@@ -1,0 +1,25 @@
+{
+  "short_name": "ITT Portal",
+  "name": "Insight Travel & Tourism Company",
+  "icons": [
+    {
+      "src": "favicon.png",
+      "sizes": "32x32 24x24 16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "icons/icon-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#05080a",
+  "background_color": "#05080a"
+}
