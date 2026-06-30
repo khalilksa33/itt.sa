@@ -3,9 +3,8 @@ services:
   itt-app:
     image: ghcr.io/khalilksa33/itt.sa-dev:latest
     build: .
-    container_name: insight-travel-app-dev
     ports:
-      - "8095:80"
+      - "${APP_PORT:-8095}:80"
     restart: always
     depends_on:
       - itt-backend
@@ -13,7 +12,6 @@ services:
   # Express Backend with MongoDB Integration — DEV environment
   itt-backend:
     image: node:18-alpine
-    container_name: insight-travel-backend-dev
     working_dir: /app
     volumes:
       - ./server:/app
@@ -22,7 +20,7 @@ services:
 
     command: sh -c "npm install && npm start"
     ports:
-      - "5001:5000"
+      - "${BACKEND_PORT:-5001}:5000"
     restart: always
     depends_on:
       - mongodb
@@ -34,7 +32,6 @@ services:
   # MongoDB database — DEV environment
   mongodb:
     image: mongo:6.0
-    container_name: insight-travel-db-dev
     volumes:
       - mongo-data-dev:/data/db
     restart: always
