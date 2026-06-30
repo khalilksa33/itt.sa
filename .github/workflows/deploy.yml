@@ -26,4 +26,4 @@ jobs:
           cd ~/itt.sa-dev
           docker rm -f insight-travel-app-dev insight-travel-backend-dev insight-travel-db-dev || true
           docker compose down || true
-          APP_PORT=8096 BACKEND_PORT=5002 docker compose up -d --build --remove-orphans
+          APP_PORT=8099 BACKEND_PORT=5099 docker compose up -d --build --remove-orphans
