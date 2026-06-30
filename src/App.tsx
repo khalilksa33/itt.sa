@@ -771,11 +771,11 @@ export default function App() {
       `}</style>
       {/* HEADER & NAVBAR */}
       <header className="sticky top-0 z-50 bg-[#05080a]/95 backdrop-blur-md border-b border-[#c5a059]/15">
-        <div className="container mx-auto px-6 py-4 flex justify-between items-center max-w-7xl">
+        <div className="w-full mx-auto px-4 lg:px-8 py-4 flex justify-between items-center">
           <a href="/" onClick={(e) => { e.preventDefault(); navigateTo('/'); }} className="flex items-center gap-3">
             <span className="text-[#c5a059] text-2.5xl animate-spin-slow inline-block"><i className="fa-solid fa-compass"></i></span>
             <span className="text-xl font-bold tracking-wide text-white uppercase">
-              Insight Travel & <span className="text-[#c5a059] font-serif capitalize">Tourism</span>
+              Insight Travel and Tourism <span className="text-[#c5a059] font-serif capitalize">Company</span>
             </span>
           </a>
 
@@ -1658,10 +1658,10 @@ function HomeView({ navigateTo, handleFormChange, handleInquirySubmit, formData,
       <section id="policy" className="py-24 bg-[#0e1217]">
         <div className="container mx-auto px-6 max-w-5xl">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-serif text-white font-bold mb-4">Hajj & Umrah Policy</h2>
+            <h2 className="text-3xl font-serif text-white font-bold mb-4">Umrah Policy</h2>
             <div className="w-16 h-0.5 bg-[#c5a059] mx-auto mb-6"></div>
             <p className="text-gray-400 text-sm max-w-2xl mx-auto">
-              Please review our comprehensive Hajj and Umrah policy below. You can also download the document for your convenience.
+              Please review our comprehensive Umrah policy below. You can also download the document for your convenience.
             </p>
           </div>
           
@@ -1670,7 +1670,7 @@ function HomeView({ navigateTo, handleFormChange, handleInquirySubmit, formData,
               <iframe 
                 src={`${BACKEND_URL}/uploaded-files/umrah%20policy/UMRAH%20POLICY.pdf`} 
                 className="w-full h-full"
-                title="Hajj and Umrah Policy"
+                title="Umrah Policy"
               ></iframe>
             </div>
             
@@ -3586,14 +3586,10 @@ function DashboardView({ dashboardStats, bookings, inquiries, exchangeRates, sub
       </div>
     </section>
   );
-}
-
 /* SALES PORTAL VIEW Component (Migrated from manage_packages.php) */
 function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACKEND_URL, setSubagents, setPackages, setTeamMembers }: any) {
   const [activeTab, setActiveTab] = useState<'rates' | 'agents' | 'sales' | 'team'>('rates');
   const [searchTerm, setSearchTerm] = useState('');
-  const [isReseeding, setIsReseeding] = useState(false);
-  const [reseedStatus, setReseedStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
 
   // Team CRUD states
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
@@ -3934,28 +3930,6 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
     }
   };
 
-  const handleReseed = async () => {
-    setIsReseeding(true);
-    setReseedStatus({ type: null, message: '' });
-    try {
-      const response = await fetch(`${BACKEND_URL}/api/packages/reseed`, { method: 'POST' });
-      const data = await response.json();
-      if (response.ok && data.success) {
-        setReseedStatus({ type: 'success', message: `✓ Reseeded ${data.count} packages from: ${data.path || 'uploaded-files'}` });
-        // Refresh packages list
-        const pkgRes = await fetch(`${BACKEND_URL}/api/packages`);
-        const pkgs = await pkgRes.json();
-        if (pkgs && pkgs.length > 0) setPackages(pkgs);
-      } else {
-        setReseedStatus({ type: 'error', message: data.error || 'Reseed failed.' });
-      }
-    } catch (err) {
-      setReseedStatus({ type: 'error', message: 'Network error reaching backend.' });
-    } finally {
-      setIsReseeding(false);
-    }
-  };
-
   // Stats Calculations
   const approvedAgentsCount = subagents.filter((a: SubAgent) => a.status === 'Approved').length;
   const totalBillings = bookings.reduce((sum: number, b: any) => sum + (b.totalPrice || 0), 0);
@@ -4031,13 +4005,8 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
                   Package Database Control
                 </h4>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Currently showing {packages.length} packages. Force reload from uploaded-files to refresh all 51+ packages.
+                  Currently showing {packages.length} packages.
                 </p>
-                {reseedStatus.type && (
-                  <p className={`text-xs mt-1.5 font-bold ${reseedStatus.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>
-                    {reseedStatus.message}
-                  </p>
-                )}
               </div>
               <div className="flex gap-2">
                 <button
@@ -4045,14 +4014,6 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
                   className="px-4 py-2 bg-green-600 border border-green-500 hover:bg-green-700 text-white rounded font-bold text-xs transition-all flex items-center gap-2 whitespace-nowrap"
                 >
                   <i className="fa-solid fa-plus"></i> Add New Package
-                </button>
-                <button
-                  onClick={handleReseed}
-                  disabled={isReseeding}
-                  className="px-4 py-2 bg-[#c5a059]/10 border border-[#c5a059]/30 text-[#c5a059] hover:bg-[#c5a059] hover:text-[#05080a] rounded font-bold text-xs transition-all flex items-center gap-2 whitespace-nowrap"
-                >
-                  <i className={`fa-solid ${isReseeding ? 'fa-circle-notch animate-spin' : 'fa-arrows-rotate'}`}></i>
-                  {isReseeding ? 'Reloading...' : 'Reload Packages'}
                 </button>
               </div>
             </div>
