@@ -24,5 +24,6 @@ jobs:
       - name: Build and Restart Docker Compose Services
         run: |
           cd ~/itt.sa-dev
+          docker rm -f insight-travel-app-dev insight-travel-backend-dev insight-travel-db-dev || true
           docker compose down || true
           docker compose up -d --build --remove-orphans
