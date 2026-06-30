@@ -883,7 +883,7 @@ export default function App() {
           <div className="flex items-center gap-3">
             <span className="text-[#c5a059] text-lg"><i className="fa-solid fa-compass"></i></span>
             <span className="text-xl font-bold tracking-wide text-white uppercase">
-              Travel & <span className="text-[#c5a059] font-serif capitalize">Tourism Agency</span>
+              Insight <span className="text-[#c5a059] font-serif capitalize">Travel & Tourism</span>
             </span>
           </div>
           <p className="text-center">
@@ -1416,7 +1416,7 @@ function HomeView({ navigateTo, handleFormChange, handleInquirySubmit, formData,
               </span>
             </h1>
             <p className="text-gray-400 text-base sm:text-lg mb-10 leading-relaxed font-sans max-w-xl">
-              Specializing in spiritual, serene Umrah pilgrimages and premium, tailored World Tour packages. Connect with our Travel & Tourism Agency for trusted guidance, comfort, and premium arrangements.
+              Specializing in spiritual, serene Umrah pilgrimages and premium, tailored World Tour packages. Connect with Insight Travel & Tourism for trusted guidance, comfort, and premium arrangements.
             </p>
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <button
@@ -2636,7 +2636,7 @@ function CustomerPortalView({ BACKEND_URL, exchangeRates }: { BACKEND_URL: strin
             <div className="bg-[#05080a] py-6 px-8 border-b border-gray-850 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
                 <span className="text-[10px] text-[#c5a059] font-bold uppercase tracking-widest font-mono">Official Booking Receipt</span>
-                <h3 className="text-lg font-bold text-white mt-0.5">Travel & Tourism Agency</h3>
+                <h3 className="text-lg font-bold text-white mt-0.5">Insight Travel & Tourism</h3>
                 <p className="text-[10px] text-gray-500 font-mono mt-0.5">Issued on: {new Date(booking.createdAt).toLocaleDateString()}</p>
               </div>
               <div className="text-right">
