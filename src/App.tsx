@@ -3586,6 +3586,8 @@ function DashboardView({ dashboardStats, bookings, inquiries, exchangeRates, sub
       </div>
     </section>
   );
+}
+
 /* SALES PORTAL VIEW Component (Migrated from manage_packages.php) */
 function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACKEND_URL, setSubagents, setPackages, setTeamMembers }: any) {
   const [activeTab, setActiveTab] = useState<'rates' | 'agents' | 'sales' | 'team'>('rates');
