@@ -3646,6 +3646,27 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
     });
   };
 
+  const openDuplicatePkgModal = (pkg: UmrahPackage) => {
+    setIsAddingPkg(true);
+    setEditingFullPkg(null);
+    setPkgForm({
+      title: `${pkg.title} (Copy)`,
+      city: pkg.city,
+      duration: pkg.duration,
+      description: pkg.description,
+      makkahHotel: pkg.hotels.makkah,
+      madinahHotel: pkg.hotels.madinah,
+      features: pkg.features.join(', '),
+      image: pkg.image || '',
+      price_sharing: pkg.price_sharing || 0,
+      price_quad: pkg.price_quad || 0,
+      price_triple: pkg.price_triple || 0,
+      price_double: pkg.price_double || 0,
+      price_single: pkg.price_single || 0,
+      isActive: false
+    });
+  };
+
   const openEditPkgModal = (pkg: UmrahPackage) => {
     setEditingFullPkg(pkg);
     setIsAddingPkg(false);
@@ -3768,6 +3789,20 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
       emails: '',
       phones: '',
       isActive: true
+    });
+  };
+
+  const openDuplicateMemberModal = (member: TeamMember) => {
+    setIsAddingMember(true);
+    setEditingMember(null);
+    setMemberForm({
+      name: `${member.name} (Copy)`,
+      role: member.role,
+      designation: member.designation,
+      office: member.office,
+      emails: member.emails.join(', '),
+      phones: member.phones.join(', '),
+      isActive: member.isActive !== false
     });
   };
 
@@ -4075,6 +4110,13 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
                               >
                                 <i className="fa-solid fa-pen text-xs"></i>
                               </button>
+                              <button
+                                onClick={() => openDuplicatePkgModal(pkg)}
+                                className="p-1.5 bg-[#c5a059]/10 border border-[#c5a059]/20 text-[#c5a059] hover:bg-[#c5a059] hover:text-[#05080a] rounded transition-all"
+                                title="Duplicate Package"
+                              >
+                                <i className="fa-solid fa-copy text-xs"></i>
+                              </button>
                               {pkg._id && (
                                 <button
                                   onClick={() => handlePkgDelete(pkg._id)}
@@ -4347,6 +4389,13 @@ function SalesPortalView({ packages, subagents, bookings, teamMembers = [], BACK
                                   title="Edit Member"
                                 >
                                   <i className="fa-solid fa-pen text-xs"></i>
+                                </button>
+                                <button
+                                  onClick={() => openDuplicateMemberModal(m)}
+                                  className="p-1.5 bg-[#c5a059]/10 border border-[#c5a059]/20 text-[#c5a059] hover:bg-[#c5a059] hover:text-[#05080a] rounded transition-all"
+                                  title="Duplicate Member"
+                                >
+                                  <i className="fa-solid fa-copy text-xs"></i>
                                 </button>
                                 {m._id && (
                                   <button
